@@ -1,0 +1,42 @@
+{
+  "_doc": "Ablation sweep 2 — RESOLUTION sweep at the standard LoRA (rank 32 / alpha 64). Batch is lowered + grad_accum raised as resolution climbs so effective batch stays 8 and the high-res cells fit on an 11GB 2080 Ti (ViT-H+ with gradient checkpointing). Early-stop on overall MEAN localization F1, min 5 epochs, patience 2. TGIF per-epoch val restricted to flux1dev; in-domain val splits (casia/coco_inpaint/sagid + imd val-only) are always scored too.",
+  "base_args": {
+    "device": "cuda",
+    "imd2020_root": "/media/ssd/DINO_SCOPE_DATA/IMD2020",
+    "casia_root": "/media/ssd/DINO_SCOPE_DATA/casia",
+    "sagid_root": "/media/ssd/DINO_SCOPE_DATA/SAGI_D",
+    "coco_inpaint_root": "/media/ssd/DINO_SCOPE_DATA/INPAINT_COCO/content/inpaint_coco/images",
+    "tgif2_root": "/media/ssd/DINO_SCOPE_DATA/content/flux_originals",
+    "casia_train": true,
+    "imd_val_only": true,
+    "lora_rank": 32,
+    "lora_alpha": 64,
+    "contrastive_dim": 64,
+    "pool_hidden": 256,
+    "lambda_image_bce": 1.0,
+    "lambda_contrastive": 2.0,
+    "paste_frac": 0.5,
+    "noise_prob": 0.8,
+    "jpeg_prob": 0.55,
+    "train_samples": 3000,
+    "num_workers": 4,
+    "num_epochs": 10,
+    "min_epochs": 5,
+    "warmup_epochs": 1.0,
+    "early_stop_patience": 2,
+    "early_stop_reduce": "mean",
+    "val_zoom": true,
+    "tgif_val_models": "flux1dev",
+    "val_per_cell": 100
+  },
+  "runs": [
+    {"name": "res_224", "module": "experiments.scripts.train", "args": {"image_size": 224, "batch_size": 8, "grad_accum": 1}},
+    {"name": "res_336", "module": "experiments.scripts.train", "args": {"image_size": 336, "batch_size": 8, "grad_accum": 1}},
+    {"name": "res_448", "module": "experiments.scripts.train", "args": {"image_size": 448, "batch_size": 8, "grad_accum": 1}},
+    {"name": "res_496", "module": "experiments.scripts.train", "args": {"image_size": 496, "batch_size": 4, "grad_accum": 2}},
+    {"name": "res_512", "module": "experiments.scripts.train", "args": {"image_size": 512, "batch_size": 4, "grad_accum": 2}},
+    {"name": "res_592", "module": "experiments.scripts.train", "args": {"image_size": 592, "batch_size": 2, "grad_accum": 4}},
+    {"name": "res_608", "module": "experiments.scripts.train", "args": {"image_size": 608, "batch_size": 2, "grad_accum": 4}},
+    {"name": "res_688", "module": "experiments.scripts.train", "args": {"image_size": 688, "batch_size": 1, "grad_accum": 8}}
+  ]
+}

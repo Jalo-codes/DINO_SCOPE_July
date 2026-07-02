@@ -1,0 +1,192 @@
+% =====================================================================
+% Section 3 — Method  (revised)
+% Drop-in replacement for the current Sec. 3. Requires amsmath, amssymb.
+% Decision points flagged with %% NOTE: ... — toggle as needed.
+% =====================================================================
+
+\section{Method}
+\label{sec:method}
+
+\subsection{Overview}
+\label{sec:overview}
+The basis of our design is simple: within one image, manipulated and
+pristine patches are \emph{relatively} different, and a strong self-supervised
+representation already exposes that difference once it is lightly adapted. A
+frozen DINOv3 backbone, adapted only by low-rank (LoRA) updates, produces dense
+patch features (Sec.~\ref{sec:backbone}) that are fed to two lightweight
+\emph{linear} heads: a within-image patch-contrastive head for localization and
+a gated multiple-instance (MIL) pooling head for image-level prediction. The
+heads are deliberately light, serving primarily to insulate the backbone and to
+aggregate its features, respectively, and to inject the two training signals
+that shape the shared backbone. At inference, localization is performed by
+$k$-means clustering the output of the contrastive projection head and then
+resolving which cluster is the manipulation using the MIL pooling weights
+(Sec.~\ref{sec:decode}); there is no separate decoder and no per-pixel
+probabilities. A training-free, attention-guided zoom re-runs the same model on
+the suspected region to stabilize and sharpen the result.
+
+\subsection{Frozen backbone with two lightweight heads}
+\label{sec:backbone}
+We use a DINOv3 ViT-H\textsuperscript{+}/16 backbone~\cite{dinov3} at input
+resolution $448\times448$
+%% NOTE: 448 is the default operating point (swept in Sec. 5.2); the deliverable
+%% checkpoint trains at higher resolution. Keep/adjust to match the headline.
+, which tokenizes the image into a $28\times28$ grid of $N{=}784$ patch tokens.
+The backbone weights are frozen; we inject LoRA adapters~\cite{lora}
+(rank $r{=}16$, $\alpha{=}32$, dropout $0.1$) into the attention and MLP
+projection layers, so the only trainable parameters are the LoRA updates and the
+two heads. From the shared patch features $\mathbf{f}\in\mathbb{R}^{N\times D}$
+the model produces:
+\begin{enumerate}\itemsep2pt
+  \item an $L_2$-normalized contrastive embedding
+        $\mathbf{z}_i\in\mathbb{R}^{d}$ ($d{=}64$) per patch, from a
+        \emph{single linear} projector; and
+  \item an image-level forgery logit together with a set of per-patch pooling
+        weights $a_i$, from a gated-attention MIL head in the sense of Ilse
+        \etal~\cite{ilse2018mil}.
+\end{enumerate}
+We stress that $a_i$ are MIL \emph{bag-pooling weights}, not spatial or
+transformer attention: the head is two linear gates and a linear scorer, has no
+localization objective, and is never supervised on which patches are real or
+fake. Both heads are deliberately low-capacity, and---crucially---the
+contrastive head projects the $D$-dimensional features down to $d{=}64$ before
+the loss is applied. Imposing the contrastive objective on a compact projection,
+rather than on the backbone features directly, confines task-specific shaping to
+the head and keeps the rich self-supervised features near their semantic roots,
+which gradients pulling patches together and apart would otherwise corrupt. The
+heads thus serve mainly to route the two training signals into the shared
+backbone through LoRA; at inference they are read-outs---the projector emits the
+embeddings we cluster, the MIL head emits the polarity weight.
+
+\subsection{Training objective}
+\label{sec:objective}
+The localization signal comes from a within-image, pairwise contrastive loss on
+the patch embeddings. We treat labeled pristine and modified regions
+symmetrically to sidestep the issues classical splices raise---both the pasted
+region and the host are real pixels from some source, so the label is ill-posed.
+Simply put, our contrastive objective asks that same-label patches be alike and
+different-label patches be unlike, treating the two labeled regions symmetrically.
+
+For an image with binary patch labels $y_i\in\{0,1\}$ (pristine / manipulated),
+let $s_{ij}=\mathbf{z}_i^{\top}\mathbf{z}_j$ be the cosine similarity. We use two
+hard thresholds---a cohesion threshold $\tau^{+}{=}0.60$ and a separation
+threshold $\tau^{-}{=}0.15$---each enforced by a one-sided hinge that is zero
+once its threshold is met (and never pushes cohesive pairs apart):
+\begin{equation}
+  v^{+}_{ij}=\big[\tau^{+}-s_{ij}\big]_{+}\ (y_i{=}y_j),
+  \qquad
+  v^{-}_{ij}=\big[s_{ij}-\tau^{-}\big]_{+}\ (y_i{\neq}y_j).
+\end{equation}
+We average these over the three kinds of pairs in an image---same-manipulated
+($mm$), same-pristine ($pp$), and cross ($\times$):
+\begin{equation}
+  A_{\text{in}}=\overline{v^{+}}(mm),\quad
+  A_{\text{out}}=\overline{v^{+}}(pp),\quad
+  R=\overline{v^{-}}(\times),
+\end{equation}
+where the per-set mean is count-tempered,
+$\ \overline{v}(P)=\big(\textstyle\sum_{(i,j)\in P} v_{ij}\big)\big/\big(a_P^{\rho}\,t_P^{\,1-\rho}\big)$,
+with $t_P$ pairs in $P$, $a_P$ of them violating, and $\rho{=}0.75$ (denominators
+floored at $1$). The exponent $\rho$ interpolates between averaging over
+violators only ($\rho{=}1$) and over all pairs ($\rho{=}0$), so both the severity
+and the \emph{number} of violations move the loss. The per-image loss balances
+the two cohesion terms by region area and adds separation:
+\begin{equation}
+  \ell_{\text{con}}=w_{\text{in}}A_{\text{in}}+w_{\text{out}}A_{\text{out}}+\lambda_{r}R,
+  \qquad
+  w_{\text{in}}=\frac{p^{\beta}}{p^{\beta}+(1-p)^{\beta}},\ \ w_{\text{out}}{=}1{-}w_{\text{in}},
+\end{equation}
+with $p$ the manipulated-patch fraction, $\beta{=}0.5$ (a small splice is neither
+drowned nor over-amplified), and $\lambda_{r}{=}1$. Authentic images and crops
+containing a single region keep only their surviving cohesion term and are
+down-weighted by $\kappa{=}0.05$ in the batch mean $\mathcal{L}_{\text{con}}$.
+
+An auxiliary image-level head supplies the second signal. Its gated-MIL pooling
+produces an image logit supervised by binary cross-entropy
+$\mathcal{L}_{\text{bce}}$ (``is this image manipulated''); the same pooling
+weights $a_i$ are reused at decode time for cluster polarity. The total loss is
+\begin{equation}
+  \mathcal{L}
+  = \lambda_{\text{bce}}\,\mathcal{L}_{\text{bce}}
+  + \lambda_{\text{con}}\,\mathcal{L}_{\text{con}},
+  \qquad \lambda_{\text{bce}}{=}1,\ \lambda_{\text{con}}{=}2 .
+\end{equation}
+%% NOTE: an optional dense patch-BCE head exists but is omitted from the main
+%% model; it is used only to instantiate the supervised-threshold decoder
+%% baseline in the ablations (Sec. 5).
+
+\subsection{GT-free decoding and attention-guided zoom}
+\label{sec:decode}
+At inference a single forward pass yields the patch embeddings, the pooling
+weights, and the image logit. We do \emph{not} threshold a trained mask head.
+Instead we cluster the embeddings $\{\mathbf{z}_i\}$ into two groups with
+spherical $k$-means ($k{=}2$) and take the resulting partition as the localization.
+
+\paragraph{Cluster polarity.}
+Clustering alone cannot say \emph{which} of the two groups is the manipulation;
+the partition is correct but its foreground/background assignment is
+arbitrary~\cite{huh2018fighting}. We resolve this with the MIL pooling weights:
+the manipulated label is assigned to the cluster with higher mean $a_i$. This is
+worth dwelling on, because it is the one place the system relies on a signal it
+never directly trains. The image head has no localization objective and is never
+told which patches are manipulated; its pooling weights concentrate on the
+manipulated region only as a \emph{by-product} of the image-level real/fake
+task---the patches most useful for that decision are usually the edited ones. We
+quantify this emergence in Sec.~\ref{sec:ablations}: the pooling map aligns with
+the ground-truth manipulation at AUC well above chance, and that alignment
+collapses to chance when the contrastive objective is removed, even though the
+two heads share no gradient path---evidence that the localization the pooling
+map exposes is borrowed from the contrastively-shaped backbone, not learned by
+the head. The reliance is honest but imperfect: when the manipulated region
+occupies a large fraction of the image the polarity can invert, since nothing
+constrains it. This is a known, unsupervised trade-off, and we report where it
+occurs.
+
+\paragraph{Attention-guided zoom.}
+A single coarse pass is fragile for two reasons, only one of which is grid
+resolution. First and foremost, two-way $k$-means is unstable: on small or
+low-contrast edits a poor partition can annex large, semantically-unrelated
+regions alongside (or instead of) the true edit, producing a mask that is
+spuriously spread across the frame. Second, even a correct coarse partition is
+imprecise about \emph{what exactly} changed inside a region the model flagged as
+suspicious. We therefore add a training-free refinement (``zoom''): from the
+coarse pooling map we derive a bounding box around the attended region, crop the
+input to that box, re-run the same frozen model on the crop, and re-cluster.
+Inside the smaller, more homogeneous crop the partition is far less likely to
+wander, the model resolves the edited sub-region more finely, and---as a third
+benefit---the effective patch density over the region of interest increases. The
+box derivation, padding, and place-back are pure geometry and touch neither
+ground truth nor a trained head. We report both the coarse pass (``stage~1'')
+and the refined pass (``stage~2'').
+
+We use $k$-means as the default decoder throughout; a density-based alternative
+(HDBSCAN) and a supervised-threshold decoder are examined in
+Sec.~\ref{sec:ablations}.
+
+\subsection{Leakage-free evaluation}
+\label{sec:leakage}
+Forgery-localization pipelines are unusually prone to silent ground-truth
+leakage, so we enforce three structural invariants, checked by automated tests:
+the model forward pass exists in exactly one module; ground-truth masks are read
+in exactly one module (the metric computation); and the decode functions are
+structurally GT-free---they accept only the model-output bundle, which has no
+mask field, so a decoder cannot read ground truth even by accident. Cluster
+polarity is therefore chosen by the pooling weights, never by comparison to the
+ground-truth mask.
+
+\subsection{Implementation details}
+\label{sec:impl}
+We adapt DINOv3 ViT-H\textsuperscript{+}/16 (patch size $16$) with LoRA rank
+$16$, $\alpha{=}32$, dropout $0.1$ on the attention and MLP projections; the
+contrastive projector has dimension $d{=}64$ and the MIL pool hidden dimension
+is $256$. We optimize with AdamW (learning rate $2\!\times\!10^{-4}$, weight
+decay $10^{-4}$), a one-epoch linear warmup followed by cosine decay, gradient
+clipping at $1.0$, and mixed-precision (fp16). Loss weights are
+$\lambda_{\text{bce}}{=}1$, $\lambda_{\text{con}}{=}2$; contrastive margins
+$\tau^{+}{=}0.60$, $\tau^{-}{=}0.15$, $\lambda_r{=}1$, norm-power $\rho{=}0.75$,
+area-balance power $\beta{=}0.5$, single-class weight $\kappa{=}0.05$. Training
+runs to best validation localization F1 (minimum $5$ epochs, early-stop patience
+$2$); ablation cells are capped at a fixed epoch budget for comparability. At
+inference, $k$-means uses $k{=}2$ with $4$ restarts. Models were trained on
+NVIDIA L4 / A100 (Colab) and dual RTX~2080~Ti hardware; timing is reported on a
+single RTX~2080~Ti.

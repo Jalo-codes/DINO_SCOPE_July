@@ -1,0 +1,41 @@
+{
+  "_doc": "Ablation sweep 1b — FINE-GRAIN LoRA RANK fill in the 8-32 range to resolve the peak at r016 (TGIF f1 peaks at 16 then declines monotonically; 8/16/32 alone under-sample the peak and the 16->32 falloff). Identical config to sweep_ablation_lora_rank.json; alpha = 2x rank. New cells live alongside r008..r256 under the same run_root (/media/ssd/runs/ablation/lora_rank_sweep) so the rollup tabulates all ranks together.",
+  "base_args": {
+    "device": "cuda",
+    "imd2020_root": "/media/ssd/DINO_SCOPE_DATA/IMD2020",
+    "casia_root": "/media/ssd/DINO_SCOPE_DATA/casia",
+    "sagid_root": "/media/ssd/DINO_SCOPE_DATA/SAGI_D",
+    "coco_inpaint_root": "/media/ssd/DINO_SCOPE_DATA/INPAINT_COCO/content/inpaint_coco/images",
+    "tgif2_root": "/media/ssd/DINO_SCOPE_DATA/content/flux_originals",
+    "casia_train": true,
+    "imd_val_only": true,
+    "image_size": 448,
+    "batch_size": 8,
+    "grad_accum": 1,
+    "contrastive_dim": 64,
+    "pool_hidden": 256,
+    "lambda_image_bce": 1.0,
+    "lambda_contrastive": 2.0,
+    "paste_frac": 0.5,
+    "noise_prob": 0.8,
+    "jpeg_prob": 0.55,
+    "train_samples": 3000,
+    "num_workers": 4,
+    "num_epochs": 10,
+    "max_train_epochs": 5,
+    "min_epochs": 5,
+    "warmup_epochs": 1.0,
+    "early_stop_patience": 2,
+    "early_stop_reduce": "mean",
+    "val_zoom": true,
+    "tgif_val_models": "flux1dev",
+    "val_per_cell": 100
+  },
+  "runs": [
+    {"name": "r012", "module": "experiments.scripts.train", "args": {"lora_rank": 12, "lora_alpha": 24}},
+    {"name": "r014", "module": "experiments.scripts.train", "args": {"lora_rank": 14, "lora_alpha": 28}},
+    {"name": "r018", "module": "experiments.scripts.train", "args": {"lora_rank": 18, "lora_alpha": 36}},
+    {"name": "r020", "module": "experiments.scripts.train", "args": {"lora_rank": 20, "lora_alpha": 40}},
+    {"name": "r024", "module": "experiments.scripts.train", "args": {"lora_rank": 24, "lora_alpha": 48}}
+  ]
+}

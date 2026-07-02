@@ -1,0 +1,43 @@
+===== [2026-06-24T15:19:33] orchestrate launch: /home/fri-team-4/dino_venv/bin/python -m experiments.scripts.eval --device cuda --amp_dtype float16 --decoder kmeans --zoom --imd2020_root /media/ssd/DINO_SCOPE_DATA/IMD2020 --tgif2_root /media/ssd/DINO_SCOPE_DATA/content/flux_originals --checkpoint /media/ssd/runs/ablation/model_size_sweep/vitl16/epoch_0004.pt --sources imd2020 --max_items 1000 --summary_out /media/ssd/runs/ablation_eval/model_size_sweep/vitl16_imd/eval_summary.json =====
+[eval] loading checkpoint: /media/ssd/runs/ablation/model_size_sweep/vitl16/epoch_0004.pt
+[ckpt] loaded epoch=4 ← /media/ssd/runs/ablation/model_size_sweep/vitl16/epoch_0004.pt
+
+Loading weights:   0%|          | 0/415 [00:00<?, ?it/s]
+Loading weights: 100%|██████████| 415/415 [00:00<00:00, 9024.83it/s]
+trainable params: 14,155,776 || all params: 317,285,376 || trainable%: 4.4615
+[data] Indexing IMD2020: /media/ssd/DINO_SCOPE_DATA/IMD2020
+[data] imd2020 train kept=2189 dropped=21/2210 reasons=mask_area_too_small:21
+[data] imd2020 val kept=212 dropped=2/214 reasons=mask_area_too_small:2
+[data] IMD2020: train=2189 val=212 real_cases=414 splices=2010 skipped_unmasked=0
+[eval] imd2020: 212 val items
+[eval] decoder=kmeans
+[eval] processing 212 items for kmeans...
+[eval] kmeans ─── summary: n_splice=171 n_real=41 ───
+[eval] kmeans image_auc: 0.9479
+[eval] kmeans splices (all):
+[eval] kmeans all         f1: n= 171  med=0.7230  mean=0.6001±0.3427  [p25=0.3051, p75=0.8965]
+[eval] kmeans all        iou: n= 171  med=0.5662  mean=0.5084±0.3304  [p25=0.1800, p75=0.8125]
+[eval] kmeans all  precision: n= 171  med=0.7208  mean=0.5719±0.3566  [p25=0.2116, p75=0.8999]
+[eval] kmeans all     recall: n= 171  med=0.9165  mean=0.7521±0.3228  [p25=0.6992, p75=0.9632]
+[eval] kmeans splices bucket=tiny (n=92):
+[eval] kmeans bucket=tiny         f1: n=  92  med=0.6640  mean=0.5421±0.3611  [p25=0.1222, p75=0.8804]
+[eval] kmeans bucket=tiny        iou: n=  92  med=0.4970  mean=0.4548±0.3386  [p25=0.0651, p75=0.7864]
+[eval] kmeans bucket=tiny  precision: n=  92  med=0.5762  mean=0.5057±0.3681  [p25=0.0753, p75=0.8703]
+[eval] kmeans bucket=tiny     recall: n=  92  med=0.9031  mean=0.7462±0.3291  [p25=0.7316, p75=0.9598]
+[eval] kmeans splices bucket=small (n=62):
+[eval] kmeans bucket=small         f1: n=  62  med=0.7850  mean=0.6617±0.3113  [p25=0.5115, p75=0.9272]
+[eval] kmeans bucket=small        iou: n=  62  med=0.6462  mean=0.5658±0.3124  [p25=0.3437, p75=0.8643]
+[eval] kmeans bucket=small  precision: n=  62  med=0.7634  mean=0.6337±0.3304  [p25=0.3859, p75=0.9297]
+[eval] kmeans bucket=small     recall: n=  62  med=0.9275  mean=0.7676±0.3151  [p25=0.7148, p75=0.9687]
+[eval] kmeans splices bucket=medium (n=15):
+[eval] kmeans bucket=medium         f1: n=  15  med=0.7896  mean=0.7016±0.3024  [p25=0.5738, p75=0.9469]
+[eval] kmeans bucket=medium        iou: n=  15  med=0.6523  mean=0.6110±0.3092  [p25=0.4044, p75=0.8991]
+[eval] kmeans bucket=medium  precision: n=  15  med=0.7635  mean=0.6825±0.3155  [p25=0.4489, p75=0.9650]
+[eval] kmeans bucket=medium     recall: n=  15  med=0.9199  mean=0.7628±0.3167  [p25=0.7324, p75=0.9840]
+[eval] kmeans splices bucket=large (n=2):
+[eval] kmeans bucket=large         f1: n=   2  med=0.5980  mean=0.5980±0.0097  [p25=0.5932, p75=0.6029]
+[eval] kmeans bucket=large        iou: n=   2  med=0.4267  mean=0.4267±0.0099  [p25=0.4217, p75=0.4316]
+[eval] kmeans bucket=large  precision: n=   2  med=0.8736  mean=0.8736±0.0594  [p25=0.8439, p75=0.9033]
+[eval] kmeans bucket=large     recall: n=   2  med=0.4572  mean=0.4572±0.0276  [p25=0.4434, p75=0.4710]
+[eval] kmeans reals accuracy: n=  41  med=0.5995  mean=0.6178±0.1953  [p25=0.4681, p75=0.7589]
+[eval] saving flat summary to /media/ssd/runs/ablation_eval/model_size_sweep/vitl16_imd/eval_summary.json

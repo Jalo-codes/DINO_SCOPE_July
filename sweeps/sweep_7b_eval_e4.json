@@ -1,0 +1,14 @@
+{
+  "_doc": "7B r16 eval at epoch_0004.pt — full IMD + all TGIF cells @1000. Wrapped in orchestrate so the per-subgroup TGIF breakdown is captured in orchestrator.log.",
+  "base_args": {
+    "device": "cuda", "amp_dtype": "float16", "decoder": ["kmeans"], "zoom": true,
+    "imd2020_root": "/home/studentresearch2/DINO_SCOPE_DATA/IMD2020",
+    "tgif2_root": "/home/studentresearch2/DINO_SCOPE_DATA/content/flux_originals"
+  },
+  "runs": [
+    {"name": "vit7b_imd",  "module": "experiments.scripts.eval",
+     "args": {"checkpoint": "/home/studentresearch2/runs/seven_b/vit7b16_448_r16/epoch_0004.pt", "sources": ["imd2020"], "imd_val_split": 1.0}},
+    {"name": "vit7b_tgif", "module": "experiments.scripts.eval",
+     "args": {"checkpoint": "/home/studentresearch2/runs/seven_b/vit7b16_448_r16/epoch_0004.pt", "sources": ["tgif2"], "tgif_eval_per_cell": 1000}}
+  ]
+}

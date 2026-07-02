@@ -1,0 +1,2 @@
+===== [2026-06-23T11:20:49] orchestrate launch: /home/fri-team-4/dino_venv/bin/python -m experiments.scripts.eval --device cuda --amp_dtype float16 --decoder kmeans --zoom --imd2020_root /media/ssd/DINO_SCOPE_DATA/IMD2020 --tgif2_root /media/ssd/DINO_SCOPE_DATA/content/flux_originals --checkpoint /media/ssd/runs/ablation/res_sweep/res_448/best.pt --sources tgif2 --tgif_eval_per_cell 1000 --summary_out /media/ssd/runs/ablation_eval/res_sweep_best/res_448_tgif/eval_summary.json =====
+[eval] loading checkpoint: /media/ssd/runs/ablation/res_sweep/res_448/best.pt

@@ -1,0 +1,1190 @@
+===== [2026-06-24T11:20:41] orchestrate launch: /home/fri-team-4/dino_venv/bin/python -m experiments.scripts.train --device cuda --imd2020_root /media/ssd/DINO_SCOPE_DATA/IMD2020 --casia_root /media/ssd/DINO_SCOPE_DATA/casia --sagid_root /media/ssd/DINO_SCOPE_DATA/SAGI_D --coco_inpaint_root /media/ssd/DINO_SCOPE_DATA/INPAINT_COCO/content/inpaint_coco/images --tgif2_root /media/ssd/DINO_SCOPE_DATA/content/flux_originals --casia_train --imd_val_only --image_size 448 --lora_rank 32 --lora_alpha 64 --batch_size 8 --grad_accum 1 --contrastive_dim 64 --pool_hidden 256 --lambda_image_bce 1.0 --lambda_contrastive 2.0 --paste_frac 0.5 --noise_prob 0.8 --jpeg_prob 0.55 --train_samples 3000 --num_workers 4 --num_epochs 10 --min_epochs 5 --warmup_epochs 1.0 --early_stop_patience 2 --early_stop_reduce mean --val_zoom --tgif_val_models flux1dev --val_per_cell 100 --model_name facebook/dinov3-vits16-pretrain-lvd1689m --checkpoint_root /media/ssd/runs/ablation/model_size_sweep/vits16 =====
+[cfg] ── dataset roots ──
+[cfg]   imd2020_root=/media/ssd/DINO_SCOPE_DATA/IMD2020
+[cfg]   casia_root=/media/ssd/DINO_SCOPE_DATA/casia
+[cfg]   indoor_root=None
+[cfg]   coco_inpaint_root=/media/ssd/DINO_SCOPE_DATA/INPAINT_COCO/content/inpaint_coco/images
+[cfg]   sagid_root=/media/ssd/DINO_SCOPE_DATA/SAGI_D
+[cfg]   bfree_root=None
+[cfg]   anyedit_root=None
+[cfg]   tgif2_root=/media/ssd/DINO_SCOPE_DATA/content/flux_originals
+[cfg] ── checkpoint ──
+[cfg]   run_dir=/media/ssd/runs/ablation/model_size_sweep/vits16
+[cfg]   resume=None
+[cfg]   init_weights=None
+[cfg]   seed=42
+[cfg]   log_every=20
+[cfg] ── training loop ──
+[cfg]   num_epochs=10
+[cfg]   warmup_epochs=1
+[cfg]   early_stop_patience=2
+[cfg]   early_stop_min_delta=0.002
+[cfg]   min_epochs=5
+[cfg]   max_train_epochs=None
+[cfg]   early_stop_reduce=mean
+[cfg]   batch_size=8
+[cfg]   grad_accum=1
+[cfg]   lr=0.0002
+[cfg]   weight_decay=0.0001
+[cfg]   train_samples=3000
+[cfg]   num_workers=4
+[cfg]   persistent_workers=false
+[cfg]   prefetch_factor=None
+[cfg] ── model ──
+[cfg]   model_name=facebook/dinov3-vits16-pretrain-lvd1689m
+[cfg]   image_size=448
+[cfg]   patch_size=16
+[cfg]   lora_rank=32
+[cfg]   lora_alpha=64
+[cfg]   lora_dropout=0.1
+[cfg]   lora_block_start=None
+[cfg]   lora_block_end=None
+[cfg]   contrastive_dim=64
+[cfg]   pool_hidden=256
+[cfg]   patch_bce=false
+[cfg] ── loss lambdas ──
+[cfg]   lambda_image_bce=1
+[cfg]   lambda_contrastive=2
+[cfg]   lambda_patch_bce=1
+[cfg]   patch_pos_weight=10
+[cfg] ── data / sampling ──
+[cfg]   splice_mix=None
+[cfg]   casia_train=true
+[cfg]   imd_val_only=true
+[cfg] ── augmentation ──
+[cfg]   train_crop_min=0.18
+[cfg]   train_crop_max=1
+[cfg]   train_crop_ratio_min=0.6
+[cfg]   train_crop_ratio_max=1.7
+[cfg]   use_splice_degradation=false
+[cfg]   use_real_degradation=None
+[cfg]   paste_frac=0.5
+[cfg]   noise_prob=0.8
+[cfg]   jpeg_prob=0.55
+[cfg]   whole_corrupt_prob=0
+[cfg]   oracle_crop=false
+[cfg] ── recipe / tgif-finetune ──
+[cfg]   recipe=standard
+[cfg]   init_checkpoint=None
+[cfg]   eval_per_cell=500
+[cfg]   val_per_cell=100
+[cfg]   imd_max_items=None
+[cfg]   val_zoom=true
+[cfg]   val_zoom_pad_frac=None
+[cfg]   val_zoom_min_area=0
+[cfg]   tgif_val_models=('flux1dev',)
+[cfg]   tgif_types=None
+[cfg]   tgif_eval_decoders=('kmeans', 'hdbscan')
+[cfg]   primary_surface=imd
+[cfg] ── hardware ──
+[cfg]   device=cuda:0
+[cfg]   use_amp=true
+[cfg]   amp_dtype=fp16
+[cfg]   world_size=1
+[cfg]   rank=0
+[cfg]   gpu_name=NVIDIA GeForce RTX 2080 Ti
+[cfg]   compute_cap=7.5
+Traceback (most recent call last):
+  File "/home/fri-team-4/dino_venv/lib/python3.10/site-packages/huggingface_hub/utils/_http.py", line 761, in hf_raise_for_status
+    response.raise_for_status()
+  File "/home/fri-team-4/dino_venv/lib/python3.10/site-packages/httpx/_models.py", line 829, in raise_for_status
+    raise HTTPStatusError(message, request=request, response=self)
+httpx.HTTPStatusError: Client error '401 Unauthorized' for url 'https://huggingface.co/facebook/dinov3-vits16-pretrain-lvd1689m/resolve/main/config.json'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/401
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/fri-team-4/dino_venv/lib/python3.10/site-packages/transformers/utils/hub.py", line 422, in cached_files
+    hf_hub_download(
+  File "/home/fri-team-4/dino_venv/lib/python3.10/site-packages/huggingface_hub/utils/_validators.py", line 88, in _inner_fn
+    return fn(*args, **kwargs)
+  File "/home/fri-team-4/dino_venv/lib/python3.10/site-packages/huggingface_hub/file_download.py", line 997, in hf_hub_download
+    return _hf_hub_download_to_cache_dir(
+  File "/home/fri-team-4/dino_venv/lib/python3.10/site-packages/huggingface_hub/file_download.py", line 1148, in _hf_hub_download_to_cache_dir
+    _raise_on_head_call_error(head_call_error, force_download, local_files_only)
+  File "/home/fri-team-4/dino_venv/lib/python3.10/site-packages/huggingface_hub/file_download.py", line 1782, in _raise_on_head_call_error
+    raise head_call_error
+  File "/home/fri-team-4/dino_venv/lib/python3.10/site-packages/huggingface_hub/file_download.py", line 1669, in _get_metadata_or_catch_error
+    metadata = get_hf_file_metadata(
+  File "/home/fri-team-4/dino_venv/lib/python3.10/site-packages/huggingface_hub/utils/_validators.py", line 88, in _inner_fn
+    return fn(*args, **kwargs)
+  File "/home/fri-team-4/dino_venv/lib/python3.10/site-packages/huggingface_hub/file_download.py", line 1591, in get_hf_file_metadata
+    response = _httpx_follow_relative_redirects_with_backoff(
+  File "/home/fri-team-4/dino_venv/lib/python3.10/site-packages/huggingface_hub/utils/_http.py", line 692, in _httpx_follow_relative_redirects_with_backoff
+    hf_raise_for_status(response)
+  File "/home/fri-team-4/dino_venv/lib/python3.10/site-packages/huggingface_hub/utils/_http.py", line 787, in hf_raise_for_status
+    raise _format(GatedRepoError, message, response, repo_type=repo_type, repo_id=repo_id) from e
+huggingface_hub.errors.GatedRepoError: 401 Client Error. (Request ID: Root=1-6a3bf5cc-0b410d643ef9d0057f95483a;732c5b85-a0e9-42f0-912e-4dd84cf776df)
+
+Cannot access gated repo for url https://huggingface.co/facebook/dinov3-vits16-pretrain-lvd1689m/resolve/main/config.json.
+Access to model facebook/dinov3-vits16-pretrain-lvd1689m is restricted. You must have access to it and be authenticated to access it. Please log in.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/usr/lib/python3.10/runpy.py", line 196, in _run_module_as_main
+    return _run_code(code, main_globals, None,
+  File "/usr/lib/python3.10/runpy.py", line 86, in _run_code
+    exec(code, run_globals)
+  File "/home/fri-team-4/fri-team4/DINO_SCOPE_final/experiments/scripts/train.py", line 550, in <module>
+    main()
+  File "/home/fri-team-4/fri-team4/DINO_SCOPE_final/experiments/scripts/train.py", line 355, in main
+    model = build_multi_head_detector(
+  File "/home/fri-team-4/fri-team4/DINO_SCOPE_final/lab_utils/model/multi_head_detector.py", line 216, in build_multi_head_detector
+    model = MultiHeadDetector(
+  File "/home/fri-team-4/fri-team4/DINO_SCOPE_final/lab_utils/model/multi_head_detector.py", line 72, in __init__
+    base = AutoModel.from_pretrained(model_name)
+  File "/home/fri-team-4/dino_venv/lib/python3.10/site-packages/transformers/models/auto/auto_factory.py", line 329, in from_pretrained
+    config, kwargs = AutoConfig.from_pretrained(
+  File "/home/fri-team-4/dino_venv/lib/python3.10/site-packages/transformers/models/auto/configuration_auto.py", line 1483, in from_pretrained
+    config_dict, unused_kwargs = PreTrainedConfig.get_config_dict(pretrained_model_name_or_path, **kwargs)
+  File "/home/fri-team-4/dino_venv/lib/python3.10/site-packages/transformers/configuration_utils.py", line 670, in get_config_dict
+    config_dict, kwargs = cls._get_config_dict(pretrained_model_name_or_path, **kwargs)
+  File "/home/fri-team-4/dino_venv/lib/python3.10/site-packages/transformers/configuration_utils.py", line 725, in _get_config_dict
+    resolved_config_file = cached_file(
+  File "/home/fri-team-4/dino_venv/lib/python3.10/site-packages/transformers/utils/hub.py", line 278, in cached_file
+    file = cached_files(path_or_repo_id=path_or_repo_id, filenames=[filename], **kwargs)
+  File "/home/fri-team-4/dino_venv/lib/python3.10/site-packages/transformers/utils/hub.py", line 488, in cached_files
+    raise OSError(
+OSError: You are trying to access a gated repo.
+Make sure to have access to it at https://huggingface.co/facebook/dinov3-vits16-pretrain-lvd1689m.
+401 Client Error. (Request ID: Root=1-6a3bf5cc-0b410d643ef9d0057f95483a;732c5b85-a0e9-42f0-912e-4dd84cf776df)
+
+Cannot access gated repo for url https://huggingface.co/facebook/dinov3-vits16-pretrain-lvd1689m/resolve/main/config.json.
+Access to model facebook/dinov3-vits16-pretrain-lvd1689m is restricted. You must have access to it and be authenticated to access it. Please log in.
+===== [2026-06-24T11:23:01] orchestrate launch: /home/fri-team-4/dino_venv/bin/python -m experiments.scripts.train --device cuda --imd2020_root /media/ssd/DINO_SCOPE_DATA/IMD2020 --casia_root /media/ssd/DINO_SCOPE_DATA/casia --sagid_root /media/ssd/DINO_SCOPE_DATA/SAGI_D --coco_inpaint_root /media/ssd/DINO_SCOPE_DATA/INPAINT_COCO/content/inpaint_coco/images --tgif2_root /media/ssd/DINO_SCOPE_DATA/content/flux_originals --casia_train --imd_val_only --image_size 448 --lora_rank 32 --lora_alpha 64 --batch_size 8 --grad_accum 1 --contrastive_dim 64 --pool_hidden 256 --lambda_image_bce 1.0 --lambda_contrastive 2.0 --paste_frac 0.5 --noise_prob 0.8 --jpeg_prob 0.55 --train_samples 3000 --num_workers 4 --num_epochs 10 --min_epochs 5 --warmup_epochs 1.0 --early_stop_patience 2 --early_stop_reduce mean --val_zoom --tgif_val_models flux1dev --val_per_cell 100 --model_name facebook/dinov3-vits16-pretrain-lvd1689m --checkpoint_root /media/ssd/runs/ablation/model_size_sweep/vits16 =====
+[cfg] ── dataset roots ──
+[cfg]   imd2020_root=/media/ssd/DINO_SCOPE_DATA/IMD2020
+[cfg]   casia_root=/media/ssd/DINO_SCOPE_DATA/casia
+[cfg]   indoor_root=None
+[cfg]   coco_inpaint_root=/media/ssd/DINO_SCOPE_DATA/INPAINT_COCO/content/inpaint_coco/images
+[cfg]   sagid_root=/media/ssd/DINO_SCOPE_DATA/SAGI_D
+[cfg]   bfree_root=None
+[cfg]   anyedit_root=None
+[cfg]   tgif2_root=/media/ssd/DINO_SCOPE_DATA/content/flux_originals
+[cfg] ── checkpoint ──
+[cfg]   run_dir=/media/ssd/runs/ablation/model_size_sweep/vits16
+[cfg]   resume=None
+[cfg]   init_weights=None
+[cfg]   seed=42
+[cfg]   log_every=20
+[cfg] ── training loop ──
+[cfg]   num_epochs=10
+[cfg]   warmup_epochs=1
+[cfg]   early_stop_patience=2
+[cfg]   early_stop_min_delta=0.002
+[cfg]   min_epochs=5
+[cfg]   max_train_epochs=None
+[cfg]   early_stop_reduce=mean
+[cfg]   batch_size=8
+[cfg]   grad_accum=1
+[cfg]   lr=0.0002
+[cfg]   weight_decay=0.0001
+[cfg]   train_samples=3000
+[cfg]   num_workers=4
+[cfg]   persistent_workers=false
+[cfg]   prefetch_factor=None
+[cfg] ── model ──
+[cfg]   model_name=facebook/dinov3-vits16-pretrain-lvd1689m
+[cfg]   image_size=448
+[cfg]   patch_size=16
+[cfg]   lora_rank=32
+[cfg]   lora_alpha=64
+[cfg]   lora_dropout=0.1
+[cfg]   lora_block_start=None
+[cfg]   lora_block_end=None
+[cfg]   contrastive_dim=64
+[cfg]   pool_hidden=256
+[cfg]   patch_bce=false
+[cfg] ── loss lambdas ──
+[cfg]   lambda_image_bce=1
+[cfg]   lambda_contrastive=2
+[cfg]   lambda_patch_bce=1
+[cfg]   patch_pos_weight=10
+[cfg] ── data / sampling ──
+[cfg]   splice_mix=None
+[cfg]   casia_train=true
+[cfg]   imd_val_only=true
+[cfg] ── augmentation ──
+[cfg]   train_crop_min=0.18
+[cfg]   train_crop_max=1
+[cfg]   train_crop_ratio_min=0.6
+[cfg]   train_crop_ratio_max=1.7
+[cfg]   use_splice_degradation=false
+[cfg]   use_real_degradation=None
+[cfg]   paste_frac=0.5
+[cfg]   noise_prob=0.8
+[cfg]   jpeg_prob=0.55
+[cfg]   whole_corrupt_prob=0
+[cfg]   oracle_crop=false
+[cfg] ── recipe / tgif-finetune ──
+[cfg]   recipe=standard
+[cfg]   init_checkpoint=None
+[cfg]   eval_per_cell=500
+[cfg]   val_per_cell=100
+[cfg]   imd_max_items=None
+[cfg]   val_zoom=true
+[cfg]   val_zoom_pad_frac=None
+[cfg]   val_zoom_min_area=0
+[cfg]   tgif_val_models=('flux1dev',)
+[cfg]   tgif_types=None
+[cfg]   tgif_eval_decoders=('kmeans', 'hdbscan')
+[cfg]   primary_surface=imd
+[cfg] ── hardware ──
+[cfg]   device=cuda:0
+[cfg]   use_amp=true
+[cfg]   amp_dtype=fp16
+[cfg]   world_size=1
+[cfg]   rank=0
+[cfg]   gpu_name=NVIDIA GeForce RTX 2080 Ti
+[cfg]   compute_cap=7.5
+
+Loading weights:   0%|          | 0/211 [00:00<?, ?it/s]
+Loading weights: 100%|██████████| 211/211 [00:00<00:00, 9049.15it/s]
+trainable params: 2,654,208 || all params: 24,250,752 || trainable%: 10.9448
+/home/fri-team-4/fri-team4/DINO_SCOPE_final/experiments/scripts/train.py:380: FutureWarning: `torch.cuda.amp.GradScaler(args...)` is deprecated. Please use `torch.amp.GradScaler('cuda', args...)` instead.
+  scaler    = torch.cuda.amp.GradScaler(enabled=cfg.use_amp)
+[data] Indexing IMD2020: /media/ssd/DINO_SCOPE_DATA/IMD2020
+[data] imd2020 train kept=2189 dropped=21/2210 reasons=mask_area_too_small:21
+[data] imd2020 val kept=212 dropped=2/214 reasons=mask_area_too_small:2
+[data] IMD2020: train=2189 val=212 real_cases=414 splices=2010 skipped_unmasked=0
+[data] Indexing CASIA: /media/ssd/DINO_SCOPE_DATA/casia
+[data] casia train kept=4423 dropped=21/4444 reasons=mask_area_too_small:21
+[data] casia val kept=56 dropped=0/56
+[data] CASIA: train=4423 val=56 triplets=2810 discarded=560 malformed=0
+[data] Indexing inpaint (coco_inpaint): /media/ssd/DINO_SCOPE_DATA/INPAINT_COCO/content/inpaint_coco/images
+[data] coco_inpaint train kept=2265 dropped=3/2268 reasons=mask_area_too_large:3
+[data] coco_inpaint val kept=252 dropped=0/252
+[data] inpaint coco_inpaint: train=2265 val=252 triplets=1260 unmatched_mods=0
+[data] Indexing inpaint (sagid): /media/ssd/DINO_SCOPE_DATA/SAGI_D
+[data] sagid train kept=3046 dropped=0/3046
+[data] sagid val kept=338 dropped=0/338
+[data] inpaint sagid: train=3046 val=338 triplets=1692 unmatched_mods=0
+[data] Indexing tgif2 (341 coco_ids): /media/ssd/DINO_SCOPE_DATA/content/flux_originals/tgif2_index.json
+[data] tgif2 train kept=16651 dropped=234/16885 reasons=image_corrupt:3,image_degenerate:231
+[data] tgif2 val kept=1206 dropped=28/1234 reasons=image_degenerate:28
+[data] tgif2: train=16651 val=1206 coco_ids=341 train_frac=0.0 max_per_cell=None eval_per_cell=100
+[data] tgif2 → val: 434 items (34 real) models=['flux1dev'] per_cell=100 cells=['flux1dev|fr|random', 'flux1dev|fr|semantic', 'flux1dev|sp|random', 'flux1dev|sp|semantic']
+[data] train epoch capped at 3000/9734 samples
+[train] LR warmup=375 steps (~1.00 ep) → cosine over 3375 steps eta_min=1.00e-05
+[train] epoch=0 step=20 loss=1.5399 bce=0.6989 cont=0.4205 lr=1.26e-05
+[train] epoch=0 step=40 loss=1.5305 bce=0.6948 cont=0.4179 lr=2.31e-05
+[train] epoch=0 step=60 loss=1.5364 bce=0.6945 cont=0.4209 lr=3.37e-05
+[train] epoch=0 step=80 loss=1.5241 bce=0.6930 cont=0.4155 lr=4.42e-05
+[train] epoch=0 step=100 loss=1.5176 bce=0.6957 cont=0.4109 lr=5.48e-05
+[train] epoch=0 step=120 loss=1.5142 bce=0.6944 cont=0.4099 lr=6.54e-05
+[train] epoch=0 step=140 loss=1.5174 bce=0.6938 cont=0.4118 lr=7.59e-05
+[train] epoch=0 step=160 loss=1.5186 bce=0.6935 cont=0.4125 lr=8.65e-05
+[train] epoch=0 step=180 loss=1.5199 bce=0.6938 cont=0.4130 lr=9.70e-05
+[train] epoch=0 step=200 loss=1.5194 bce=0.6946 cont=0.4124 lr=1.08e-04
+[train] epoch=0 step=220 loss=1.5236 bce=0.6941 cont=0.4147 lr=1.18e-04
+[train] epoch=0 step=240 loss=1.5220 bce=0.6932 cont=0.4144 lr=1.29e-04
+[train] epoch=0 step=260 loss=1.5273 bce=0.6920 cont=0.4177 lr=1.39e-04
+[train] epoch=0 step=280 loss=1.5258 bce=0.6910 cont=0.4174 lr=1.50e-04
+[train] epoch=0 step=300 loss=1.5258 bce=0.6895 cont=0.4182 lr=1.60e-04
+[train] epoch=0 step=320 loss=1.5203 bce=0.6885 cont=0.4159 lr=1.71e-04
+[train] epoch=0 step=340 loss=1.5147 bce=0.6866 cont=0.4140 lr=1.82e-04
+[train] epoch=0 step=360 loss=1.5118 bce=0.6847 cont=0.4135 lr=1.92e-04
+[train] epoch=0 loss=1.5133 bce=0.6829 cont=0.4152 patch=0.0000
+[eval] val zoom ON (two-pass, decoder=kmeans)
+[eval] ─── summary: n_splice=894 n_real=398 ───
+[eval] image_auc: 0.6297
+[eval] splices (all):
+[eval] all         f1: n= 894  med=0.2772  mean=0.3685±0.3364  [p25=0.0276, p75=0.6729]
+[eval] all        iou: n= 894  med=0.1609  mean=0.2865±0.2983  [p25=0.0140, p75=0.5070]
+[eval] all  precision: n= 894  med=0.2405  mean=0.3880±0.3831  [p25=0.0167, p75=0.8136]
+[eval] all     recall: n= 894  med=0.5485  mean=0.5171±0.3886  [p25=0.0711, p75=0.9334]
+[eval] splices bucket=tiny (n=310):
+[eval] bucket=tiny         f1: n= 310  med=0.0430  mean=0.1762±0.2635  [p25=0.0000, p75=0.2218]
+[eval] bucket=tiny        iou: n= 310  med=0.0220  mean=0.1281±0.2199  [p25=0.0000, p75=0.1247]
+[eval] bucket=tiny  precision: n= 310  med=0.0228  mean=0.1396±0.2451  [p25=0.0000, p75=0.1265]
+[eval] bucket=tiny     recall: n= 310  med=0.6571  mean=0.5115±0.4336  [p25=0.0000, p75=0.9694]
+[eval] splices bucket=small (n=310):
+[eval] bucket=small         f1: n= 310  med=0.3884  mean=0.4011±0.3212  [p25=0.0565, p75=0.6957]
+[eval] bucket=small        iou: n= 310  med=0.2410  mean=0.3070±0.2834  [p25=0.0291, p75=0.5334]
+[eval] bucket=small  precision: n= 310  med=0.2804  mean=0.3738±0.3365  [p25=0.0411, p75=0.6916]
+[eval] bucket=small     recall: n= 310  med=0.6050  mean=0.5334±0.3879  [p25=0.0662, p75=0.9392]
+[eval] splices bucket=medium (n=174):
+[eval] bucket=medium         f1: n= 174  med=0.5733  mean=0.5004±0.3187  [p25=0.1679, p75=0.7724]
+[eval] bucket=medium        iou: n= 174  med=0.4019  mean=0.3963±0.2990  [p25=0.0917, p75=0.6292]
+[eval] bucket=medium  precision: n= 174  med=0.7818  mean=0.6123±0.3675  [p25=0.2249, p75=0.9549]
+[eval] bucket=medium     recall: n= 174  med=0.4440  mean=0.4691±0.3356  [p25=0.1450, p75=0.7695]
+[eval] splices bucket=large (n=100):
+[eval] bucket=large         f1: n= 100  med=0.6743  mean=0.6337±0.2851  [p25=0.4706, p75=0.8738]
+[eval] bucket=large        iou: n= 100  med=0.5087  mean=0.5233±0.2913  [p25=0.3078, p75=0.7759]
+[eval] bucket=large  precision: n= 100  med=0.9538  mean=0.8115±0.2843  [p25=0.7242, p75=0.9896]
+[eval] bucket=large     recall: n= 100  med=0.5485  mean=0.5673±0.3117  [p25=0.3482, p75=0.8670]
+[eval] reals accuracy: n= 398  med=0.7597  mean=0.7381±0.1679  [p25=0.6256, p75=0.8814]
+[eval] source=casia: n_splice=28 n_real=28
+[eval] source=casia         f1: n=  28  med=0.5890  mean=0.4924±0.3939  [p25=0.0133, p75=0.8932]
+[eval] source=casia        iou: n=  28  med=0.4175  mean=0.4202±0.3616  [p25=0.0067, p75=0.8071]
+[eval] source=casia  precision: n=  28  med=0.4986  mean=0.4484±0.3794  [p25=0.0083, p75=0.8386]
+[eval] source=casia     recall: n=  28  med=0.9497  mean=0.6129±0.4565  [p25=0.0160, p75=0.9859]
+[eval] source=coco_inpaint: n_splice=126 n_real=126
+[eval] source=coco_inpaint         f1: n= 126  med=0.6077  mean=0.5502±0.2462  [p25=0.4244, p75=0.7386]
+[eval] source=coco_inpaint        iou: n= 126  med=0.4364  mean=0.4164±0.2207  [p25=0.2694, p75=0.5855]
+[eval] source=coco_inpaint  precision: n= 126  med=0.8815  mean=0.7111±0.3310  [p25=0.4835, p75=0.9903]
+[eval] source=coco_inpaint     recall: n= 126  med=0.5364  mean=0.5245±0.2681  [p25=0.3542, p75=0.7360]
+[eval] source=imd2020: n_splice=171 n_real=41
+[eval] source=imd2020         f1: n= 171  med=0.1622  mean=0.3069±0.3241  [p25=0.0082, p75=0.5434]
+[eval] source=imd2020        iou: n= 171  med=0.0882  mean=0.2353±0.2862  [p25=0.0041, p75=0.3731]
+[eval] source=imd2020  precision: n= 171  med=0.0940  mean=0.2602±0.3142  [p25=0.0047, p75=0.4400]
+[eval] source=imd2020     recall: n= 171  med=0.9015  mean=0.6089±0.4285  [p25=0.0589, p75=0.9879]
+[eval] source=sagid: n_splice=169 n_real=169
+[eval] source=sagid         f1: n= 169  med=0.7058  mean=0.5937±0.3482  [p25=0.2975, p75=0.8960]
+[eval] source=sagid        iou: n= 169  med=0.5453  mean=0.5040±0.3353  [p25=0.1748, p75=0.8116]
+[eval] source=sagid  precision: n= 169  med=0.7756  mean=0.6212±0.3681  [p25=0.2714, p75=0.9491]
+[eval] source=sagid     recall: n= 169  med=0.8312  mean=0.6487±0.3673  [p25=0.3147, p75=0.9715]
+[eval] source=tgif2: n_splice=400 n_real=34
+[eval] source=tgif2         f1: n= 400  med=0.1225  mean=0.2338±0.2723  [p25=0.0070, p75=0.4001]
+[eval] source=tgif2        iou: n= 400  med=0.0653  mean=0.1663±0.2230  [p25=0.0035, p75=0.2501]
+[eval] source=tgif2  precision: n= 400  med=0.0936  mean=0.2381±0.3136  [p25=0.0044, p75=0.3471]
+[eval] source=tgif2     recall: n= 400  med=0.3435  mean=0.4132±0.3773  [p25=0.0262, p75=0.7801]
+[eval] ─── by subgroup (4 cells) ───
+[eval] subgroup=flux1dev|fr|random (n_splice=100 n_real=0):
+[eval] subgroup=flux1dev|fr|random         f1: n= 100  med=0.0406  mean=0.1287±0.1682  [p25=0.0000, p75=0.2282]
+[eval] subgroup=flux1dev|fr|random        iou: n= 100  med=0.0207  mean=0.0789±0.1137  [p25=0.0000, p75=0.1288]
+[eval] subgroup=flux1dev|fr|random  precision: n= 100  med=0.0358  mean=0.1479±0.2362  [p25=0.0000, p75=0.2044]
+[eval] subgroup=flux1dev|fr|random     recall: n= 100  med=0.0745  mean=0.2214±0.2733  [p25=0.0000, p75=0.4125]
+[eval] subgroup=flux1dev|fr|semantic (n_splice=100 n_real=0):
+[eval] subgroup=flux1dev|fr|semantic         f1: n= 100  med=0.2494  mean=0.3335±0.3065  [p25=0.0403, p75=0.5958]
+[eval] subgroup=flux1dev|fr|semantic        iou: n= 100  med=0.1425  mean=0.2467±0.2562  [p25=0.0206, p75=0.4245]
+[eval] subgroup=flux1dev|fr|semantic  precision: n= 100  med=0.1726  mean=0.3367±0.3613  [p25=0.0208, p75=0.6868]
+[eval] subgroup=flux1dev|fr|semantic     recall: n= 100  med=0.6976  mean=0.6018±0.3608  [p25=0.2710, p75=0.9473]
+[eval] subgroup=flux1dev|sp|random (n_splice=100 n_real=0):
+[eval] subgroup=flux1dev|sp|random         f1: n= 100  med=0.0694  mean=0.1402±0.1712  [p25=0.0000, p75=0.2370]
+[eval] subgroup=flux1dev|sp|random        iou: n= 100  med=0.0360  mean=0.0859±0.1149  [p25=0.0000, p75=0.1344]
+[eval] subgroup=flux1dev|sp|random  precision: n= 100  med=0.0811  mean=0.1595±0.2423  [p25=0.0000, p75=0.2038]
+[eval] subgroup=flux1dev|sp|random     recall: n= 100  med=0.0796  mean=0.2399±0.3021  [p25=0.0000, p75=0.4334]
+[eval] subgroup=flux1dev|sp|semantic (n_splice=100 n_real=0):
+[eval] subgroup=flux1dev|sp|semantic         f1: n= 100  med=0.2037  mean=0.3326±0.3251  [p25=0.0280, p75=0.5993]
+[eval] subgroup=flux1dev|sp|semantic        iou: n= 100  med=0.1134  mean=0.2536±0.2810  [p25=0.0142, p75=0.4279]
+[eval] subgroup=flux1dev|sp|semantic  precision: n= 100  med=0.1240  mean=0.3081±0.3454  [p25=0.0154, p75=0.5074]
+[eval] subgroup=flux1dev|sp|semantic     recall: n= 100  med=0.6728  mean=0.5897±0.3737  [p25=0.1550, p75=0.9420]
+[eval]   casia image_auc=0.6747 (n=56)
+[eval]   coco_inpaint image_auc=0.7674 (n=252)
+[eval]   imd2020 image_auc=0.7493 (n=212)
+[eval]   sagid image_auc=0.7706 (n=338)
+[eval]   tgif2 image_auc=0.5471 (n=434)
+[eval] epoch=0 val_f1_mean=0.3685
+[ckpt] saved epoch=0 → /media/ssd/runs/ablation/model_size_sweep/vits16/epoch_0000.pt
+[ckpt] best model saved  val_f1_mean=0.3685
+[train] epoch=1 step=20 loss=1.4018 bce=0.6240 cont=0.3889 lr=2.00e-04
+[train] epoch=1 step=40 loss=1.4417 bce=0.6253 cont=0.4082 lr=2.00e-04
+[train] epoch=1 step=60 loss=1.4540 bce=0.6309 cont=0.4116 lr=2.00e-04
+[train] epoch=1 step=80 loss=1.4385 bce=0.6213 cont=0.4086 lr=2.00e-04
+[train] epoch=1 step=100 loss=1.4214 bce=0.5997 cont=0.4108 lr=2.00e-04
+[train] epoch=1 step=120 loss=1.4097 bce=0.5919 cont=0.4089 lr=1.99e-04
+[train] epoch=1 step=140 loss=1.3960 bce=0.5876 cont=0.4042 lr=1.99e-04
+[train] epoch=1 step=160 loss=1.3990 bce=0.5899 cont=0.4046 lr=1.99e-04
+[train] epoch=1 step=180 loss=1.3957 bce=0.5834 cont=0.4062 lr=1.99e-04
+[train] epoch=1 step=200 loss=1.3888 bce=0.5784 cont=0.4052 lr=1.98e-04
+[train] epoch=1 step=220 loss=1.3787 bce=0.5734 cont=0.4027 lr=1.98e-04
+[train] epoch=1 step=240 loss=1.3750 bce=0.5706 cont=0.4022 lr=1.98e-04
+[train] epoch=1 step=260 loss=1.3708 bce=0.5668 cont=0.4020 lr=1.97e-04
+[train] epoch=1 step=280 loss=1.3657 bce=0.5629 cont=0.4014 lr=1.97e-04
+[train] epoch=1 step=300 loss=1.3616 bce=0.5578 cont=0.4019 lr=1.96e-04
+[train] epoch=1 step=320 loss=1.3583 bce=0.5563 cont=0.4010 lr=1.96e-04
+[train] epoch=1 step=340 loss=1.3551 bce=0.5546 cont=0.4003 lr=1.95e-04
+[train] epoch=1 step=360 loss=1.3502 bce=0.5528 cont=0.3987 lr=1.95e-04
+[train] epoch=1 loss=1.3436 bce=0.5506 cont=0.3965 patch=0.0000
+[eval] val zoom ON (two-pass, decoder=kmeans)
+[eval] ─── summary: n_splice=894 n_real=398 ───
+[eval] image_auc: 0.7443
+[eval] splices (all):
+[eval] all         f1: n= 894  med=0.4068  mean=0.4158±0.3393  [p25=0.0514, p75=0.7268]
+[eval] all        iou: n= 894  med=0.2553  mean=0.3272±0.3068  [p25=0.0264, p75=0.5708]
+[eval] all  precision: n= 894  med=0.4184  mean=0.4687±0.3934  [p25=0.0383, p75=0.8981]
+[eval] all     recall: n= 894  med=0.5067  mean=0.5004±0.3764  [p25=0.1025, p75=0.9057]
+[eval] splices bucket=tiny (n=310):
+[eval] bucket=tiny         f1: n= 310  med=0.1015  mean=0.2865±0.3185  [p25=0.0000, p75=0.5440]
+[eval] bucket=tiny        iou: n= 310  med=0.0535  mean=0.2169±0.2706  [p25=0.0000, p75=0.3736]
+[eval] bucket=tiny  precision: n= 310  med=0.0661  mean=0.2537±0.3177  [p25=0.0000, p75=0.4441]
+[eval] bucket=tiny     recall: n= 310  med=0.5860  mean=0.5095±0.4132  [p25=0.0000, p75=0.9515]
+[eval] splices bucket=small (n=310):
+[eval] bucket=small         f1: n= 310  med=0.4530  mean=0.4351±0.3365  [p25=0.0336, p75=0.7442]
+[eval] bucket=small        iou: n= 310  med=0.2928  mean=0.3422±0.3026  [p25=0.0171, p75=0.5926]
+[eval] bucket=small  precision: n= 310  med=0.4677  mean=0.4520±0.3697  [p25=0.0211, p75=0.8413]
+[eval] bucket=small     recall: n= 310  med=0.5235  mean=0.5053±0.3748  [p25=0.0888, p75=0.8865]
+[eval] splices bucket=medium (n=174):
+[eval] bucket=medium         f1: n= 174  med=0.5467  mean=0.4959±0.3212  [p25=0.1957, p75=0.7934]
+[eval] bucket=medium        iou: n= 174  med=0.3762  mean=0.3946±0.3084  [p25=0.1085, p75=0.6575]
+[eval] bucket=medium  precision: n= 174  med=0.8921  mean=0.6643±0.3650  [p25=0.3159, p75=0.9734]
+[eval] bucket=medium     recall: n= 174  med=0.4040  mean=0.4508±0.3340  [p25=0.1272, p75=0.7401]
+[eval] splices bucket=large (n=100):
+[eval] bucket=large         f1: n= 100  med=0.6234  mean=0.6174±0.2813  [p25=0.4175, p75=0.8555]
+[eval] bucket=large        iou: n= 100  med=0.4528  mean=0.5056±0.2954  [p25=0.2639, p75=0.7477]
+[eval] bucket=large  precision: n= 100  med=0.9697  mean=0.8462±0.2495  [p25=0.7963, p75=0.9983]
+[eval] bucket=large     recall: n= 100  med=0.5000  mean=0.5430±0.3183  [p25=0.2727, p75=0.8907]
+[eval] reals accuracy: n= 398  med=0.8385  mean=0.7842±0.1791  [p25=0.6786, p75=0.9259]
+[eval] source=casia: n_splice=28 n_real=28
+[eval] source=casia         f1: n=  28  med=0.8786  mean=0.7112±0.3363  [p25=0.5994, p75=0.9287]
+[eval] source=casia        iou: n=  28  med=0.7835  mean=0.6364±0.3275  [p25=0.4280, p75=0.8669]
+[eval] source=casia  precision: n=  28  med=0.8215  mean=0.6854±0.3259  [p25=0.6436, p75=0.9172]
+[eval] source=casia     recall: n=  28  med=0.9472  mean=0.7746±0.3567  [p25=0.8883, p75=0.9784]
+[eval] source=coco_inpaint: n_splice=126 n_real=126
+[eval] source=coco_inpaint         f1: n= 126  med=0.5874  mean=0.5235±0.2385  [p25=0.4004, p75=0.6906]
+[eval] source=coco_inpaint        iou: n= 126  med=0.4158  mean=0.3882±0.2114  [p25=0.2503, p75=0.5274]
+[eval] source=coco_inpaint  precision: n= 126  med=0.9555  mean=0.7694±0.3230  [p25=0.6378, p75=0.9968]
+[eval] source=coco_inpaint     recall: n= 126  med=0.4548  mean=0.4624±0.2517  [p25=0.2908, p75=0.6447]
+[eval] source=imd2020: n_splice=171 n_real=41
+[eval] source=imd2020         f1: n= 171  med=0.5270  mean=0.4856±0.3253  [p25=0.1524, p75=0.7997]
+[eval] source=imd2020        iou: n= 171  med=0.3577  mean=0.3842±0.3000  [p25=0.0825, p75=0.6662]
+[eval] source=imd2020  precision: n= 171  med=0.3946  mean=0.4300±0.3317  [p25=0.0899, p75=0.7633]
+[eval] source=imd2020     recall: n= 171  med=0.9257  mean=0.7403±0.3347  [p25=0.5960, p75=0.9771]
+[eval] source=sagid: n_splice=169 n_real=169
+[eval] source=sagid         f1: n= 169  med=0.7628  mean=0.6363±0.3271  [p25=0.3651, p75=0.9182]
+[eval] source=sagid        iou: n= 169  med=0.6166  mean=0.5449±0.3311  [p25=0.2233, p75=0.8489]
+[eval] source=sagid  precision: n= 169  med=0.9004  mean=0.7338±0.3357  [p25=0.5565, p75=0.9719]
+[eval] source=sagid     recall: n= 169  med=0.7617  mean=0.6434±0.3419  [p25=0.3582, p75=0.9547]
+[eval] source=tgif2: n_splice=400 n_real=34
+[eval] source=tgif2         f1: n= 400  med=0.0886  mean=0.2383±0.2777  [p25=0.0000, p75=0.4515]
+[eval] source=tgif2        iou: n= 400  med=0.0464  mean=0.1701±0.2238  [p25=0.0000, p75=0.2916]
+[eval] source=tgif2  precision: n= 400  med=0.0739  mean=0.2633±0.3267  [p25=0.0000, p75=0.4734]
+[eval] source=tgif2     recall: n= 400  med=0.2214  mean=0.3301±0.3500  [p25=0.0000, p75=0.6193]
+[eval] ─── by subgroup (4 cells) ───
+[eval] subgroup=flux1dev|fr|random (n_splice=100 n_real=0):
+[eval] subgroup=flux1dev|fr|random         f1: n= 100  med=0.0124  mean=0.1281±0.1795  [p25=0.0000, p75=0.2299]
+[eval] subgroup=flux1dev|fr|random        iou: n= 100  med=0.0063  mean=0.0802±0.1248  [p25=0.0000, p75=0.1299]
+[eval] subgroup=flux1dev|fr|random  precision: n= 100  med=0.0144  mean=0.1595±0.2431  [p25=0.0000, p75=0.2565]
+[eval] subgroup=flux1dev|fr|random     recall: n= 100  med=0.0237  mean=0.1468±0.2075  [p25=0.0000, p75=0.2692]
+[eval] subgroup=flux1dev|fr|semantic (n_splice=100 n_real=0):
+[eval] subgroup=flux1dev|fr|semantic         f1: n= 100  med=0.3116  mean=0.3432±0.3146  [p25=0.0281, p75=0.6228]
+[eval] subgroup=flux1dev|fr|semantic        iou: n= 100  med=0.1847  mean=0.2564±0.2630  [p25=0.0143, p75=0.4522]
+[eval] subgroup=flux1dev|fr|semantic  precision: n= 100  med=0.3221  mean=0.3767±0.3804  [p25=0.0160, p75=0.7811]
+[eval] subgroup=flux1dev|fr|semantic     recall: n= 100  med=0.5721  mean=0.4998±0.3603  [p25=0.1358, p75=0.8432]
+[eval] subgroup=flux1dev|sp|random (n_splice=100 n_real=0):
+[eval] subgroup=flux1dev|sp|random         f1: n= 100  med=0.0125  mean=0.1254±0.1797  [p25=0.0000, p75=0.2179]
+[eval] subgroup=flux1dev|sp|random        iou: n= 100  med=0.0063  mean=0.0790±0.1283  [p25=0.0000, p75=0.1223]
+[eval] subgroup=flux1dev|sp|random  precision: n= 100  med=0.0128  mean=0.1725±0.2625  [p25=0.0000, p75=0.2270]
+[eval] subgroup=flux1dev|sp|random     recall: n= 100  med=0.0237  mean=0.1294±0.1873  [p25=0.0000, p75=0.2201]
+[eval] subgroup=flux1dev|sp|semantic (n_splice=100 n_real=0):
+[eval] subgroup=flux1dev|sp|semantic         f1: n= 100  med=0.3468  mean=0.3565±0.3085  [p25=0.0328, p75=0.6357]
+[eval] subgroup=flux1dev|sp|semantic        iou: n= 100  med=0.2103  mean=0.2646±0.2576  [p25=0.0167, p75=0.4659]
+[eval] subgroup=flux1dev|sp|semantic  precision: n= 100  med=0.2621  mean=0.3445±0.3402  [p25=0.0168, p75=0.5640]
+[eval] subgroup=flux1dev|sp|semantic     recall: n= 100  med=0.6112  mean=0.5443±0.3655  [p25=0.1954, p75=0.8878]
+[eval]   casia image_auc=0.8559 (n=56)
+[eval]   coco_inpaint image_auc=0.8568 (n=252)
+[eval]   imd2020 image_auc=0.7404 (n=212)
+[eval]   sagid image_auc=0.8831 (n=338)
+[eval]   tgif2 image_auc=0.5457 (n=434)
+[eval] epoch=1 val_f1_mean=0.4158
+[ckpt] saved epoch=1 → /media/ssd/runs/ablation/model_size_sweep/vits16/epoch_0001.pt
+[ckpt] best model saved  val_f1_mean=0.4158
+[train] epoch=2 step=20 loss=1.1316 bce=0.3997 cont=0.3660 lr=1.94e-04
+[train] epoch=2 step=40 loss=1.2015 bce=0.4373 cont=0.3821 lr=1.93e-04
+[train] epoch=2 step=60 loss=1.2009 bce=0.4453 cont=0.3778 lr=1.92e-04
+[train] epoch=2 step=80 loss=1.2102 bce=0.4602 cont=0.3750 lr=1.92e-04
+[train] epoch=2 step=100 loss=1.2293 bce=0.4779 cont=0.3757 lr=1.91e-04
+[train] epoch=2 step=120 loss=1.2352 bce=0.4801 cont=0.3775 lr=1.90e-04
+[train] epoch=2 step=140 loss=1.2323 bce=0.4782 cont=0.3771 lr=1.89e-04
+[train] epoch=2 step=160 loss=1.2467 bce=0.4814 cont=0.3826 lr=1.88e-04
+[train] epoch=2 step=180 loss=1.2432 bce=0.4819 cont=0.3806 lr=1.88e-04
+[train] epoch=2 step=200 loss=1.2412 bce=0.4796 cont=0.3808 lr=1.87e-04
+[train] epoch=2 step=220 loss=1.2428 bce=0.4798 cont=0.3815 lr=1.86e-04
+[train] epoch=2 step=240 loss=1.2508 bce=0.4819 cont=0.3845 lr=1.85e-04
+[train] epoch=2 step=260 loss=1.2447 bce=0.4777 cont=0.3835 lr=1.84e-04
+[train] epoch=2 step=280 loss=1.2438 bce=0.4771 cont=0.3834 lr=1.83e-04
+[train] epoch=2 step=300 loss=1.2412 bce=0.4767 cont=0.3822 lr=1.82e-04
+[train] epoch=2 step=320 loss=1.2443 bce=0.4770 cont=0.3837 lr=1.81e-04
+[train] epoch=2 step=340 loss=1.2420 bce=0.4739 cont=0.3840 lr=1.80e-04
+[train] epoch=2 step=360 loss=1.2320 bce=0.4691 cont=0.3815 lr=1.79e-04
+[train] epoch=2 loss=1.2311 bce=0.4684 cont=0.3813 patch=0.0000
+[eval] val zoom ON (two-pass, decoder=kmeans)
+[eval] ─── summary: n_splice=894 n_real=398 ───
+[eval] image_auc: 0.7147
+[eval] splices (all):
+[eval] all         f1: n= 894  med=0.3496  mean=0.3938±0.3458  [p25=0.0233, p75=0.7233]
+[eval] all        iou: n= 894  med=0.2118  mean=0.3112±0.3109  [p25=0.0118, p75=0.5666]
+[eval] all  precision: n= 894  med=0.3288  mean=0.4384±0.4016  [p25=0.0147, p75=0.8970]
+[eval] all     recall: n= 894  med=0.4875  mean=0.4886±0.3871  [p25=0.0418, p75=0.9133]
+[eval] splices bucket=tiny (n=310):
+[eval] bucket=tiny         f1: n= 310  med=0.0442  mean=0.2348±0.3106  [p25=0.0000, p75=0.4449]
+[eval] bucket=tiny        iou: n= 310  med=0.0226  mean=0.1786±0.2615  [p25=0.0000, p75=0.2862]
+[eval] bucket=tiny  precision: n= 310  med=0.0226  mean=0.2076±0.3037  [p25=0.0000, p75=0.3447]
+[eval] bucket=tiny     recall: n= 310  med=0.3908  mean=0.4490±0.4297  [p25=0.0000, p75=0.9310]
+[eval] splices bucket=small (n=310):
+[eval] bucket=small         f1: n= 310  med=0.3670  mean=0.4131±0.3395  [p25=0.0274, p75=0.7388]
+[eval] bucket=small        iou: n= 310  med=0.2247  mean=0.3246±0.3043  [p25=0.0139, p75=0.5858]
+[eval] bucket=small  precision: n= 310  med=0.3470  mean=0.4365±0.3852  [p25=0.0252, p75=0.8655]
+[eval] bucket=small     recall: n= 310  med=0.5140  mean=0.5006±0.3868  [p25=0.0643, p75=0.9216]
+[eval] splices bucket=medium (n=174):
+[eval] bucket=medium         f1: n= 174  med=0.5033  mean=0.4996±0.3208  [p25=0.2462, p75=0.7939]
+[eval] bucket=medium        iou: n= 174  med=0.3363  mean=0.3982±0.3101  [p25=0.1404, p75=0.6583]
+[eval] bucket=medium  precision: n= 174  med=0.8165  mean=0.6200±0.3748  [p25=0.2249, p75=0.9589]
+[eval] bucket=medium     recall: n= 174  med=0.4832  mean=0.4880±0.3359  [p25=0.1759, p75=0.8464]
+[eval] splices bucket=large (n=100):
+[eval] bucket=large         f1: n= 100  med=0.6500  mean=0.6427±0.2689  [p25=0.4926, p75=0.8696]
+[eval] bucket=large        iou: n= 100  med=0.4815  mean=0.5291±0.2862  [p25=0.3268, p75=0.7694]
+[eval] bucket=large  precision: n= 100  med=0.9659  mean=0.8432±0.2546  [p25=0.8129, p75=0.9967]
+[eval] bucket=large     recall: n= 100  med=0.5213  mean=0.5750±0.3072  [p25=0.3619, p75=0.9248]
+[eval] reals accuracy: n= 398  med=0.8198  mean=0.7655±0.1956  [p25=0.6518, p75=0.9332]
+[eval] source=casia: n_splice=28 n_real=28
+[eval] source=casia         f1: n=  28  med=0.8804  mean=0.7128±0.3537  [p25=0.7752, p75=0.9420]
+[eval] source=casia        iou: n=  28  med=0.7863  mean=0.6454±0.3363  [p25=0.6429, p75=0.8904]
+[eval] source=casia  precision: n=  28  med=0.8307  mean=0.6907±0.3488  [p25=0.7311, p75=0.9206]
+[eval] source=casia     recall: n=  28  med=0.9475  mean=0.7620±0.3690  [p25=0.8311, p75=0.9766]
+[eval] source=coco_inpaint: n_splice=126 n_real=126
+[eval] source=coco_inpaint         f1: n= 126  med=0.6102  mean=0.5419±0.2540  [p25=0.3922, p75=0.7591]
+[eval] source=coco_inpaint        iou: n= 126  med=0.4390  mean=0.4103±0.2251  [p25=0.2439, p75=0.6118]
+[eval] source=coco_inpaint  precision: n= 126  med=0.9135  mean=0.7387±0.3337  [p25=0.5369, p75=0.9941]
+[eval] source=coco_inpaint     recall: n= 126  med=0.4987  mean=0.4994±0.2775  [p25=0.3107, p75=0.6904]
+[eval] source=imd2020: n_splice=171 n_real=41
+[eval] source=imd2020         f1: n= 171  med=0.3664  mean=0.3887±0.3368  [p25=0.0281, p75=0.6704]
+[eval] source=imd2020        iou: n= 171  med=0.2243  mean=0.3032±0.3007  [p25=0.0142, p75=0.5042]
+[eval] source=imd2020  precision: n= 171  med=0.2616  mean=0.3645±0.3459  [p25=0.0240, p75=0.7035]
+[eval] source=imd2020     recall: n= 171  med=0.7248  mean=0.5760±0.4026  [p25=0.1244, p75=0.9579]
+[eval] source=sagid: n_splice=169 n_real=169
+[eval] source=sagid         f1: n= 169  med=0.7837  mean=0.6597±0.3193  [p25=0.4135, p75=0.9260]
+[eval] source=sagid        iou: n= 169  med=0.6443  mean=0.5678±0.3220  [p25=0.2606, p75=0.8622]
+[eval] source=sagid  precision: n= 169  med=0.9098  mean=0.7474±0.3233  [p25=0.6655, p75=0.9690]
+[eval] source=sagid     recall: n= 169  med=0.7679  mean=0.6574±0.3412  [p25=0.3989, p75=0.9627]
+[eval] source=tgif2: n_splice=400 n_real=34
+[eval] source=tgif2         f1: n= 400  med=0.0616  mean=0.2146±0.2656  [p25=0.0000, p75=0.3595]
+[eval] source=tgif2        iou: n= 400  med=0.0318  mean=0.1515±0.2131  [p25=0.0000, p75=0.2192]
+[eval] source=tgif2  precision: n= 400  med=0.0660  mean=0.2271±0.3183  [p25=0.0000, p75=0.3055]
+[eval] source=tgif2     recall: n= 400  med=0.2185  mean=0.3573±0.3806  [p25=0.0000, p75=0.7016]
+[eval] ─── by subgroup (4 cells) ───
+[eval] subgroup=flux1dev|fr|random (n_splice=100 n_real=0):
+[eval] subgroup=flux1dev|fr|random         f1: n= 100  med=0.0469  mean=0.1423±0.1732  [p25=0.0000, p75=0.2581]
+[eval] subgroup=flux1dev|fr|random        iou: n= 100  med=0.0240  mean=0.0873±0.1160  [p25=0.0000, p75=0.1482]
+[eval] subgroup=flux1dev|fr|random  precision: n= 100  med=0.0404  mean=0.1505±0.2118  [p25=0.0000, p75=0.2269]
+[eval] subgroup=flux1dev|fr|random     recall: n= 100  med=0.0778  mean=0.2213±0.2925  [p25=0.0000, p75=0.3687]
+[eval] subgroup=flux1dev|fr|semantic (n_splice=100 n_real=0):
+[eval] subgroup=flux1dev|fr|semantic         f1: n= 100  med=0.0895  mean=0.2790±0.3173  [p25=0.0000, p75=0.5659]
+[eval] subgroup=flux1dev|fr|semantic        iou: n= 100  med=0.0469  mean=0.2103±0.2641  [p25=0.0000, p75=0.3947]
+[eval] subgroup=flux1dev|fr|semantic  precision: n= 100  med=0.0473  mean=0.3241±0.3967  [p25=0.0000, p75=0.7528]
+[eval] subgroup=flux1dev|fr|semantic     recall: n= 100  med=0.3950  mean=0.4575±0.4029  [p25=0.0000, p75=0.9066]
+[eval] subgroup=flux1dev|sp|random (n_splice=100 n_real=0):
+[eval] subgroup=flux1dev|sp|random         f1: n= 100  med=0.0613  mean=0.1580±0.1910  [p25=0.0000, p75=0.2918]
+[eval] subgroup=flux1dev|sp|random        iou: n= 100  med=0.0316  mean=0.1007±0.1473  [p25=0.0000, p75=0.1708]
+[eval] subgroup=flux1dev|sp|random  precision: n= 100  med=0.0806  mean=0.1392±0.1921  [p25=0.0000, p75=0.2022]
+[eval] subgroup=flux1dev|sp|random     recall: n= 100  med=0.1229  mean=0.2951±0.3532  [p25=0.0000, p75=0.4741]
+[eval] subgroup=flux1dev|sp|semantic (n_splice=100 n_real=0):
+[eval] subgroup=flux1dev|sp|semantic         f1: n= 100  med=0.0817  mean=0.2793±0.3133  [p25=0.0000, p75=0.6202]
+[eval] subgroup=flux1dev|sp|semantic        iou: n= 100  med=0.0426  mean=0.2078±0.2518  [p25=0.0000, p75=0.4495]
+[eval] subgroup=flux1dev|sp|semantic  precision: n= 100  med=0.0568  mean=0.2946±0.3722  [p25=0.0000, p75=0.5844]
+[eval] subgroup=flux1dev|sp|semantic     recall: n= 100  med=0.4948  mean=0.4554±0.4058  [p25=0.0000, p75=0.8845]
+[eval]   casia image_auc=0.8176 (n=56)
+[eval]   coco_inpaint image_auc=0.8709 (n=252)
+[eval]   imd2020 image_auc=0.8084 (n=212)
+[eval]   sagid image_auc=0.9140 (n=338)
+[eval]   tgif2 image_auc=0.5288 (n=434)
+[eval] epoch=2 val_f1_mean=0.3938
+[ckpt] saved epoch=2 → /media/ssd/runs/ablation/model_size_sweep/vits16/epoch_0002.pt
+[ckpt] no improvement (epoch 2 < min_epochs=5); patience held at 2  best=0.4158
+[train] epoch=3 step=20 loss=1.1651 bce=0.3943 cont=0.3854 lr=1.77e-04
+[train] epoch=3 step=40 loss=1.1266 bce=0.4011 cont=0.3627 lr=1.75e-04
+[train] epoch=3 step=60 loss=1.0801 bce=0.3721 cont=0.3540 lr=1.74e-04
+[train] epoch=3 step=80 loss=1.1293 bce=0.3921 cont=0.3686 lr=1.73e-04
+[train] epoch=3 step=100 loss=1.1443 bce=0.4008 cont=0.3717 lr=1.72e-04
+[train] epoch=3 step=120 loss=1.1405 bce=0.3975 cont=0.3715 lr=1.71e-04
+[train] epoch=3 step=140 loss=1.1527 bce=0.4080 cont=0.3724 lr=1.69e-04
+[train] epoch=3 step=160 loss=1.1366 bce=0.3991 cont=0.3688 lr=1.68e-04
+[train] epoch=3 step=180 loss=1.1362 bce=0.4059 cont=0.3651 lr=1.67e-04
+[train] epoch=3 step=200 loss=1.1378 bce=0.4084 cont=0.3647 lr=1.65e-04
+[train] epoch=3 step=220 loss=1.1321 bce=0.4084 cont=0.3619 lr=1.64e-04
+[train] epoch=3 step=240 loss=1.1336 bce=0.4080 cont=0.3628 lr=1.62e-04
+[train] epoch=3 step=260 loss=1.1436 bce=0.4152 cont=0.3642 lr=1.61e-04
+[train] epoch=3 step=280 loss=1.1395 bce=0.4139 cont=0.3628 lr=1.60e-04
+[train] epoch=3 step=300 loss=1.1428 bce=0.4159 cont=0.3635 lr=1.58e-04
+[train] epoch=3 step=320 loss=1.1436 bce=0.4165 cont=0.3635 lr=1.57e-04
+[train] epoch=3 step=340 loss=1.1442 bce=0.4165 cont=0.3638 lr=1.55e-04
+[train] epoch=3 step=360 loss=1.1430 bce=0.4153 cont=0.3638 lr=1.54e-04
+[train] epoch=3 loss=1.1501 bce=0.4194 cont=0.3654 patch=0.0000
+[eval] val zoom ON (two-pass, decoder=kmeans)
+[eval] ─── summary: n_splice=894 n_real=398 ───
+[eval] image_auc: 0.7406
+[eval] splices (all):
+[eval] all         f1: n= 894  med=0.2462  mean=0.3547±0.3494  [p25=0.0073, p75=0.6798]
+[eval] all        iou: n= 894  med=0.1404  mean=0.2813±0.3134  [p25=0.0037, p75=0.5149]
+[eval] all  precision: n= 894  med=0.2060  mean=0.4008±0.4089  [p25=0.0055, p75=0.8880]
+[eval] all     recall: n= 894  med=0.4330  mean=0.4568±0.3906  [p25=0.0170, p75=0.8885]
+[eval] splices bucket=tiny (n=310):
+[eval] bucket=tiny         f1: n= 310  med=0.0457  mean=0.2251±0.3113  [p25=0.0000, p75=0.4307]
+[eval] bucket=tiny        iou: n= 310  med=0.0234  mean=0.1727±0.2639  [p25=0.0000, p75=0.2746]
+[eval] bucket=tiny  precision: n= 310  med=0.0254  mean=0.2114±0.3260  [p25=0.0000, p75=0.3437]
+[eval] bucket=tiny     recall: n= 310  med=0.4270  mean=0.4617±0.4228  [p25=0.0000, p75=0.9329]
+[eval] splices bucket=small (n=310):
+[eval] bucket=small         f1: n= 310  med=0.2127  mean=0.3413±0.3491  [p25=0.0019, p75=0.6770]
+[eval] bucket=small        iou: n= 310  med=0.1190  mean=0.2706±0.3118  [p25=0.0009, p75=0.5117]
+[eval] bucket=small  precision: n= 310  med=0.1661  mean=0.3549±0.3890  [p25=0.0011, p75=0.8191]
+[eval] bucket=small     recall: n= 310  med=0.3916  mean=0.4244±0.3978  [p25=0.0036, p75=0.8796]
+[eval] splices bucket=medium (n=174):
+[eval] bucket=medium         f1: n= 174  med=0.4419  mean=0.4653±0.3328  [p25=0.1487, p75=0.7616]
+[eval] bucket=medium        iou: n= 174  med=0.2836  mean=0.3705±0.3152  [p25=0.0803, p75=0.6150]
+[eval] bucket=medium  precision: n= 174  med=0.7430  mean=0.5773±0.3923  [p25=0.1888, p75=0.9538]
+[eval] bucket=medium     recall: n= 174  med=0.4616  mean=0.4657±0.3486  [p25=0.1283, p75=0.8248]
+[eval] splices bucket=large (n=100):
+[eval] bucket=large         f1: n= 100  med=0.6315  mean=0.6054±0.2889  [p25=0.4328, p75=0.8573]
+[eval] bucket=large        iou: n= 100  med=0.4615  mean=0.4956±0.3023  [p25=0.2762, p75=0.7502]
+[eval] bucket=large  precision: n= 100  med=0.9739  mean=0.8235±0.2789  [p25=0.7641, p75=0.9968]
+[eval] bucket=large     recall: n= 100  med=0.4816  mean=0.5266±0.3155  [p25=0.2862, p75=0.8527]
+[eval] reals accuracy: n= 398  med=0.7376  mean=0.7088±0.2057  [p25=0.5654, p75=0.8928]
+[eval] source=casia: n_splice=28 n_real=28
+[eval] source=casia         f1: n=  28  med=0.8917  mean=0.7526±0.3231  [p25=0.8388, p75=0.9248]
+[eval] source=casia        iou: n=  28  med=0.8045  mean=0.6831±0.3108  [p25=0.7224, p75=0.8603]
+[eval] source=casia  precision: n=  28  med=0.8687  mean=0.7410±0.3237  [p25=0.7937, p75=0.9386]
+[eval] source=casia     recall: n=  28  med=0.9181  mean=0.7838±0.3338  [p25=0.8698, p75=0.9634]
+[eval] source=coco_inpaint: n_splice=126 n_real=126
+[eval] source=coco_inpaint         f1: n= 126  med=0.5932  mean=0.5161±0.2626  [p25=0.3395, p75=0.7262]
+[eval] source=coco_inpaint        iou: n= 126  med=0.4217  mean=0.3883±0.2323  [p25=0.2044, p75=0.5701]
+[eval] source=coco_inpaint  precision: n= 126  med=0.9016  mean=0.7209±0.3434  [p25=0.4783, p75=0.9961]
+[eval] source=coco_inpaint     recall: n= 126  med=0.5014  mean=0.4860±0.2849  [p25=0.2731, p75=0.6844]
+[eval] source=imd2020: n_splice=171 n_real=41
+[eval] source=imd2020         f1: n= 171  med=0.1905  mean=0.3342±0.3367  [p25=0.0214, p75=0.6082]
+[eval] source=imd2020        iou: n= 171  med=0.1053  mean=0.2604±0.2996  [p25=0.0108, p75=0.4369]
+[eval] source=imd2020  precision: n= 171  med=0.1575  mean=0.3308±0.3571  [p25=0.0163, p75=0.6851]
+[eval] source=imd2020     recall: n= 171  med=0.5357  mean=0.5225±0.4075  [p25=0.0626, p75=0.9536]
+[eval] source=sagid: n_splice=169 n_real=169
+[eval] source=sagid         f1: n= 169  med=0.7219  mean=0.6243±0.3395  [p25=0.3512, p75=0.9238]
+[eval] source=sagid        iou: n= 169  med=0.5649  mean=0.5358±0.3377  [p25=0.2130, p75=0.8584]
+[eval] source=sagid  precision: n= 169  med=0.9114  mean=0.7152±0.3545  [p25=0.5365, p75=0.9769]
+[eval] source=sagid     recall: n= 169  med=0.7695  mean=0.6320±0.3540  [p25=0.3116, p75=0.9646]
+[eval] source=tgif2: n_splice=400 n_real=34
+[eval] source=tgif2         f1: n= 400  med=0.0292  mean=0.1709±0.2503  [p25=0.0000, p75=0.2587]
+[eval] source=tgif2        iou: n= 400  med=0.0148  mean=0.1208±0.2025  [p25=0.0000, p75=0.1487]
+[eval] source=tgif2  precision: n= 400  med=0.0163  mean=0.1733±0.2927  [p25=0.0000, p75=0.1956]
+[eval] source=tgif2     recall: n= 400  med=0.1289  mean=0.3227±0.3784  [p25=0.0000, p75=0.6093]
+[eval] ─── by subgroup (4 cells) ───
+[eval] subgroup=flux1dev|fr|random (n_splice=100 n_real=0):
+[eval] subgroup=flux1dev|fr|random         f1: n= 100  med=0.0057  mean=0.0957±0.1458  [p25=0.0000, p75=0.1613]
+[eval] subgroup=flux1dev|fr|random        iou: n= 100  med=0.0028  mean=0.0572±0.0917  [p25=0.0000, p75=0.0877]
+[eval] subgroup=flux1dev|fr|random  precision: n= 100  med=0.0032  mean=0.0782±0.1205  [p25=0.0000, p75=0.1228]
+[eval] subgroup=flux1dev|fr|random     recall: n= 100  med=0.0146  mean=0.2080±0.3094  [p25=0.0000, p75=0.3632]
+[eval] subgroup=flux1dev|fr|semantic (n_splice=100 n_real=0):
+[eval] subgroup=flux1dev|fr|semantic         f1: n= 100  med=0.0801  mean=0.2558±0.3019  [p25=0.0000, p75=0.5422]
+[eval] subgroup=flux1dev|fr|semantic        iou: n= 100  med=0.0418  mean=0.1890±0.2471  [p25=0.0000, p75=0.3720]
+[eval] subgroup=flux1dev|fr|semantic  precision: n= 100  med=0.0418  mean=0.2876±0.3748  [p25=0.0000, p75=0.6260]
+[eval] subgroup=flux1dev|fr|semantic     recall: n= 100  med=0.2916  mean=0.4171±0.3887  [p25=0.0000, p75=0.8525]
+[eval] subgroup=flux1dev|sp|random (n_splice=100 n_real=0):
+[eval] subgroup=flux1dev|sp|random         f1: n= 100  med=0.0147  mean=0.1243±0.2096  [p25=0.0000, p75=0.1897]
+[eval] subgroup=flux1dev|sp|random        iou: n= 100  med=0.0074  mean=0.0858±0.1786  [p25=0.0000, p75=0.1048]
+[eval] subgroup=flux1dev|sp|random  precision: n= 100  med=0.0107  mean=0.1095±0.2042  [p25=0.0000, p75=0.1374]
+[eval] subgroup=flux1dev|sp|random     recall: n= 100  med=0.0253  mean=0.2373±0.3399  [p25=0.0000, p75=0.4096]
+[eval] subgroup=flux1dev|sp|semantic (n_splice=100 n_real=0):
+[eval] subgroup=flux1dev|sp|semantic         f1: n= 100  med=0.0431  mean=0.2079±0.2790  [p25=0.0000, p75=0.3218]
+[eval] subgroup=flux1dev|sp|semantic        iou: n= 100  med=0.0220  mean=0.1510±0.2274  [p25=0.0000, p75=0.1920]
+[eval] subgroup=flux1dev|sp|semantic  precision: n= 100  med=0.0232  mean=0.2180±0.3432  [p25=0.0000, p75=0.2336]
+[eval] subgroup=flux1dev|sp|semantic     recall: n= 100  med=0.3558  mean=0.4283±0.4122  [p25=0.0000, p75=0.9323]
+[eval]   casia image_auc=0.7895 (n=56)
+[eval]   coco_inpaint image_auc=0.9200 (n=252)
+[eval]   imd2020 image_auc=0.8316 (n=212)
+[eval]   sagid image_auc=0.9212 (n=338)
+[eval]   tgif2 image_auc=0.5232 (n=434)
+[eval] epoch=3 val_f1_mean=0.3547
+[ckpt] saved epoch=3 → /media/ssd/runs/ablation/model_size_sweep/vits16/epoch_0003.pt
+[ckpt] no improvement (epoch 3 < min_epochs=5); patience held at 2  best=0.4158
+[train] epoch=4 step=20 loss=1.1117 bce=0.4184 cont=0.3466 lr=1.51e-04
+[train] epoch=4 step=40 loss=1.0878 bce=0.3800 cont=0.3539 lr=1.49e-04
+[train] epoch=4 step=60 loss=1.1052 bce=0.3796 cont=0.3628 lr=1.48e-04
+[train] epoch=4 step=80 loss=1.0967 bce=0.3718 cont=0.3624 lr=1.46e-04
+[train] epoch=4 step=100 loss=1.1007 bce=0.3707 cont=0.3650 lr=1.45e-04
+[train] epoch=4 step=120 loss=1.0876 bce=0.3588 cont=0.3644 lr=1.43e-04
+[train] epoch=4 step=140 loss=1.0867 bce=0.3597 cont=0.3635 lr=1.41e-04
+[train] epoch=4 step=160 loss=1.0865 bce=0.3626 cont=0.3619 lr=1.40e-04
+[train] epoch=4 step=180 loss=1.0815 bce=0.3660 cont=0.3578 lr=1.38e-04
+[train] epoch=4 step=200 loss=1.0920 bce=0.3723 cont=0.3599 lr=1.36e-04
+[train] epoch=4 step=220 loss=1.0912 bce=0.3746 cont=0.3583 lr=1.35e-04
+[train] epoch=4 step=240 loss=1.0923 bce=0.3761 cont=0.3581 lr=1.33e-04
+[train] epoch=4 step=260 loss=1.0923 bce=0.3770 cont=0.3576 lr=1.31e-04
+[train] epoch=4 step=280 loss=1.0942 bce=0.3788 cont=0.3577 lr=1.30e-04
+[train] epoch=4 step=300 loss=1.1046 bce=0.3869 cont=0.3588 lr=1.28e-04
+[train] epoch=4 step=320 loss=1.1042 bce=0.3838 cont=0.3602 lr=1.26e-04
+[train] epoch=4 step=340 loss=1.0985 bce=0.3828 cont=0.3578 lr=1.25e-04
+[train] epoch=4 step=360 loss=1.0899 bce=0.3773 cont=0.3563 lr=1.23e-04
+[train] epoch=4 loss=1.0942 bce=0.3787 cont=0.3578 patch=0.0000
+[eval] val zoom ON (two-pass, decoder=kmeans)
+[eval] ─── summary: n_splice=894 n_real=398 ───
+[eval] image_auc: 0.7749
+[eval] splices (all):
+[eval] all         f1: n= 894  med=0.3897  mean=0.4100±0.3509  [p25=0.0292, p75=0.7375]
+[eval] all        iou: n= 894  med=0.2420  mean=0.3268±0.3167  [p25=0.0148, p75=0.5842]
+[eval] all  precision: n= 894  med=0.4660  mean=0.4864±0.4165  [p25=0.0190, p75=0.9368]
+[eval] all     recall: n= 894  med=0.4762  mean=0.4870±0.3749  [p25=0.0804, p75=0.8841]
+[eval] splices bucket=tiny (n=310):
+[eval] bucket=tiny         f1: n= 310  med=0.0771  mean=0.2880±0.3417  [p25=0.0012, p75=0.6092]
+[eval] bucket=tiny        iou: n= 310  med=0.0401  mean=0.2269±0.2966  [p25=0.0006, p75=0.4381]
+[eval] bucket=tiny  precision: n= 310  med=0.0441  mean=0.2793±0.3601  [p25=0.0008, p75=0.6192]
+[eval] bucket=tiny     recall: n= 310  med=0.6554  mean=0.5333±0.4148  [p25=0.0082, p75=0.9537]
+[eval] splices bucket=small (n=310):
+[eval] bucket=small         f1: n= 310  med=0.4602  mean=0.4217±0.3442  [p25=0.0242, p75=0.7371]
+[eval] bucket=small        iou: n= 310  med=0.2989  mean=0.3327±0.3048  [p25=0.0122, p75=0.5836]
+[eval] bucket=small  precision: n= 310  med=0.4645  mean=0.4782±0.4031  [p25=0.0199, p75=0.9119]
+[eval] bucket=small     recall: n= 310  med=0.4433  mean=0.4447±0.3635  [p25=0.0295, p75=0.7975]
+[eval] splices bucket=medium (n=174):
+[eval] bucket=medium         f1: n= 174  med=0.4577  mean=0.4847±0.3285  [p25=0.1889, p75=0.8012]
+[eval] bucket=medium        iou: n= 174  med=0.2968  mean=0.3874±0.3161  [p25=0.1043, p75=0.6683]
+[eval] bucket=medium  precision: n= 174  med=0.8822  mean=0.6471±0.3843  [p25=0.2476, p75=0.9787]
+[eval] bucket=medium     recall: n= 174  med=0.4492  mean=0.4507±0.3352  [p25=0.1288, p75=0.7281]
+[eval] splices bucket=large (n=100):
+[eval] bucket=large         f1: n= 100  med=0.6561  mean=0.6214±0.2881  [p25=0.4421, p75=0.8814]
+[eval] bucket=large        iou: n= 100  med=0.4883  mean=0.5124±0.3006  [p25=0.2838, p75=0.7880]
+[eval] bucket=large  precision: n= 100  med=0.9800  mean=0.8745±0.2442  [p25=0.9316, p75=0.9976]
+[eval] bucket=large     recall: n= 100  med=0.5034  mean=0.5378±0.3174  [p25=0.2995, p75=0.8812]
+[eval] reals accuracy: n= 398  med=0.8521  mean=0.8013±0.1739  [p25=0.6818, p75=0.9461]
+[eval] source=casia: n_splice=28 n_real=28
+[eval] source=casia         f1: n=  28  med=0.8667  mean=0.6577±0.3808  [p25=0.4720, p75=0.9054]
+[eval] source=casia        iou: n=  28  med=0.7648  mean=0.5902±0.3557  [p25=0.3350, p75=0.8272]
+[eval] source=casia  precision: n=  28  med=0.8290  mean=0.6455±0.3766  [p25=0.3425, p75=0.9239]
+[eval] source=casia     recall: n=  28  med=0.9122  mean=0.6885±0.4024  [p25=0.3607, p75=0.9724]
+[eval] source=coco_inpaint: n_splice=126 n_real=126
+[eval] source=coco_inpaint         f1: n= 126  med=0.6224  mean=0.5575±0.2418  [p25=0.4172, p75=0.7394]
+[eval] source=coco_inpaint        iou: n= 126  med=0.4518  mean=0.4227±0.2190  [p25=0.2636, p75=0.5866]
+[eval] source=coco_inpaint  precision: n= 126  med=0.9615  mean=0.8024±0.2985  [p25=0.7503, p75=0.9969]
+[eval] source=coco_inpaint     recall: n= 126  med=0.4969  mean=0.4941±0.2649  [p25=0.3225, p75=0.6642]
+[eval] source=imd2020: n_splice=171 n_real=41
+[eval] source=imd2020         f1: n= 171  med=0.4560  mean=0.4302±0.3438  [p25=0.0541, p75=0.7472]
+[eval] source=imd2020        iou: n= 171  med=0.2954  mean=0.3411±0.3107  [p25=0.0278, p75=0.5965]
+[eval] source=imd2020  precision: n= 171  med=0.3919  mean=0.4369±0.3719  [p25=0.0357, p75=0.8109]
+[eval] source=imd2020     recall: n= 171  med=0.7674  mean=0.5831±0.3920  [p25=0.1311, p75=0.9546]
+[eval] source=sagid: n_splice=169 n_real=169
+[eval] source=sagid         f1: n= 169  med=0.7828  mean=0.6661±0.3204  [p25=0.5278, p75=0.9230]
+[eval] source=sagid        iou: n= 169  med=0.6431  mean=0.5750±0.3204  [p25=0.3585, p75=0.8569]
+[eval] source=sagid  precision: n= 169  med=0.9367  mean=0.7766±0.3221  [p25=0.7592, p75=0.9795]
+[eval] source=sagid     recall: n= 169  med=0.7444  mean=0.6457±0.3400  [p25=0.4144, p75=0.9560]
+[eval] source=tgif2: n_splice=400 n_real=34
+[eval] source=tgif2         f1: n= 400  med=0.0672  mean=0.2293±0.2847  [p25=0.0000, p75=0.4001]
+[eval] source=tgif2        iou: n= 400  med=0.0347  mean=0.1671±0.2371  [p25=0.0000, p75=0.2501]
+[eval] source=tgif2  precision: n= 400  med=0.0518  mean=0.2743±0.3632  [p25=0.0000, p75=0.5014]
+[eval] source=tgif2     recall: n= 400  med=0.2661  mean=0.3625±0.3649  [p25=0.0000, p75=0.6738]
+[eval] ─── by subgroup (4 cells) ───
+[eval] subgroup=flux1dev|fr|random (n_splice=100 n_real=0):
+[eval] subgroup=flux1dev|fr|random         f1: n= 100  med=0.0267  mean=0.1207±0.1622  [p25=0.0000, p75=0.2105]
+[eval] subgroup=flux1dev|fr|random        iou: n= 100  med=0.0135  mean=0.0737±0.1114  [p25=0.0000, p75=0.1176]
+[eval] subgroup=flux1dev|fr|random  precision: n= 100  med=0.0307  mean=0.1465±0.2294  [p25=0.0000, p75=0.2123]
+[eval] subgroup=flux1dev|fr|random     recall: n= 100  med=0.0502  mean=0.1958±0.2752  [p25=0.0000, p75=0.3001]
+[eval] subgroup=flux1dev|fr|semantic (n_splice=100 n_real=0):
+[eval] subgroup=flux1dev|fr|semantic         f1: n= 100  med=0.0884  mean=0.3063±0.3254  [p25=0.0229, p75=0.5915]
+[eval] subgroup=flux1dev|fr|semantic        iou: n= 100  med=0.0462  mean=0.2332±0.2756  [p25=0.0116, p75=0.4200]
+[eval] subgroup=flux1dev|fr|semantic  precision: n= 100  med=0.0640  mean=0.3975±0.4353  [p25=0.0117, p75=0.9281]
+[eval] subgroup=flux1dev|fr|semantic     recall: n= 100  med=0.4875  mean=0.4848±0.3631  [p25=0.0913, p75=0.8151]
+[eval] subgroup=flux1dev|sp|random (n_splice=100 n_real=0):
+[eval] subgroup=flux1dev|sp|random         f1: n= 100  med=0.0423  mean=0.1618±0.2213  [p25=0.0000, p75=0.2481]
+[eval] subgroup=flux1dev|sp|random        iou: n= 100  med=0.0216  mean=0.1097±0.1850  [p25=0.0000, p75=0.1416]
+[eval] subgroup=flux1dev|sp|random  precision: n= 100  med=0.0556  mean=0.1857±0.2687  [p25=0.0000, p75=0.2542]
+[eval] subgroup=flux1dev|sp|random     recall: n= 100  med=0.1089  mean=0.2458±0.3194  [p25=0.0000, p75=0.3927]
+[eval] subgroup=flux1dev|sp|semantic (n_splice=100 n_real=0):
+[eval] subgroup=flux1dev|sp|semantic         f1: n= 100  med=0.1384  mean=0.3283±0.3333  [p25=0.0170, p75=0.6288]
+[eval] subgroup=flux1dev|sp|semantic        iou: n= 100  med=0.0746  mean=0.2517±0.2806  [p25=0.0086, p75=0.4585]
+[eval] subgroup=flux1dev|sp|semantic  precision: n= 100  med=0.0764  mean=0.3676±0.4067  [p25=0.0090, p75=0.8494]
+[eval] subgroup=flux1dev|sp|semantic     recall: n= 100  med=0.5449  mean=0.5236±0.3751  [p25=0.0984, p75=0.8977]
+[eval]   casia image_auc=0.8878 (n=56)
+[eval]   coco_inpaint image_auc=0.9309 (n=252)
+[eval]   imd2020 image_auc=0.8348 (n=212)
+[eval]   sagid image_auc=0.9360 (n=338)
+[eval]   tgif2 image_auc=0.5543 (n=434)
+[eval] epoch=4 val_f1_mean=0.4100
+[ckpt] saved epoch=4 → /media/ssd/runs/ablation/model_size_sweep/vits16/epoch_0004.pt
+[ckpt] no improvement  patience_left=1  best=0.4158
+[train] epoch=5 step=20 loss=0.9323 bce=0.2708 cont=0.3308 lr=1.20e-04
+[train] epoch=5 step=40 loss=0.9620 bce=0.2622 cont=0.3499 lr=1.18e-04
+[train] epoch=5 step=60 loss=0.9802 bce=0.2826 cont=0.3488 lr=1.16e-04
+[train] epoch=5 step=80 loss=0.9845 bce=0.2964 cont=0.3441 lr=1.14e-04
+[train] epoch=5 step=100 loss=0.9788 bce=0.3066 cont=0.3361 lr=1.13e-04
+[train] epoch=5 step=120 loss=0.9903 bce=0.3101 cont=0.3401 lr=1.11e-04
+[train] epoch=5 step=140 loss=1.0007 bce=0.3179 cont=0.3414 lr=1.09e-04
+[train] epoch=5 step=160 loss=1.0052 bce=0.3200 cont=0.3426 lr=1.07e-04
+[train] epoch=5 step=180 loss=1.0008 bce=0.3137 cont=0.3436 lr=1.06e-04
+[train] epoch=5 step=200 loss=1.0145 bce=0.3239 cont=0.3453 lr=1.04e-04
+[train] epoch=5 step=220 loss=1.0152 bce=0.3264 cont=0.3444 lr=1.02e-04
+[train] epoch=5 step=240 loss=1.0075 bce=0.3229 cont=0.3423 lr=1.00e-04
+[train] epoch=5 step=260 loss=1.0030 bce=0.3208 cont=0.3411 lr=9.86e-05
+[train] epoch=5 step=280 loss=0.9952 bce=0.3135 cont=0.3408 lr=9.68e-05
+[train] epoch=5 step=300 loss=1.0083 bce=0.3203 cont=0.3440 lr=9.51e-05
+[train] epoch=5 step=320 loss=1.0156 bce=0.3267 cont=0.3444 lr=9.33e-05
+[train] epoch=5 step=340 loss=1.0200 bce=0.3320 cont=0.3440 lr=9.16e-05
+[train] epoch=5 step=360 loss=1.0176 bce=0.3314 cont=0.3431 lr=8.98e-05
+[train] epoch=5 loss=1.0181 bce=0.3326 cont=0.3427 patch=0.0000
+[eval] val zoom ON (two-pass, decoder=kmeans)
+[eval] ─── summary: n_splice=894 n_real=398 ───
+[eval] image_auc: 0.7759
+[eval] splices (all):
+[eval] all         f1: n= 894  med=0.4530  mean=0.4411±0.3541  [p25=0.0605, p75=0.7803]
+[eval] all        iou: n= 894  med=0.2928  mean=0.3557±0.3246  [p25=0.0312, p75=0.6398]
+[eval] all  precision: n= 894  med=0.4461  mean=0.4725±0.3984  [p25=0.0392, p75=0.8991]
+[eval] all     recall: n= 894  med=0.6329  mean=0.5612±0.3809  [p25=0.1578, p75=0.9447]
+[eval] splices bucket=tiny (n=310):
+[eval] bucket=tiny         f1: n= 310  med=0.0911  mean=0.2611±0.3234  [p25=0.0000, p75=0.5354]
+[eval] bucket=tiny        iou: n= 310  med=0.0477  mean=0.2022±0.2829  [p25=0.0000, p75=0.3655]
+[eval] bucket=tiny  precision: n= 310  med=0.0521  mean=0.2350±0.3310  [p25=0.0000, p75=0.4007]
+[eval] bucket=tiny     recall: n= 310  med=0.7264  mean=0.5554±0.4215  [p25=0.0000, p75=0.9553]
+[eval] splices bucket=small (n=310):
+[eval] bucket=small         f1: n= 310  med=0.5326  mean=0.4790±0.3358  [p25=0.1531, p75=0.7750]
+[eval] bucket=small        iou: n= 310  med=0.3630  mean=0.3820±0.3089  [p25=0.0829, p75=0.6326]
+[eval] bucket=small  precision: n= 310  med=0.5008  mean=0.4817±0.3641  [p25=0.1295, p75=0.8519]
+[eval] bucket=small     recall: n= 310  med=0.6110  mean=0.5595±0.3750  [p25=0.1655, p75=0.9366]
+[eval] splices bucket=medium (n=174):
+[eval] bucket=medium         f1: n= 174  med=0.6362  mean=0.5324±0.3310  [p25=0.1852, p75=0.8185]
+[eval] bucket=medium        iou: n= 174  med=0.4665  mean=0.4329±0.3152  [p25=0.1020, p75=0.6927]
+[eval] bucket=medium  precision: n= 174  med=0.8116  mean=0.6404±0.3672  [p25=0.2022, p75=0.9600]
+[eval] bucket=medium     recall: n= 174  med=0.5099  mean=0.5191±0.3517  [p25=0.1696, p75=0.8878]
+[eval] splices bucket=large (n=100):
+[eval] bucket=large         f1: n= 100  med=0.7868  mean=0.7231±0.2399  [p25=0.5714, p75=0.9204]
+[eval] bucket=large        iou: n= 100  med=0.6486  mean=0.6158±0.2682  [p25=0.4001, p75=0.8526]
+[eval] bucket=large  precision: n= 100  med=0.9599  mean=0.8882±0.1913  [p25=0.8651, p75=0.9909]
+[eval] bucket=large     recall: n= 100  med=0.6781  mean=0.6578±0.2876  [p25=0.4263, p75=0.9533]
+[eval] reals accuracy: n= 398  med=0.8228  mean=0.7739±0.1851  [p25=0.6703, p75=0.9273]
+[eval] source=casia: n_splice=28 n_real=28
+[eval] source=casia         f1: n=  28  med=0.8880  mean=0.7283±0.3409  [p25=0.7657, p75=0.9480]
+[eval] source=casia        iou: n=  28  med=0.7986  mean=0.6597±0.3273  [p25=0.6274, p75=0.9012]
+[eval] source=casia  precision: n=  28  med=0.8416  mean=0.7135±0.3357  [p25=0.7807, p75=0.9264]
+[eval] source=casia     recall: n=  28  med=0.9357  mean=0.7610±0.3531  [p25=0.8381, p75=0.9706]
+[eval] source=coco_inpaint: n_splice=126 n_real=126
+[eval] source=coco_inpaint         f1: n= 126  med=0.6594  mean=0.5855±0.2470  [p25=0.4620, p75=0.7771]
+[eval] source=coco_inpaint        iou: n= 126  med=0.4918  mean=0.4528±0.2257  [p25=0.3004, p75=0.6355]
+[eval] source=coco_inpaint  precision: n= 126  med=0.8798  mean=0.7397±0.3157  [p25=0.5905, p75=0.9864]
+[eval] source=coco_inpaint     recall: n= 126  med=0.6001  mean=0.5719±0.2769  [p25=0.3980, p75=0.7682]
+[eval] source=imd2020: n_splice=171 n_real=41
+[eval] source=imd2020         f1: n= 171  med=0.4723  mean=0.4520±0.3432  [p25=0.0973, p75=0.8121]
+[eval] source=imd2020        iou: n= 171  med=0.3091  mean=0.3612±0.3164  [p25=0.0512, p75=0.6837]
+[eval] source=imd2020  precision: n= 171  med=0.3439  mean=0.4186±0.3620  [p25=0.0563, p75=0.7883]
+[eval] source=imd2020     recall: n= 171  med=0.9147  mean=0.7076±0.3632  [p25=0.4845, p75=0.9732]
+[eval] source=sagid: n_splice=169 n_real=169
+[eval] source=sagid         f1: n= 169  med=0.8048  mean=0.7229±0.2793  [p25=0.6527, p75=0.9417]
+[eval] source=sagid        iou: n= 169  med=0.6733  mean=0.6285±0.2912  [p25=0.4844, p75=0.8898]
+[eval] source=sagid  precision: n= 169  med=0.8974  mean=0.7721±0.2861  [p25=0.6981, p75=0.9704]
+[eval] source=sagid     recall: n= 169  med=0.9052  mean=0.7423±0.2985  [p25=0.5771, p75=0.9696]
+[eval] source=tgif2: n_splice=400 n_real=34
+[eval] source=tgif2         f1: n= 400  med=0.1292  mean=0.2519±0.2964  [p25=0.0000, p75=0.4438]
+[eval] source=tgif2        iou: n= 400  med=0.0690  mean=0.1863±0.2525  [p25=0.0000, p75=0.2852]
+[eval] source=tgif2  precision: n= 400  med=0.0919  mean=0.2679±0.3424  [p25=0.0000, p75=0.5064]
+[eval] source=tgif2     recall: n= 400  med=0.2815  mean=0.4048±0.3835  [p25=0.0000, p75=0.8165]
+[eval] ─── by subgroup (4 cells) ───
+[eval] subgroup=flux1dev|fr|random (n_splice=100 n_real=0):
+[eval] subgroup=flux1dev|fr|random         f1: n= 100  med=0.0476  mean=0.1460±0.1836  [p25=0.0000, p75=0.2248]
+[eval] subgroup=flux1dev|fr|random        iou: n= 100  med=0.0244  mean=0.0916±0.1319  [p25=0.0000, p75=0.1266]
+[eval] subgroup=flux1dev|fr|random  precision: n= 100  med=0.0638  mean=0.1563±0.2192  [p25=0.0000, p75=0.2079]
+[eval] subgroup=flux1dev|fr|random     recall: n= 100  med=0.1195  mean=0.2392±0.3091  [p25=0.0000, p75=0.3854]
+[eval] subgroup=flux1dev|fr|semantic (n_splice=100 n_real=0):
+[eval] subgroup=flux1dev|fr|semantic         f1: n= 100  med=0.1184  mean=0.3189±0.3386  [p25=0.0136, p75=0.6438]
+[eval] subgroup=flux1dev|fr|semantic        iou: n= 100  med=0.0629  mean=0.2479±0.2922  [p25=0.0069, p75=0.4748]
+[eval] subgroup=flux1dev|fr|semantic  precision: n= 100  med=0.0675  mean=0.3651±0.4152  [p25=0.0072, p75=0.8799]
+[eval] subgroup=flux1dev|fr|semantic     recall: n= 100  med=0.6165  mean=0.5480±0.3938  [p25=0.1353, p75=0.9479]
+[eval] subgroup=flux1dev|sp|random (n_splice=100 n_real=0):
+[eval] subgroup=flux1dev|sp|random         f1: n= 100  med=0.1511  mean=0.1979±0.2391  [p25=0.0000, p75=0.2830]
+[eval] subgroup=flux1dev|sp|random        iou: n= 100  med=0.0817  mean=0.1361±0.2026  [p25=0.0000, p75=0.1649]
+[eval] subgroup=flux1dev|sp|random  precision: n= 100  med=0.1241  mean=0.2042±0.2708  [p25=0.0000, p75=0.2793]
+[eval] subgroup=flux1dev|sp|random     recall: n= 100  med=0.1995  mean=0.2859±0.3227  [p25=0.0000, p75=0.4598]
+[eval] subgroup=flux1dev|sp|semantic (n_splice=100 n_real=0):
+[eval] subgroup=flux1dev|sp|semantic         f1: n= 100  med=0.1712  mean=0.3447±0.3443  [p25=0.0106, p75=0.6605]
+[eval] subgroup=flux1dev|sp|semantic        iou: n= 100  med=0.0937  mean=0.2695±0.2982  [p25=0.0053, p75=0.4931]
+[eval] subgroup=flux1dev|sp|semantic  precision: n= 100  med=0.0971  mean=0.3462±0.3784  [p25=0.0057, p75=0.7170]
+[eval] subgroup=flux1dev|sp|semantic     recall: n= 100  med=0.6779  mean=0.5460±0.3892  [p25=0.0508, p75=0.9128]
+[eval]   casia image_auc=0.8712 (n=56)
+[eval]   coco_inpaint image_auc=0.9387 (n=252)
+[eval]   imd2020 image_auc=0.8099 (n=212)
+[eval]   sagid image_auc=0.9407 (n=338)
+[eval]   tgif2 image_auc=0.5507 (n=434)
+[eval] epoch=5 val_f1_mean=0.4411
+[ckpt] saved epoch=5 → /media/ssd/runs/ablation/model_size_sweep/vits16/epoch_0005.pt
+[ckpt] best model saved  val_f1_mean=0.4411
+[train] epoch=6 step=20 loss=0.9465 bce=0.2413 cont=0.3526 lr=8.68e-05
+[train] epoch=6 step=40 loss=1.0330 bce=0.3108 cont=0.3611 lr=8.50e-05
+[train] epoch=6 step=60 loss=1.0114 bce=0.3097 cont=0.3509 lr=8.33e-05
+[train] epoch=6 step=80 loss=1.0162 bce=0.3101 cont=0.3530 lr=8.16e-05
+[train] epoch=6 step=100 loss=1.0061 bce=0.3011 cont=0.3525 lr=7.99e-05
+[train] epoch=6 step=120 loss=1.0264 bce=0.3161 cont=0.3552 lr=7.82e-05
+[train] epoch=6 step=140 loss=1.0195 bce=0.3111 cont=0.3542 lr=7.65e-05
+[train] epoch=6 step=160 loss=1.0057 bce=0.3037 cont=0.3510 lr=7.48e-05
+[train] epoch=6 step=180 loss=1.0049 bce=0.3012 cont=0.3519 lr=7.31e-05
+[train] epoch=6 step=200 loss=1.0083 bce=0.2992 cont=0.3546 lr=7.15e-05
+[train] epoch=6 step=220 loss=1.0168 bce=0.3079 cont=0.3544 lr=6.98e-05
+[train] epoch=6 step=240 loss=1.0149 bce=0.3066 cont=0.3542 lr=6.82e-05
+[train] epoch=6 step=260 loss=1.0096 bce=0.3047 cont=0.3525 lr=6.66e-05
+[train] epoch=6 step=280 loss=1.0046 bce=0.3030 cont=0.3508 lr=6.50e-05
+[train] epoch=6 step=300 loss=1.0070 bce=0.3045 cont=0.3513 lr=6.34e-05
+[train] epoch=6 step=320 loss=1.0100 bce=0.3087 cont=0.3507 lr=6.18e-05
+[train] epoch=6 step=340 loss=1.0078 bce=0.3080 cont=0.3499 lr=6.02e-05
+[train] epoch=6 step=360 loss=1.0108 bce=0.3089 cont=0.3510 lr=5.87e-05
+[train] epoch=6 loss=1.0056 bce=0.3069 cont=0.3493 patch=0.0000
+[eval] val zoom ON (two-pass, decoder=kmeans)
+[eval] ─── summary: n_splice=894 n_real=398 ───
+[eval] image_auc: 0.7919
+[eval] splices (all):
+[eval] all         f1: n= 894  med=0.4467  mean=0.4441±0.3535  [p25=0.0676, p75=0.7771]
+[eval] all        iou: n= 894  med=0.2876  mean=0.3583±0.3252  [p25=0.0350, p75=0.6355]
+[eval] all  precision: n= 894  med=0.4426  mean=0.4792±0.4018  [p25=0.0421, p75=0.9142]
+[eval] all     recall: n= 894  med=0.6057  mean=0.5582±0.3698  [p25=0.2139, p75=0.9329]
+[eval] splices bucket=tiny (n=310):
+[eval] bucket=tiny         f1: n= 310  med=0.1093  mean=0.2688±0.3224  [p25=0.0073, p75=0.4960]
+[eval] bucket=tiny        iou: n= 310  med=0.0578  mean=0.2075±0.2836  [p25=0.0036, p75=0.3301]
+[eval] bucket=tiny  precision: n= 310  med=0.0629  mean=0.2418±0.3314  [p25=0.0037, p75=0.4013]
+[eval] bucket=tiny     recall: n= 310  med=0.7043  mean=0.5631±0.4017  [p25=0.0727, p75=0.9508]
+[eval] splices bucket=small (n=310):
+[eval] bucket=small         f1: n= 310  med=0.5488  mean=0.4808±0.3416  [p25=0.1449, p75=0.7752]
+[eval] bucket=small        iou: n= 310  med=0.3782  mean=0.3858±0.3129  [p25=0.0781, p75=0.6329]
+[eval] bucket=small  precision: n= 310  med=0.5018  mean=0.4985±0.3780  [p25=0.0923, p75=0.8952]
+[eval] bucket=small     recall: n= 310  med=0.5967  mean=0.5437±0.3728  [p25=0.1346, p75=0.9255]
+[eval] splices bucket=medium (n=174):
+[eval] bucket=medium         f1: n= 174  med=0.6318  mean=0.5396±0.3220  [p25=0.2523, p75=0.8178]
+[eval] bucket=medium        iou: n= 174  med=0.4618  mean=0.4375±0.3133  [p25=0.1444, p75=0.6918]
+[eval] bucket=medium  precision: n= 174  med=0.8519  mean=0.6417±0.3682  [p25=0.2268, p75=0.9650]
+[eval] bucket=medium     recall: n= 174  med=0.5137  mean=0.5266±0.3330  [p25=0.2594, p75=0.8694]
+[eval] splices bucket=large (n=100):
+[eval] bucket=large         f1: n= 100  med=0.7675  mean=0.7073±0.2611  [p25=0.5890, p75=0.9340]
+[eval] bucket=large        iou: n= 100  med=0.6227  mean=0.6025±0.2802  [p25=0.4174, p75=0.8761]
+[eval] bucket=large  precision: n= 100  med=0.9584  mean=0.8728±0.2176  [p25=0.8709, p75=0.9891]
+[eval] bucket=large     recall: n= 100  med=0.6681  mean=0.6426±0.2989  [p25=0.4460, p75=0.9551]
+[eval] reals accuracy: n= 398  med=0.8097  mean=0.7681±0.1829  [p25=0.6489, p75=0.9299]
+[eval] source=casia: n_splice=28 n_real=28
+[eval] source=casia         f1: n=  28  med=0.8981  mean=0.7981±0.2745  [p25=0.8613, p75=0.9479]
+[eval] source=casia        iou: n=  28  med=0.8150  mean=0.7260±0.2742  [p25=0.7565, p75=0.9009]
+[eval] source=casia  precision: n=  28  med=0.8568  mean=0.7931±0.2519  [p25=0.8210, p75=0.9298]
+[eval] source=casia     recall: n=  28  med=0.9510  mean=0.8434±0.2857  [p25=0.9160, p75=0.9773]
+[eval] source=coco_inpaint: n_splice=126 n_real=126
+[eval] source=coco_inpaint         f1: n= 126  med=0.6665  mean=0.5879±0.2438  [p25=0.4788, p75=0.7601]
+[eval] source=coco_inpaint        iou: n= 126  med=0.4999  mean=0.4539±0.2208  [p25=0.3148, p75=0.6130]
+[eval] source=coco_inpaint  precision: n= 126  med=0.9053  mean=0.7475±0.3139  [p25=0.5718, p75=0.9892]
+[eval] source=coco_inpaint     recall: n= 126  med=0.5906  mean=0.5727±0.2711  [p25=0.4463, p75=0.7885]
+[eval] source=imd2020: n_splice=171 n_real=41
+[eval] source=imd2020         f1: n= 171  med=0.4469  mean=0.4628±0.3392  [p25=0.1146, p75=0.8060]
+[eval] source=imd2020        iou: n= 171  med=0.2877  mean=0.3699±0.3157  [p25=0.0608, p75=0.6751]
+[eval] source=imd2020  precision: n= 171  med=0.3183  mean=0.4313±0.3618  [p25=0.0713, p75=0.8027]
+[eval] source=imd2020     recall: n= 171  med=0.8953  mean=0.6937±0.3536  [p25=0.4414, p75=0.9736]
+[eval] source=sagid: n_splice=169 n_real=169
+[eval] source=sagid         f1: n= 169  med=0.8209  mean=0.7251±0.2866  [p25=0.6383, p75=0.9388]
+[eval] source=sagid        iou: n= 169  med=0.6963  mean=0.6344±0.2972  [p25=0.4687, p75=0.8846]
+[eval] source=sagid  precision: n= 169  med=0.8991  mean=0.7738±0.2908  [p25=0.7120, p75=0.9705]
+[eval] source=sagid     recall: n= 169  med=0.9110  mean=0.7510±0.2966  [p25=0.5972, p75=0.9729]
+[eval] source=tgif2: n_splice=400 n_real=34
+[eval] source=tgif2         f1: n= 400  med=0.1219  mean=0.2472±0.2895  [p25=0.0000, p75=0.4184]
+[eval] source=tgif2        iou: n= 400  med=0.0649  mean=0.1808±0.2444  [p25=0.0000, p75=0.2646]
+[eval] source=tgif2  precision: n= 400  med=0.0718  mean=0.2687±0.3495  [p25=0.0000, p75=0.4465]
+[eval] source=tgif2     recall: n= 400  med=0.3344  mean=0.3942±0.3605  [p25=0.0000, p75=0.7100]
+[eval] ─── by subgroup (4 cells) ───
+[eval] subgroup=flux1dev|fr|random (n_splice=100 n_real=0):
+[eval] subgroup=flux1dev|fr|random         f1: n= 100  med=0.0373  mean=0.1395±0.1738  [p25=0.0000, p75=0.2459]
+[eval] subgroup=flux1dev|fr|random        iou: n= 100  med=0.0190  mean=0.0858±0.1175  [p25=0.0000, p75=0.1402]
+[eval] subgroup=flux1dev|fr|random  precision: n= 100  med=0.0363  mean=0.1391±0.1938  [p25=0.0000, p75=0.2168]
+[eval] subgroup=flux1dev|fr|random     recall: n= 100  med=0.0726  mean=0.2042±0.2575  [p25=0.0000, p75=0.3706]
+[eval] subgroup=flux1dev|fr|semantic (n_splice=100 n_real=0):
+[eval] subgroup=flux1dev|fr|semantic         f1: n= 100  med=0.1554  mean=0.3236±0.3268  [p25=0.0292, p75=0.6609]
+[eval] subgroup=flux1dev|fr|semantic        iou: n= 100  med=0.0842  mean=0.2470±0.2794  [p25=0.0148, p75=0.4936]
+[eval] subgroup=flux1dev|fr|semantic  precision: n= 100  med=0.0879  mean=0.3812±0.4199  [p25=0.0150, p75=0.9120]
+[eval] subgroup=flux1dev|fr|semantic     recall: n= 100  med=0.5946  mean=0.5551±0.3521  [p25=0.2589, p75=0.9027]
+[eval] subgroup=flux1dev|sp|random (n_splice=100 n_real=0):
+[eval] subgroup=flux1dev|sp|random         f1: n= 100  med=0.0837  mean=0.1888±0.2396  [p25=0.0000, p75=0.2837]
+[eval] subgroup=flux1dev|sp|random        iou: n= 100  med=0.0437  mean=0.1302±0.2010  [p25=0.0000, p75=0.1653]
+[eval] subgroup=flux1dev|sp|random  precision: n= 100  med=0.0645  mean=0.2030±0.2811  [p25=0.0000, p75=0.2666]
+[eval] subgroup=flux1dev|sp|random     recall: n= 100  med=0.1500  mean=0.2416±0.2852  [p25=0.0000, p75=0.3926]
+[eval] subgroup=flux1dev|sp|semantic (n_splice=100 n_real=0):
+[eval] subgroup=flux1dev|sp|semantic         f1: n= 100  med=0.1460  mean=0.3368±0.3346  [p25=0.0301, p75=0.6280]
+[eval] subgroup=flux1dev|sp|semantic        iou: n= 100  med=0.0788  mean=0.2602±0.2904  [p25=0.0153, p75=0.4578]
+[eval] subgroup=flux1dev|sp|semantic  precision: n= 100  med=0.0811  mean=0.3515±0.3939  [p25=0.0155, p75=0.7746]
+[eval] subgroup=flux1dev|sp|semantic     recall: n= 100  med=0.6414  mean=0.5757±0.3608  [p25=0.2894, p75=0.8999]
+[eval]   casia image_auc=0.8457 (n=56)
+[eval]   coco_inpaint image_auc=0.9569 (n=252)
+[eval]   imd2020 image_auc=0.8260 (n=212)
+[eval]   sagid image_auc=0.9450 (n=338)
+[eval]   tgif2 image_auc=0.5467 (n=434)
+[eval] epoch=6 val_f1_mean=0.4441
+[ckpt] saved epoch=6 → /media/ssd/runs/ablation/model_size_sweep/vits16/epoch_0006.pt
+[ckpt] best model saved  val_f1_mean=0.4441
+[train] epoch=7 step=20 loss=1.0075 bce=0.3472 cont=0.3302 lr=5.60e-05
+[train] epoch=7 step=40 loss=0.9683 bce=0.3092 cont=0.3295 lr=5.45e-05
+[train] epoch=7 step=60 loss=0.9843 bce=0.3114 cont=0.3364 lr=5.30e-05
+[train] epoch=7 step=80 loss=0.9884 bce=0.3121 cont=0.3382 lr=5.15e-05
+[train] epoch=7 step=100 loss=0.9903 bce=0.3068 cont=0.3418 lr=5.01e-05
+[train] epoch=7 step=120 loss=0.9608 bce=0.2912 cont=0.3348 lr=4.86e-05
+[train] epoch=7 step=140 loss=0.9594 bce=0.2835 cont=0.3379 lr=4.72e-05
+[train] epoch=7 step=160 loss=0.9511 bce=0.2814 cont=0.3349 lr=4.58e-05
+[train] epoch=7 step=180 loss=0.9548 bce=0.2847 cont=0.3351 lr=4.44e-05
+[train] epoch=7 step=200 loss=0.9564 bce=0.2810 cont=0.3377 lr=4.31e-05
+[train] epoch=7 step=220 loss=0.9635 bce=0.2904 cont=0.3366 lr=4.18e-05
+[train] epoch=7 step=240 loss=0.9666 bce=0.2923 cont=0.3371 lr=4.05e-05
+[train] epoch=7 step=260 loss=0.9610 bce=0.2864 cont=0.3373 lr=3.92e-05
+[train] epoch=7 step=280 loss=0.9564 bce=0.2816 cont=0.3374 lr=3.79e-05
+[train] epoch=7 step=300 loss=0.9534 bce=0.2776 cont=0.3379 lr=3.67e-05
+[train] epoch=7 step=320 loss=0.9557 bce=0.2782 cont=0.3388 lr=3.54e-05
+[train] epoch=7 step=340 loss=0.9508 bce=0.2770 cont=0.3369 lr=3.43e-05
+[train] epoch=7 step=360 loss=0.9553 bce=0.2805 cont=0.3374 lr=3.31e-05
+[train] epoch=7 loss=0.9513 bce=0.2792 cont=0.3361 patch=0.0000
+[eval] val zoom ON (two-pass, decoder=kmeans)
+[eval] ─── summary: n_splice=894 n_real=398 ───
+[eval] image_auc: 0.7967
+[eval] splices (all):
+[eval] all         f1: n= 894  med=0.4210  mean=0.4315±0.3521  [p25=0.0494, p75=0.7684]
+[eval] all        iou: n= 894  med=0.2666  mean=0.3464±0.3220  [p25=0.0253, p75=0.6240]
+[eval] all  precision: n= 894  med=0.4422  mean=0.4810±0.4061  [p25=0.0375, p75=0.9250]
+[eval] all     recall: n= 894  med=0.5462  mean=0.5218±0.3730  [p25=0.1223, p75=0.9075]
+[eval] splices bucket=tiny (n=310):
+[eval] bucket=tiny         f1: n= 310  med=0.1281  mean=0.2821±0.3280  [p25=0.0007, p75=0.5680]
+[eval] bucket=tiny        iou: n= 310  med=0.0684  mean=0.2183±0.2864  [p25=0.0004, p75=0.3967]
+[eval] bucket=tiny  precision: n= 310  med=0.0704  mean=0.2581±0.3411  [p25=0.0004, p75=0.4253]
+[eval] bucket=tiny     recall: n= 310  med=0.6610  mean=0.5360±0.4064  [p25=0.0208, p75=0.9386]
+[eval] splices bucket=small (n=310):
+[eval] bucket=small         f1: n= 310  med=0.5079  mean=0.4558±0.3436  [p25=0.0685, p75=0.7650]
+[eval] bucket=small        iou: n= 310  med=0.3405  mean=0.3632±0.3104  [p25=0.0355, p75=0.6194]
+[eval] bucket=small  precision: n= 310  med=0.4872  mean=0.4870±0.3854  [p25=0.0609, p75=0.8987]
+[eval] bucket=small     recall: n= 310  med=0.5248  mean=0.4995±0.3705  [p25=0.0983, p75=0.8825]
+[eval] splices bucket=medium (n=174):
+[eval] bucket=medium         f1: n= 174  med=0.5374  mean=0.5147±0.3314  [p25=0.2322, p75=0.8388]
+[eval] bucket=medium        iou: n= 174  med=0.3676  mean=0.4169±0.3205  [p25=0.1314, p75=0.7224]
+[eval] bucket=medium  precision: n= 174  med=0.8900  mean=0.6455±0.3781  [p25=0.2595, p75=0.9723]
+[eval] bucket=medium     recall: n= 174  med=0.4805  mean=0.4900±0.3403  [p25=0.2122, p75=0.8256]
+[eval] splices bucket=large (n=100):
+[eval] bucket=large         f1: n= 100  med=0.7368  mean=0.6745±0.2757  [p25=0.5025, p75=0.9096]
+[eval] bucket=large        iou: n= 100  med=0.5832  mean=0.5685±0.2925  [p25=0.3356, p75=0.8342]
+[eval] bucket=large  precision: n= 100  med=0.9645  mean=0.8672±0.2325  [p25=0.8663, p75=0.9935]
+[eval] bucket=large     recall: n= 100  med=0.6408  mean=0.6023±0.3066  [p25=0.3519, p75=0.9282]
+[eval] reals accuracy: n= 398  med=0.8103  mean=0.7638±0.1922  [p25=0.6541, p75=0.9283]
+[eval] source=casia: n_splice=28 n_real=28
+[eval] source=casia         f1: n=  28  med=0.8854  mean=0.7060±0.3557  [p25=0.6457, p75=0.9363]
+[eval] source=casia        iou: n=  28  med=0.7944  mean=0.6387±0.3412  [p25=0.4770, p75=0.8803]
+[eval] source=casia  precision: n=  28  med=0.8571  mean=0.7061±0.3391  [p25=0.7137, p75=0.9310]
+[eval] source=casia     recall: n=  28  med=0.9300  mean=0.7408±0.3758  [p25=0.7751, p75=0.9754]
+[eval] source=coco_inpaint: n_splice=126 n_real=126
+[eval] source=coco_inpaint         f1: n= 126  med=0.6640  mean=0.5927±0.2325  [p25=0.4764, p75=0.7634]
+[eval] source=coco_inpaint        iou: n= 126  med=0.4971  mean=0.4561±0.2140  [p25=0.3127, p75=0.6174]
+[eval] source=coco_inpaint  precision: n= 126  med=0.9118  mean=0.7763±0.2869  [p25=0.6919, p75=0.9938]
+[eval] source=coco_inpaint     recall: n= 126  med=0.5769  mean=0.5597±0.2628  [p25=0.4224, p75=0.7531]
+[eval] source=imd2020: n_splice=171 n_real=41
+[eval] source=imd2020         f1: n= 171  med=0.4715  mean=0.4626±0.3366  [p25=0.0985, p75=0.7778]
+[eval] source=imd2020        iou: n= 171  med=0.3084  mean=0.3675±0.3088  [p25=0.0518, p75=0.6365]
+[eval] source=imd2020  precision: n= 171  med=0.3892  mean=0.4405±0.3617  [p25=0.0660, p75=0.7976]
+[eval] source=imd2020     recall: n= 171  med=0.8550  mean=0.6643±0.3597  [p25=0.4070, p75=0.9625]
+[eval] source=sagid: n_splice=169 n_real=169
+[eval] source=sagid         f1: n= 169  med=0.8235  mean=0.7161±0.2886  [p25=0.6009, p75=0.9403]
+[eval] source=sagid        iou: n= 169  med=0.7000  mean=0.6241±0.3005  [p25=0.4295, p75=0.8874]
+[eval] source=sagid  precision: n= 169  med=0.9243  mean=0.7916±0.2905  [p25=0.7404, p75=0.9734]
+[eval] source=sagid     recall: n= 169  med=0.8799  mean=0.7259±0.3023  [p25=0.5353, p75=0.9658]
+[eval] source=tgif2: n_splice=400 n_real=34
+[eval] source=tgif2         f1: n= 400  med=0.1184  mean=0.2279±0.2795  [p25=0.0000, p75=0.4006]
+[eval] source=tgif2        iou: n= 400  med=0.0629  mean=0.1650±0.2341  [p25=0.0000, p75=0.2505]
+[eval] source=tgif2  precision: n= 400  med=0.0726  mean=0.2583±0.3477  [p25=0.0000, p75=0.4142]
+[eval] source=tgif2     recall: n= 400  med=0.2615  mean=0.3474±0.3533  [p25=0.0000, p75=0.6357]
+[eval] ─── by subgroup (4 cells) ───
+[eval] subgroup=flux1dev|fr|random (n_splice=100 n_real=0):
+[eval] subgroup=flux1dev|fr|random         f1: n= 100  med=0.0362  mean=0.1141±0.1486  [p25=0.0000, p75=0.2145]
+[eval] subgroup=flux1dev|fr|random        iou: n= 100  med=0.0185  mean=0.0682±0.0988  [p25=0.0000, p75=0.1201]
+[eval] subgroup=flux1dev|fr|random  precision: n= 100  med=0.0293  mean=0.1300±0.1994  [p25=0.0000, p75=0.1815]
+[eval] subgroup=flux1dev|fr|random     recall: n= 100  med=0.0594  mean=0.1743±0.2379  [p25=0.0000, p75=0.2717]
+[eval] subgroup=flux1dev|fr|semantic (n_splice=100 n_real=0):
+[eval] subgroup=flux1dev|fr|semantic         f1: n= 100  med=0.1557  mean=0.3198±0.3199  [p25=0.0090, p75=0.6146]
+[eval] subgroup=flux1dev|fr|semantic        iou: n= 100  med=0.0845  mean=0.2417±0.2731  [p25=0.0045, p75=0.4436]
+[eval] subgroup=flux1dev|fr|semantic  precision: n= 100  med=0.1025  mean=0.3894±0.4242  [p25=0.0046, p75=0.9165]
+[eval] subgroup=flux1dev|fr|semantic     recall: n= 100  med=0.5025  mean=0.4936±0.3635  [p25=0.0790, p75=0.8381]
+[eval] subgroup=flux1dev|sp|random (n_splice=100 n_real=0):
+[eval] subgroup=flux1dev|sp|random         f1: n= 100  med=0.0822  mean=0.1712±0.2222  [p25=0.0000, p75=0.2437]
+[eval] subgroup=flux1dev|sp|random        iou: n= 100  med=0.0429  mean=0.1156±0.1855  [p25=0.0000, p75=0.1387]
+[eval] subgroup=flux1dev|sp|random  precision: n= 100  med=0.0572  mean=0.1804±0.2439  [p25=0.0000, p75=0.2897]
+[eval] subgroup=flux1dev|sp|random     recall: n= 100  med=0.1187  mean=0.2217±0.2773  [p25=0.0000, p75=0.3617]
+[eval] subgroup=flux1dev|sp|semantic (n_splice=100 n_real=0):
+[eval] subgroup=flux1dev|sp|semantic         f1: n= 100  med=0.1373  mean=0.3063±0.3284  [p25=0.0139, p75=0.5985]
+[eval] subgroup=flux1dev|sp|semantic        iou: n= 100  med=0.0737  mean=0.2344±0.2792  [p25=0.0070, p75=0.4270]
+[eval] subgroup=flux1dev|sp|semantic  precision: n= 100  med=0.0755  mean=0.3335±0.3988  [p25=0.0077, p75=0.8158]
+[eval] subgroup=flux1dev|sp|semantic     recall: n= 100  med=0.5152  mean=0.4999±0.3784  [p25=0.0771, p75=0.8959]
+[eval]   casia image_auc=0.8788 (n=56)
+[eval]   coco_inpaint image_auc=0.9706 (n=252)
+[eval]   imd2020 image_auc=0.8288 (n=212)
+[eval]   sagid image_auc=0.9516 (n=338)
+[eval]   tgif2 image_auc=0.5565 (n=434)
+[eval] epoch=7 val_f1_mean=0.4315
+[ckpt] saved epoch=7 → /media/ssd/runs/ablation/model_size_sweep/vits16/epoch_0007.pt
+[ckpt] no improvement  patience_left=1  best=0.4441
+[train] epoch=8 step=20 loss=0.8987 bce=0.2176 cont=0.3406 lr=3.11e-05
+[train] epoch=8 step=40 loss=0.8882 bce=0.2364 cont=0.3259 lr=3.00e-05
+[train] epoch=8 step=60 loss=0.9474 bce=0.2568 cont=0.3453 lr=2.89e-05
+[train] epoch=8 step=80 loss=0.9268 bce=0.2586 cont=0.3341 lr=2.79e-05
+[train] epoch=8 step=100 loss=0.9572 bce=0.2799 cont=0.3387 lr=2.69e-05
+[train] epoch=8 step=120 loss=0.9413 bce=0.2755 cont=0.3329 lr=2.59e-05
+[train] epoch=8 step=140 loss=0.9324 bce=0.2651 cont=0.3337 lr=2.49e-05
+[train] epoch=8 step=160 loss=0.9415 bce=0.2727 cont=0.3344 lr=2.40e-05
+[train] epoch=8 step=180 loss=0.9444 bce=0.2748 cont=0.3348 lr=2.31e-05
+[train] epoch=8 step=200 loss=0.9549 bce=0.2780 cont=0.3385 lr=2.22e-05
+[train] epoch=8 step=220 loss=0.9544 bce=0.2787 cont=0.3379 lr=2.13e-05
+[train] epoch=8 step=240 loss=0.9464 bce=0.2746 cont=0.3359 lr=2.05e-05
+[train] epoch=8 step=260 loss=0.9468 bce=0.2754 cont=0.3357 lr=1.97e-05
+[train] epoch=8 step=280 loss=0.9470 bce=0.2765 cont=0.3353 lr=1.89e-05
+[train] epoch=8 step=300 loss=0.9530 bce=0.2790 cont=0.3370 lr=1.82e-05
+[train] epoch=8 step=320 loss=0.9409 bce=0.2719 cont=0.3345 lr=1.75e-05
+[train] epoch=8 step=340 loss=0.9381 bce=0.2698 cont=0.3341 lr=1.68e-05
+[train] epoch=8 step=360 loss=0.9352 bce=0.2657 cont=0.3347 lr=1.62e-05
+[train] epoch=8 loss=0.9360 bce=0.2681 cont=0.3339 patch=0.0000
+[eval] val zoom ON (two-pass, decoder=kmeans)
+[eval] ─── summary: n_splice=894 n_real=398 ───
+[eval] image_auc: 0.7970
+[eval] splices (all):
+[eval] all         f1: n= 894  med=0.4224  mean=0.4289±0.3581  [p25=0.0399, p75=0.7781]
+[eval] all        iou: n= 894  med=0.2677  mean=0.3464±0.3260  [p25=0.0204, p75=0.6368]
+[eval] all  precision: n= 894  med=0.4618  mean=0.4809±0.4094  [p25=0.0274, p75=0.9227]
+[eval] all     recall: n= 894  med=0.5321  mean=0.5022±0.3786  [p25=0.0804, p75=0.8984]
+[eval] splices bucket=tiny (n=310):
+[eval] bucket=tiny         f1: n= 310  med=0.0959  mean=0.2826±0.3339  [p25=0.0000, p75=0.5733]
+[eval] bucket=tiny        iou: n= 310  med=0.0503  mean=0.2207±0.2915  [p25=0.0000, p75=0.4018]
+[eval] bucket=tiny  precision: n= 310  med=0.0566  mean=0.2628±0.3455  [p25=0.0000, p75=0.4933]
+[eval] bucket=tiny     recall: n= 310  med=0.5341  mean=0.4974±0.4140  [p25=0.0006, p75=0.9238]
+[eval] splices bucket=small (n=310):
+[eval] bucket=small         f1: n= 310  med=0.5342  mean=0.4633±0.3516  [p25=0.0480, p75=0.7772]
+[eval] bucket=small        iou: n= 310  med=0.3645  mean=0.3731±0.3173  [p25=0.0246, p75=0.6356]
+[eval] bucket=small  precision: n= 310  med=0.5354  mean=0.4959±0.3916  [p25=0.0433, p75=0.9107]
+[eval] bucket=small     recall: n= 310  med=0.5606  mean=0.4996±0.3743  [p25=0.0672, p75=0.8803]
+[eval] splices bucket=medium (n=174):
+[eval] bucket=medium         f1: n= 174  med=0.5574  mean=0.4977±0.3443  [p25=0.1584, p75=0.8301]
+[eval] bucket=medium        iou: n= 174  med=0.3864  mean=0.4050±0.3260  [p25=0.0860, p75=0.7095]
+[eval] bucket=medium  precision: n= 174  med=0.8752  mean=0.6242±0.3909  [p25=0.2079, p75=0.9728]
+[eval] bucket=medium     recall: n= 174  med=0.4791  mean=0.4707±0.3471  [p25=0.1201, p75=0.8073]
+[eval] splices bucket=large (n=100):
+[eval] bucket=large         f1: n= 100  med=0.7443  mean=0.6565±0.2850  [p25=0.4604, p75=0.8830]
+[eval] bucket=large        iou: n= 100  med=0.5927  mean=0.5513±0.3009  [p25=0.2991, p75=0.7906]
+[eval] bucket=large  precision: n= 100  med=0.9664  mean=0.8617±0.2400  [p25=0.8673, p75=0.9912]
+[eval] bucket=large     recall: n= 100  med=0.6005  mean=0.5799±0.3140  [p25=0.3117, p75=0.9132]
+[eval] reals accuracy: n= 398  med=0.7949  mean=0.7569±0.1886  [p25=0.6276, p75=0.9273]
+[eval] source=casia: n_splice=28 n_real=28
+[eval] source=casia         f1: n=  28  med=0.8951  mean=0.7979±0.2724  [p25=0.8492, p75=0.9439]
+[eval] source=casia        iou: n=  28  med=0.8102  mean=0.7242±0.2700  [p25=0.7380, p75=0.8938]
+[eval] source=casia  precision: n=  28  med=0.8802  mean=0.8016±0.2535  [p25=0.8230, p75=0.9307]
+[eval] source=casia     recall: n=  28  med=0.9507  mean=0.8363±0.2856  [p25=0.9051, p75=0.9772]
+[eval] source=coco_inpaint: n_splice=126 n_real=126
+[eval] source=coco_inpaint         f1: n= 126  med=0.6532  mean=0.5743±0.2450  [p25=0.4196, p75=0.7736]
+[eval] source=coco_inpaint        iou: n= 126  med=0.4850  mean=0.4410±0.2252  [p25=0.2655, p75=0.6307]
+[eval] source=coco_inpaint  precision: n= 126  med=0.9227  mean=0.7643±0.2999  [p25=0.6621, p75=0.9898]
+[eval] source=coco_inpaint     recall: n= 126  med=0.5634  mean=0.5414±0.2758  [p25=0.3461, p75=0.7540]
+[eval] source=imd2020: n_splice=171 n_real=41
+[eval] source=imd2020         f1: n= 171  med=0.4804  mean=0.4598±0.3377  [p25=0.0959, p75=0.7774]
+[eval] source=imd2020        iou: n= 171  med=0.3161  mean=0.3654±0.3092  [p25=0.0503, p75=0.6358]
+[eval] source=imd2020  precision: n= 171  med=0.4093  mean=0.4544±0.3657  [p25=0.0645, p75=0.8270]
+[eval] source=imd2020     recall: n= 171  med=0.8220  mean=0.6470±0.3665  [p25=0.3724, p75=0.9625]
+[eval] source=sagid: n_splice=169 n_real=169
+[eval] source=sagid         f1: n= 169  med=0.8308  mean=0.7139±0.2941  [p25=0.6255, p75=0.9345]
+[eval] source=sagid        iou: n= 169  med=0.7105  mean=0.6225±0.3000  [p25=0.4550, p75=0.8771]
+[eval] source=sagid  precision: n= 169  med=0.9217  mean=0.7933±0.2894  [p25=0.7528, p75=0.9747]
+[eval] source=sagid     recall: n= 169  med=0.8300  mean=0.7101±0.3132  [p25=0.5339, p75=0.9637]
+[eval] source=tgif2: n_splice=400 n_real=34
+[eval] source=tgif2         f1: n= 400  med=0.0667  mean=0.2237±0.2901  [p25=0.0000, p75=0.4066]
+[eval] source=tgif2        iou: n= 400  med=0.0345  mean=0.1653±0.2442  [p25=0.0000, p75=0.2552]
+[eval] source=tgif2  precision: n= 400  med=0.0532  mean=0.2486±0.3481  [p25=0.0000, p75=0.3874]
+[eval] source=tgif2     recall: n= 400  med=0.1622  mean=0.3166±0.3492  [p25=0.0000, p75=0.5924]
+[eval] ─── by subgroup (4 cells) ───
+[eval] subgroup=flux1dev|fr|random (n_splice=100 n_real=0):
+[eval] subgroup=flux1dev|fr|random         f1: n= 100  med=0.0458  mean=0.1118±0.1521  [p25=0.0000, p75=0.1737]
+[eval] subgroup=flux1dev|fr|random        iou: n= 100  med=0.0234  mean=0.0674±0.1022  [p25=0.0000, p75=0.0951]
+[eval] subgroup=flux1dev|fr|random  precision: n= 100  med=0.0452  mean=0.1206±0.1850  [p25=0.0000, p75=0.1629]
+[eval] subgroup=flux1dev|fr|random     recall: n= 100  med=0.0509  mean=0.1857±0.2654  [p25=0.0000, p75=0.2692]
+[eval] subgroup=flux1dev|fr|semantic (n_splice=100 n_real=0):
+[eval] subgroup=flux1dev|fr|semantic         f1: n= 100  med=0.1205  mean=0.3157±0.3412  [p25=0.0014, p75=0.6642]
+[eval] subgroup=flux1dev|fr|semantic        iou: n= 100  med=0.0641  mean=0.2456±0.2898  [p25=0.0007, p75=0.4973]
+[eval] subgroup=flux1dev|fr|semantic  precision: n= 100  med=0.0735  mean=0.3783±0.4276  [p25=0.0009, p75=0.9151]
+[eval] subgroup=flux1dev|fr|semantic     recall: n= 100  med=0.4822  mean=0.4369±0.3719  [p25=0.0208, p75=0.8029]
+[eval] subgroup=flux1dev|sp|random (n_splice=100 n_real=0):
+[eval] subgroup=flux1dev|sp|random         f1: n= 100  med=0.0516  mean=0.1564±0.2135  [p25=0.0000, p75=0.2432]
+[eval] subgroup=flux1dev|sp|random        iou: n= 100  med=0.0265  mean=0.1053±0.1811  [p25=0.0000, p75=0.1384]
+[eval] subgroup=flux1dev|sp|random  precision: n= 100  med=0.0486  mean=0.1538±0.2246  [p25=0.0000, p75=0.2319]
+[eval] subgroup=flux1dev|sp|random     recall: n= 100  med=0.1189  mean=0.2298±0.2863  [p25=0.0000, p75=0.3423]
+[eval] subgroup=flux1dev|sp|semantic (n_splice=100 n_real=0):
+[eval] subgroup=flux1dev|sp|semantic         f1: n= 100  med=0.0988  mean=0.3111±0.3441  [p25=0.0006, p75=0.6418]
+[eval] subgroup=flux1dev|sp|semantic        iou: n= 100  med=0.0521  mean=0.2431±0.2924  [p25=0.0003, p75=0.4726]
+[eval] subgroup=flux1dev|sp|semantic  precision: n= 100  med=0.0668  mean=0.3417±0.4077  [p25=0.0003, p75=0.8671]
+[eval] subgroup=flux1dev|sp|semantic     recall: n= 100  med=0.3982  mean=0.4141±0.3853  [p25=0.0059, p75=0.8240]
+[eval]   casia image_auc=0.8686 (n=56)
+[eval]   coco_inpaint image_auc=0.9745 (n=252)
+[eval]   imd2020 image_auc=0.8320 (n=212)
+[eval]   sagid image_auc=0.9518 (n=338)
+[eval]   tgif2 image_auc=0.5595 (n=434)
+[eval] epoch=8 val_f1_mean=0.4289
+[ckpt] saved epoch=8 → /media/ssd/runs/ablation/model_size_sweep/vits16/epoch_0008.pt
+[ckpt] no improvement  patience_left=0  best=0.4441
+[train] early stop at epoch=8  best_val_f1_mean=0.4441
+[train] done  best_val_f1_mean=0.4441

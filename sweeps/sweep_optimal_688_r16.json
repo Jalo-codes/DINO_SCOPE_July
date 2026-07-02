@@ -1,0 +1,40 @@
+{
+  "_doc": "OPTIMAL headline run (not an ablation cell): DINOv3 ViT-H+/16 at the best resolution (688) and the peak LoRA rank (16, alpha 32), all layers adapted. Combines the two ablation optima: rank-16 peak (from the rank sweep) × 688 (still-climbing top of the resolution sweep). Trained to BEST (early-stop on zoom mean localization F1, min 5 epochs, patience 2) — NO epoch-4 cap, because this is a deliverable model, not a comparability cell. 688 trains at batch 8 / grad_accum 1 (effective batch 8). Observed VRAM at batch 2/ga4 was only ~5 GB of 22 (grad checkpointing on + tiny LoRA optimizer state), so the micro-batch is raised all the way to 8 with ga 1 — ONE forward/backward per optimizer step instead of 4, ~4x fewer micro-steps, far better occupancy, ~12 GB used. steps_per_epoch = len(loader)//grad_accum is identical (375) to the batch2/ga4 setting, so the cosine LR schedule is byte-identical and an in-progress run RESUMES cleanly into this (not a restart). To chase the remaining ~10 GB, the next lever is disabling gradient checkpointing (needs a flag) for a faster backward; raising effective batch past 8 would change the LR recipe, so it's avoided. amp fp16 pinned for the L4 (Ada, bf16-capable) to match the fp16 regime of every other run. Colab /content roots + Drive checkpoint_root so it survives runtime disconnect and auto-resumes.",
+  "base_args": {
+    "device": "cuda",
+    "amp_dtype": "fp16",
+    "imd2020_root": "/content/IMD2020",
+    "casia_root": "/content/casia",
+    "sagid_root": "/content/sagi_d_partial",
+    "coco_inpaint_root": "/content/inpaint_coco/images",
+    "tgif2_root": "/content/dataset_root/content/flux_originals",
+    "casia_train": true,
+    "imd_val_only": true,
+    "model_name": "facebook/dinov3-vith16plus-pretrain-lvd1689m",
+    "image_size": 688,
+    "lora_rank": 16,
+    "lora_alpha": 32,
+    "batch_size": 8,
+    "grad_accum": 1,
+    "contrastive_dim": 64,
+    "pool_hidden": 256,
+    "lambda_image_bce": 1.0,
+    "lambda_contrastive": 2.0,
+    "paste_frac": 0.5,
+    "noise_prob": 0.8,
+    "jpeg_prob": 0.55,
+    "train_samples": 3000,
+    "num_workers": 8,
+    "num_epochs": 10,
+    "min_epochs": 5,
+    "warmup_epochs": 1.0,
+    "early_stop_patience": 2,
+    "early_stop_reduce": "mean",
+    "val_zoom": true,
+    "tgif_val_models": "flux1dev",
+    "val_per_cell": 100
+  },
+  "runs": [
+    {"name": "optimal_h16plus_688_r16", "module": "experiments.scripts.train", "args": {}}
+  ]
+}

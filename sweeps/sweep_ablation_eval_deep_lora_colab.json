@@ -1,0 +1,23 @@
+{
+  "_doc": "Deep-LoRA location sweep eval on Colab, fixed epoch_0004.pt (mirrors the rank-sweep e4 harness). Cells: deep-half {8,16,32} + shallow-half {8,16}. Checkpoints under Drive (/content/drive/MyDrive/DINO_SCOPE_RUNS/deep_lora). Eval rebuilds the full backbone and loads strict=False, so the frozen shallow/deep adapters that aren't in the state_dict stay at PEFT B=0 (zero contribution) — a depth-restricted checkpoint evaluates identically without passing the block range. tgif2 @1000/cell + imd2020 @1000, --zoom. Overlay TGIF means against the box all-layers e4 rollup: r008 .423 / r016 .499 / r032 .409.",
+  "base_args": {
+    "device": "cuda",
+    "amp_dtype": "float16",
+    "decoder": ["kmeans"],
+    "zoom": true,
+    "imd2020_root": "/content/IMD2020",
+    "tgif2_root": "/content/dataset_root/content/flux_originals"
+  },
+  "runs": [
+    {"name": "dh_r008_tgif", "module": "experiments.scripts.eval", "args": {"checkpoint": "/content/drive/MyDrive/DINO_SCOPE_RUNS/deep_lora/dh_r008/epoch_0004.pt", "sources": ["tgif2"], "tgif_eval_per_cell": 1000}},
+    {"name": "dh_r008_imd",  "module": "experiments.scripts.eval", "args": {"checkpoint": "/content/drive/MyDrive/DINO_SCOPE_RUNS/deep_lora/dh_r008/epoch_0004.pt", "sources": ["imd2020"], "max_items": 1000}},
+    {"name": "dh_r016_tgif", "module": "experiments.scripts.eval", "args": {"checkpoint": "/content/drive/MyDrive/DINO_SCOPE_RUNS/deep_lora/dh_r016/epoch_0004.pt", "sources": ["tgif2"], "tgif_eval_per_cell": 1000}},
+    {"name": "dh_r016_imd",  "module": "experiments.scripts.eval", "args": {"checkpoint": "/content/drive/MyDrive/DINO_SCOPE_RUNS/deep_lora/dh_r016/epoch_0004.pt", "sources": ["imd2020"], "max_items": 1000}},
+    {"name": "dh_r032_tgif", "module": "experiments.scripts.eval", "args": {"checkpoint": "/content/drive/MyDrive/DINO_SCOPE_RUNS/deep_lora/dh_r032/epoch_0004.pt", "sources": ["tgif2"], "tgif_eval_per_cell": 1000}},
+    {"name": "dh_r032_imd",  "module": "experiments.scripts.eval", "args": {"checkpoint": "/content/drive/MyDrive/DINO_SCOPE_RUNS/deep_lora/dh_r032/epoch_0004.pt", "sources": ["imd2020"], "max_items": 1000}},
+    {"name": "sh_r008_tgif", "module": "experiments.scripts.eval", "args": {"checkpoint": "/content/drive/MyDrive/DINO_SCOPE_RUNS/deep_lora/sh_r008/epoch_0004.pt", "sources": ["tgif2"], "tgif_eval_per_cell": 1000}},
+    {"name": "sh_r008_imd",  "module": "experiments.scripts.eval", "args": {"checkpoint": "/content/drive/MyDrive/DINO_SCOPE_RUNS/deep_lora/sh_r008/epoch_0004.pt", "sources": ["imd2020"], "max_items": 1000}},
+    {"name": "sh_r016_tgif", "module": "experiments.scripts.eval", "args": {"checkpoint": "/content/drive/MyDrive/DINO_SCOPE_RUNS/deep_lora/sh_r016/epoch_0004.pt", "sources": ["tgif2"], "tgif_eval_per_cell": 1000}},
+    {"name": "sh_r016_imd",  "module": "experiments.scripts.eval", "args": {"checkpoint": "/content/drive/MyDrive/DINO_SCOPE_RUNS/deep_lora/sh_r016/epoch_0004.pt", "sources": ["imd2020"], "max_items": 1000}}
+  ]
+}

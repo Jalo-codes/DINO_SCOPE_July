@@ -1,0 +1,14 @@
+cell,vitb16_tgif,vitl16_tgif,vits16_tgif,vits16plus_tgif
+flux1dev|fr|random,0.1838,0.2098,0.1541,0.1612
+flux1dev|fr|semantic,0.2031,0.2109,0.3085,0.2648
+flux1dev|sp|random,0.2364,0.3518,0.1733,0.1927
+flux1dev|sp|semantic,0.2043,0.215,0.3066,0.2443
+flux1filldev|fr|random,0.2643,0.3266,0.2036,0.2149
+flux1filldev|fr|semantic,0.1832,0.223,0.2077,0.1901
+flux1filldev|sp|random,0.4922,0.6408,0.357,0.3915
+flux1filldev|sp|semantic,0.306,0.3727,0.2816,0.2965
+flux1schnell|fr|random,0.3151,0.3767,0.2268,0.2483
+flux1schnell|fr|semantic,0.2333,0.3304,0.3161,0.269
+flux1schnell|sp|random,0.3598,0.4963,0.2468,0.2915
+flux1schnell|sp|semantic,0.2329,0.2891,0.3092,0.2643
+MEAN_over_cells,0.26786666666666664,0.3369250000000001,0.2576083333333334,0.252425

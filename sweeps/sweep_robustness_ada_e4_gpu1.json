@@ -1,0 +1,42 @@
+{
+  "_doc": "Robustness run for r016/epoch_0004.pt on the Ada rig — noise half (GPU 1). 8 noise levels (std 0.01→0.20), no clean (pristine already in hand). TGIF 300/cell, IMD 1k random. Split into 4-condition groups to keep per-process RAM bounded. Run alongside sweep_robustness_ada_e4_gpu0.json on GPU 0 for the JPEG half.",
+  "base_args": {
+    "device": "cuda",
+    "amp_dtype": "float16",
+    "decoder": ["kmeans"],
+    "zoom": true,
+    "tgif2_root": "/home/studentresearch2/DINO_SCOPE_DATA/content/flux_originals",
+    "imd2020_root": "/home/studentresearch2/DINO_SCOPE_DATA/IMD2020",
+    "checkpoint": "/home/studentresearch2/runs/ablation/lora_rank_sweep/r016/epoch_0004.pt"
+  },
+  "runs": [
+    {
+      "name": "tgif_noise_a",
+      "module": "experiments.scripts.eval_robustness",
+      "args": {
+        "sources": ["tgif2"],
+        "tgif_eval_per_cell": 300,
+        "conditions": ["noise_0.01", "noise_0.02", "noise_0.04", "noise_0.06"]
+      }
+    },
+    {
+      "name": "tgif_noise_b",
+      "module": "experiments.scripts.eval_robustness",
+      "args": {
+        "sources": ["tgif2"],
+        "tgif_eval_per_cell": 300,
+        "conditions": ["noise_0.08", "noise_0.10", "noise_0.15", "noise_0.20"]
+      }
+    },
+    {
+      "name": "imd_noise",
+      "module": "experiments.scripts.eval_robustness",
+      "args": {
+        "sources": ["imd2020"],
+        "imd_val_split": 1.0,
+        "max_items": 1000,
+        "conditions": ["noise_0.01", "noise_0.02", "noise_0.04", "noise_0.06", "noise_0.08", "noise_0.10", "noise_0.15", "noise_0.20"]
+      }
+    }
+  ]
+}

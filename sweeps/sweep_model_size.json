@@ -1,0 +1,41 @@
+{
+  "_doc": "Ablation sweep 3 — DINOv3 MODEL-SIZE sweep at the standard config (LoRA rank 32 / alpha 64, 448 res). Identical base_args to the rank sweep; only model_name varies. Cells: ViT-S/16 (21M, dim384, MLP), ViT-S+/16 (29M, dim384, SwiGLU), ViT-B/16 (86M, dim768, MLP), ViT-L/16 (300M, dim1024, MLP). ViT-H+/16 (840M, dim1280, SwiGLU) is NOT re-run here — it is the existing rank-sweep r032 cell (== res_448), the headline baseline these overlay against. All models are patch-16 so 448/16=28 → 784 patches; head feat_dim auto-detects from backbone.config.hidden_size. LoRA targets q/k/v/o_proj + up_proj/down_proj match both FFN types (the SwiGLU gate_proj on S+ is left unadapted, exactly as on the H+ baseline), so adapter coverage is consistent across sizes. NOTE: DINOv3 weights are gated on HF — the box's existing license/token (already used for H+) covers the whole collection.",
+  "base_args": {
+    "device": "cuda",
+    "imd2020_root": "/media/ssd/DINO_SCOPE_DATA/IMD2020",
+    "casia_root": "/media/ssd/DINO_SCOPE_DATA/casia",
+    "sagid_root": "/media/ssd/DINO_SCOPE_DATA/SAGI_D",
+    "coco_inpaint_root": "/media/ssd/DINO_SCOPE_DATA/INPAINT_COCO/content/inpaint_coco/images",
+    "tgif2_root": "/media/ssd/DINO_SCOPE_DATA/content/flux_originals",
+    "casia_train": true,
+    "imd_val_only": true,
+    "image_size": 448,
+    "lora_rank": 32,
+    "lora_alpha": 64,
+    "batch_size": 8,
+    "grad_accum": 1,
+    "contrastive_dim": 64,
+    "pool_hidden": 256,
+    "lambda_image_bce": 1.0,
+    "lambda_contrastive": 2.0,
+    "paste_frac": 0.5,
+    "noise_prob": 0.8,
+    "jpeg_prob": 0.55,
+    "train_samples": 3000,
+    "num_workers": 4,
+    "num_epochs": 10,
+    "min_epochs": 5,
+    "warmup_epochs": 1.0,
+    "early_stop_patience": 2,
+    "early_stop_reduce": "mean",
+    "val_zoom": true,
+    "tgif_val_models": "flux1dev",
+    "val_per_cell": 100
+  },
+  "runs": [
+    {"name": "vits16",     "module": "experiments.scripts.train", "args": {"model_name": "facebook/dinov3-vits16-pretrain-lvd1689m"}},
+    {"name": "vits16plus", "module": "experiments.scripts.train", "args": {"model_name": "facebook/dinov3-vits16plus-pretrain-lvd1689m"}},
+    {"name": "vitb16",     "module": "experiments.scripts.train", "args": {"model_name": "facebook/dinov3-vitb16-pretrain-lvd1689m"}},
+    {"name": "vitl16",     "module": "experiments.scripts.train", "args": {"model_name": "facebook/dinov3-vitl16-pretrain-lvd1689m"}}
+  ]
+}

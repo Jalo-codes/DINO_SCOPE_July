@@ -1,0 +1,42 @@
+{
+  "_doc": "Robustness run for r016/epoch_0004.pt on the Ada rig — JPEG half (GPU 0). 8 compression levels (quality 90→20), no clean (pristine already in hand). TGIF 300/cell, IMD 1k random. Split into 4-condition groups to keep per-process RAM bounded (lesson from the 2080 TGIF OOM). Run alongside sweep_robustness_ada_e4_gpu1.json on GPU 1 for the noise half.",
+  "base_args": {
+    "device": "cuda",
+    "amp_dtype": "float16",
+    "decoder": ["kmeans"],
+    "zoom": true,
+    "tgif2_root": "/home/studentresearch2/DINO_SCOPE_DATA/content/flux_originals",
+    "imd2020_root": "/home/studentresearch2/DINO_SCOPE_DATA/IMD2020",
+    "checkpoint": "/home/studentresearch2/runs/ablation/lora_rank_sweep/r016/epoch_0004.pt"
+  },
+  "runs": [
+    {
+      "name": "tgif_jpeg_a",
+      "module": "experiments.scripts.eval_robustness",
+      "args": {
+        "sources": ["tgif2"],
+        "tgif_eval_per_cell": 300,
+        "conditions": ["jpeg_90", "jpeg_80", "jpeg_70", "jpeg_60"]
+      }
+    },
+    {
+      "name": "tgif_jpeg_b",
+      "module": "experiments.scripts.eval_robustness",
+      "args": {
+        "sources": ["tgif2"],
+        "tgif_eval_per_cell": 300,
+        "conditions": ["jpeg_50", "jpeg_40", "jpeg_30", "jpeg_20"]
+      }
+    },
+    {
+      "name": "imd_jpeg",
+      "module": "experiments.scripts.eval_robustness",
+      "args": {
+        "sources": ["imd2020"],
+        "imd_val_split": 1.0,
+        "max_items": 1000,
+        "conditions": ["jpeg_90", "jpeg_80", "jpeg_70", "jpeg_60", "jpeg_50", "jpeg_40", "jpeg_30", "jpeg_20"]
+      }
+    }
+  ]
+}

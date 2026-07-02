@@ -1,0 +1,75 @@
+{
+  "base_args": {
+    "device": "cuda",
+    "decoder": ["kmeans"],
+    "zoom": true,
+    "attn_percentile": "otsu",
+    "attn_thresh_mult": 1.0,
+    "tgif2_root": "/media/ssd/DINO_SCOPE_DATA/content/flux_originals",
+    "tgif_eval_per_cell": 400,
+    "sources": ["tgif2"],
+    "checkpoint": "/media/ssd/runs/DINO_SCOPE_epoch4_WACV_checkpoint/epoch_004.pt"
+  },
+  "runs": [
+    {
+      "name": "robust_flux1dev_sp_semantic",
+      "module": "experiments.scripts.eval_robustness",
+      "args": { "subgroup": "flux1dev|sp|semantic" }
+    },
+    {
+      "name": "robust_flux1dev_sp_random",
+      "module": "experiments.scripts.eval_robustness",
+      "args": { "subgroup": "flux1dev|sp|random" }
+    },
+    {
+      "name": "robust_flux1dev_fr_semantic",
+      "module": "experiments.scripts.eval_robustness",
+      "args": { "subgroup": "flux1dev|fr|semantic" }
+    },
+    {
+      "name": "robust_flux1dev_fr_random",
+      "module": "experiments.scripts.eval_robustness",
+      "args": { "subgroup": "flux1dev|fr|random" }
+    },
+    {
+      "name": "robust_flux1filldev_sp_semantic",
+      "module": "experiments.scripts.eval_robustness",
+      "args": { "subgroup": "flux1filldev|sp|semantic" }
+    },
+    {
+      "name": "robust_flux1filldev_sp_random",
+      "module": "experiments.scripts.eval_robustness",
+      "args": { "subgroup": "flux1filldev|sp|random" }
+    },
+    {
+      "name": "robust_flux1filldev_fr_semantic",
+      "module": "experiments.scripts.eval_robustness",
+      "args": { "subgroup": "flux1filldev|fr|semantic" }
+    },
+    {
+      "name": "robust_flux1filldev_fr_random",
+      "module": "experiments.scripts.eval_robustness",
+      "args": { "subgroup": "flux1filldev|fr|random" }
+    },
+    {
+      "name": "robust_flux1schnell_sp_semantic",
+      "module": "experiments.scripts.eval_robustness",
+      "args": { "subgroup": "flux1schnell|sp|semantic" }
+    },
+    {
+      "name": "robust_flux1schnell_sp_random",
+      "module": "experiments.scripts.eval_robustness",
+      "args": { "subgroup": "flux1schnell|sp|random" }
+    },
+    {
+      "name": "robust_flux1schnell_fr_semantic",
+      "module": "experiments.scripts.eval_robustness",
+      "args": { "subgroup": "flux1schnell|fr|semantic" }
+    },
+    {
+      "name": "robust_flux1schnell_fr_random",
+      "module": "experiments.scripts.eval_robustness",
+      "args": { "subgroup": "flux1schnell|fr|random" }
+    }
+  ]
+}

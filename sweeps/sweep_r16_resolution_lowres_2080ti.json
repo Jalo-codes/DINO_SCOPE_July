@@ -1,0 +1,37 @@
+{
+  "_doc": "RANK-16 resolution sweep — LOW-RES half, runs on the 2080 Ti (fri-team-4, /media/ssd). Rerun of the resolution ablation at the new optimum LoRA rank 16 / alpha 32 (rank 16 beat rank 32 in the rank sweep). Only deltas vs the original rank-32 sweep_ablation_resolution.json: lora_rank 16, lora_alpha 32. Per-epoch val stays on the default 10% IMD split (cheap, drives early-stop, matches the original sweep) — the FULL IMD set is reported only in the eval sweep (sweep_r16_eval_resolution_*), where imd_val_split=1.0 runs once per checkpoint. base_dtype/amp_dtype left at fp32 defaults to match the original sweep exactly and keep this half on the same resolution curve as the Ada high-res half. Effective batch 8 everywhere (recipe-identical, 375 steps/epoch). Launch: GPU=1 RUNS_ROOT=/media/ssd/runs/ablation bash run_scripts/run_ablation_resolution.sh (point its --queue at this file).",
+  "base_args": {
+    "device": "cuda",
+    "imd2020_root": "/media/ssd/DINO_SCOPE_DATA/IMD2020",
+    "casia_root": "/media/ssd/DINO_SCOPE_DATA/casia",
+    "sagid_root": "/media/ssd/DINO_SCOPE_DATA/SAGI_D",
+    "coco_inpaint_root": "/media/ssd/DINO_SCOPE_DATA/INPAINT_COCO/content/inpaint_coco/images",
+    "tgif2_root": "/media/ssd/DINO_SCOPE_DATA/content/flux_originals",
+    "casia_train": true,
+    "imd_val_only": true,
+    "lora_rank": 16,
+    "lora_alpha": 32,
+    "contrastive_dim": 64,
+    "pool_hidden": 256,
+    "lambda_image_bce": 1.0,
+    "lambda_contrastive": 2.0,
+    "paste_frac": 0.5,
+    "noise_prob": 0.8,
+    "jpeg_prob": 0.55,
+    "train_samples": 3000,
+    "num_workers": 4,
+    "num_epochs": 10,
+    "min_epochs": 5,
+    "warmup_epochs": 1.0,
+    "early_stop_patience": 2,
+    "early_stop_reduce": "mean",
+    "val_zoom": true,
+    "tgif_val_models": "flux1dev",
+    "val_per_cell": 100
+  },
+  "runs": [
+    {"name": "res_224", "module": "experiments.scripts.train", "args": {"image_size": 224, "batch_size": 8, "grad_accum": 1}},
+    {"name": "res_336", "module": "experiments.scripts.train", "args": {"image_size": 336, "batch_size": 8, "grad_accum": 1}},
+    {"name": "res_448", "module": "experiments.scripts.train", "args": {"image_size": 448, "batch_size": 8, "grad_accum": 1}}
+  ]
+}

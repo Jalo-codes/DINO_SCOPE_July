@@ -1,0 +1,107 @@
+===== [2026-06-23T17:37:07] orchestrate launch: /home/fri-team-4/dino_venv/bin/python -m experiments.scripts.eval --device cuda --amp_dtype float16 --decoder kmeans --imd2020_root /media/ssd/DINO_SCOPE_DATA/IMD2020 --tgif2_root /media/ssd/DINO_SCOPE_DATA/content/flux_originals --checkpoint /media/ssd/runs/ablation/res_sweep/res_336/epoch_0004.pt --sources tgif2 --tgif_eval_per_cell 1000 --summary_out /media/ssd/runs/ablation_eval/res_sweep_e4_nozoom/res_336_tgif/eval_summary.json =====
+[eval] loading checkpoint: /media/ssd/runs/ablation/res_sweep/res_336/epoch_0004.pt
+[ckpt] loaded epoch=4 ← /media/ssd/runs/ablation/res_sweep/res_336/epoch_0004.pt
+
+Loading weights:   0%|          | 0/615 [00:00<?, ?it/s]
+Loading weights: 100%|██████████| 615/615 [00:00<00:00, 8756.20it/s]
+trainable params: 23,592,960 || all params: 864,185,600 || trainable%: 2.7301
+[data] Indexing tgif2 (341 coco_ids): /media/ssd/DINO_SCOPE_DATA/content/flux_originals/tgif2_index.json
+[data] tgif2 train kept=379 dropped=6/385 reasons=image_degenerate:6
+[data] tgif2 val kept=12144 dropped=190/12334 reasons=image_corrupt:1,image_degenerate:189
+[data] tgif2: train=379 val=12144 coco_ids=341 train_frac=0.0 max_per_cell=None eval_per_cell=1000
+[eval] tgif2: 12144 val items
+[eval] decoder=kmeans
+[eval] processing 12144 items for kmeans...
+[eval] kmeans ─── summary: n_splice=11810 n_real=334 ───
+[eval] kmeans image_auc: 0.7294
+[eval] kmeans splices (all):
+[eval] kmeans all         f1: n=11810  med=0.1505  mean=0.3109±0.3387  [p25=0.0249, p75=0.6317]
+[eval] kmeans all        iou: n=11810  med=0.0814  mean=0.2446±0.3045  [p25=0.0126, p75=0.4617]
+[eval] kmeans all  precision: n=11810  med=0.0840  mean=0.2906±0.3658  [p25=0.0137, p75=0.6333]
+[eval] kmeans all     recall: n=11810  med=0.8289  mean=0.6334±0.3900  [p25=0.2185, p75=0.9752]
+[eval] kmeans splices bucket=tiny (n=5055):
+[eval] kmeans bucket=tiny         f1: n=5055  med=0.0451  mean=0.0962±0.1693  [p25=0.0033, p75=0.1101]
+[eval] kmeans bucket=tiny        iou: n=5055  med=0.0230  mean=0.0626±0.1376  [p25=0.0017, p75=0.0583]
+[eval] kmeans bucket=tiny  precision: n=5055  med=0.0236  mean=0.0683±0.1605  [p25=0.0017, p75=0.0585]
+[eval] kmeans bucket=tiny     recall: n=5055  med=0.8483  mean=0.6018±0.4335  [p25=0.0350, p75=1.0000]
+[eval] kmeans splices bucket=small (n=4426):
+[eval] kmeans bucket=small         f1: n=4426  med=0.2647  mean=0.3960±0.3390  [p25=0.1034, p75=0.8016]
+[eval] kmeans bucket=small        iou: n=4426  med=0.1525  mean=0.3126±0.3137  [p25=0.0545, p75=0.6689]
+[eval] kmeans bucket=small  precision: n=4426  med=0.1556  mean=0.3582±0.3671  [p25=0.0616, p75=0.8109]
+[eval] kmeans bucket=small     recall: n=4426  med=0.8402  mean=0.6566±0.3735  [p25=0.3288, p75=0.9531]
+[eval] kmeans splices bucket=medium (n=2230):
+[eval] kmeans bucket=medium         f1: n=2230  med=0.7178  mean=0.6120±0.3103  [p25=0.4066, p75=0.8861]
+[eval] kmeans bucket=medium        iou: n=2230  med=0.5598  mean=0.5077±0.3033  [p25=0.2552, p75=0.7956]
+[eval] kmeans bucket=medium  precision: n=2230  med=0.8450  mean=0.6388±0.3568  [p25=0.2948, p75=0.9407]
+[eval] kmeans bucket=medium     recall: n=2230  med=0.7539  mean=0.6567±0.3102  [p25=0.4563, p75=0.9212]
+[eval] kmeans splices bucket=large (n=99):
+[eval] kmeans bucket=large         f1: n=  99  med=0.6618  mean=0.6923±0.2161  [p25=0.5987, p75=0.8934]
+[eval] kmeans bucket=large        iou: n=  99  med=0.4946  mean=0.5686±0.2419  [p25=0.4272, p75=0.8073]
+[eval] kmeans bucket=large  precision: n=  99  med=0.9495  mean=0.7775±0.2558  [p25=0.5323, p75=0.9719]
+[eval] kmeans bucket=large     recall: n=  99  med=0.7399  mean=0.6802±0.2496  [p25=0.4612, p75=0.9037]
+[eval] kmeans reals accuracy: n= 334  med=0.5397  mean=0.5452±0.1416  [p25=0.4422, p75=0.6349]
+[eval] kmeans ─── by subgroup (13 cells) ───
+[eval] kmeans subgroup=flux1dev|fr|random (n_splice=1000 n_real=0):
+[eval] kmeans subgroup=flux1dev|fr|random         f1: n=1000  med=0.1595  mean=0.2649±0.2884  [p25=0.0230, p75=0.4206]
+[eval] kmeans subgroup=flux1dev|fr|random        iou: n=1000  med=0.0867  mean=0.1936±0.2493  [p25=0.0116, p75=0.2663]
+[eval] kmeans subgroup=flux1dev|fr|random  precision: n=1000  med=0.0943  mean=0.2396±0.3154  [p25=0.0141, p75=0.3162]
+[eval] kmeans subgroup=flux1dev|fr|random     recall: n=1000  med=0.5677  mean=0.5307±0.3946  [p25=0.0716, p75=0.9452]
+[eval] kmeans subgroup=flux1dev|fr|semantic (n_splice=1000 n_real=0):
+[eval] kmeans subgroup=flux1dev|fr|semantic         f1: n=1000  med=0.0692  mean=0.2077±0.2859  [p25=0.0063, p75=0.2522]
+[eval] kmeans subgroup=flux1dev|fr|semantic        iou: n=1000  med=0.0358  mean=0.1547±0.2455  [p25=0.0032, p75=0.1443]
+[eval] kmeans subgroup=flux1dev|fr|semantic  precision: n=1000  med=0.0389  mean=0.1841±0.3040  [p25=0.0033, p75=0.1484]
+[eval] kmeans subgroup=flux1dev|fr|semantic     recall: n=1000  med=0.8200  mean=0.5889±0.4221  [p25=0.0485, p75=0.9927]
+[eval] kmeans subgroup=flux1dev|sp|random (n_splice=1000 n_real=0):
+[eval] kmeans subgroup=flux1dev|sp|random         f1: n=1000  med=0.1989  mean=0.3482±0.3367  [p25=0.0493, p75=0.6830]
+[eval] kmeans subgroup=flux1dev|sp|random        iou: n=1000  med=0.1104  mean=0.2718±0.3026  [p25=0.0253, p75=0.5186]
+[eval] kmeans subgroup=flux1dev|sp|random  precision: n=1000  med=0.1187  mean=0.3336±0.3727  [p25=0.0286, p75=0.7540]
+[eval] kmeans subgroup=flux1dev|sp|random     recall: n=1000  med=0.7323  mean=0.5915±0.3790  [p25=0.2223, p75=0.9376]
+[eval] kmeans subgroup=flux1dev|sp|semantic (n_splice=999 n_real=0):
+[eval] kmeans subgroup=flux1dev|sp|semantic         f1: n= 999  med=0.0688  mean=0.2180±0.2987  [p25=0.0056, p75=0.2668]
+[eval] kmeans subgroup=flux1dev|sp|semantic        iou: n= 999  med=0.0356  mean=0.1657±0.2607  [p25=0.0028, p75=0.1539]
+[eval] kmeans subgroup=flux1dev|sp|semantic  precision: n= 999  med=0.0378  mean=0.1974±0.3195  [p25=0.0032, p75=0.1623]
+[eval] kmeans subgroup=flux1dev|sp|semantic     recall: n= 999  med=0.8273  mean=0.5951±0.4236  [p25=0.0404, p75=0.9904]
+[eval] kmeans subgroup=flux1filldev|fr|random (n_splice=888 n_real=0):
+[eval] kmeans subgroup=flux1filldev|fr|random         f1: n= 888  med=0.2108  mean=0.3397±0.3267  [p25=0.0502, p75=0.6510]
+[eval] kmeans subgroup=flux1filldev|fr|random        iou: n= 888  med=0.1178  mean=0.2608±0.2889  [p25=0.0258, p75=0.4826]
+[eval] kmeans subgroup=flux1filldev|fr|random  precision: n= 888  med=0.1232  mean=0.3226±0.3624  [p25=0.0283, p75=0.7199]
+[eval] kmeans subgroup=flux1filldev|fr|random     recall: n= 888  med=0.7443  mean=0.6019±0.3843  [p25=0.1841, p75=0.9595]
+[eval] kmeans subgroup=flux1filldev|fr|semantic (n_splice=923 n_real=0):
+[eval] kmeans subgroup=flux1filldev|fr|semantic         f1: n= 923  med=0.0597  mean=0.1887±0.2719  [p25=0.0109, p75=0.2230]
+[eval] kmeans subgroup=flux1filldev|fr|semantic        iou: n= 923  med=0.0308  mean=0.1393±0.2361  [p25=0.0055, p75=0.1255]
+[eval] kmeans subgroup=flux1filldev|fr|semantic  precision: n= 923  med=0.0315  mean=0.1613±0.2820  [p25=0.0061, p75=0.1366]
+[eval] kmeans subgroup=flux1filldev|fr|semantic     recall: n= 923  med=0.8402  mean=0.6084±0.4207  [p25=0.0782, p75=1.0000]
+[eval] kmeans subgroup=flux1filldev|sp|random (n_splice=1000 n_real=0):
+[eval] kmeans subgroup=flux1filldev|sp|random         f1: n=1000  med=0.6526  mean=0.5267±0.3739  [p25=0.1297, p75=0.8945]
+[eval] kmeans subgroup=flux1filldev|sp|random        iou: n=1000  med=0.4843  mean=0.4475±0.3572  [p25=0.0693, p75=0.8092]
+[eval] kmeans subgroup=flux1filldev|sp|random  precision: n=1000  med=0.6265  mean=0.5130±0.4090  [p25=0.0706, p75=0.9247]
+[eval] kmeans subgroup=flux1filldev|sp|random     recall: n=1000  med=0.8830  mean=0.7527±0.3072  [p25=0.7034, p75=0.9514]
+[eval] kmeans subgroup=flux1filldev|sp|semantic (n_splice=1000 n_real=0):
+[eval] kmeans subgroup=flux1filldev|sp|semantic         f1: n=1000  med=0.0960  mean=0.2903±0.3551  [p25=0.0190, p75=0.6469]
+[eval] kmeans subgroup=flux1filldev|sp|semantic        iou: n=1000  med=0.0504  mean=0.2370±0.3254  [p25=0.0096, p75=0.4781]
+[eval] kmeans subgroup=flux1filldev|sp|semantic  precision: n=1000  med=0.0510  mean=0.2623±0.3628  [p25=0.0101, p75=0.5476]
+[eval] kmeans subgroup=flux1filldev|sp|semantic     recall: n=1000  med=0.9093  mean=0.6872±0.3906  [p25=0.3537, p75=0.9929]
+[eval] kmeans subgroup=flux1schnell|fr|random (n_splice=1000 n_real=0):
+[eval] kmeans subgroup=flux1schnell|fr|random         f1: n=1000  med=0.2506  mean=0.3829±0.3364  [p25=0.0766, p75=0.7218]
+[eval] kmeans subgroup=flux1schnell|fr|random        iou: n=1000  med=0.1433  mean=0.2999±0.3065  [p25=0.0398, p75=0.5647]
+[eval] kmeans subgroup=flux1schnell|fr|random  precision: n=1000  med=0.1487  mean=0.3636±0.3748  [p25=0.0418, p75=0.8276]
+[eval] kmeans subgroup=flux1schnell|fr|random     recall: n=1000  med=0.8009  mean=0.6539±0.3550  [p25=0.4179, p75=0.9563]
+[eval] kmeans subgroup=flux1schnell|fr|semantic (n_splice=1000 n_real=0):
+[eval] kmeans subgroup=flux1schnell|fr|semantic         f1: n=1000  med=0.1076  mean=0.2815±0.3333  [p25=0.0211, p75=0.5516]
+[eval] kmeans subgroup=flux1schnell|fr|semantic        iou: n=1000  med=0.0568  mean=0.2211±0.2973  [p25=0.0107, p75=0.3809]
+[eval] kmeans subgroup=flux1schnell|fr|semantic  precision: n=1000  med=0.0590  mean=0.2534±0.3490  [p25=0.0110, p75=0.4150]
+[eval] kmeans subgroup=flux1schnell|fr|semantic     recall: n=1000  med=0.8794  mean=0.6792±0.3889  [p25=0.2683, p75=0.9945]
+[eval] kmeans subgroup=flux1schnell|sp|random (n_splice=1000 n_real=0):
+[eval] kmeans subgroup=flux1schnell|sp|random         f1: n=1000  med=0.3285  mean=0.4236±0.3515  [p25=0.0874, p75=0.8184]
+[eval] kmeans subgroup=flux1schnell|sp|random        iou: n=1000  med=0.1966  mean=0.3405±0.3249  [p25=0.0457, p75=0.6926]
+[eval] kmeans subgroup=flux1schnell|sp|random  precision: n=1000  med=0.2171  mean=0.4184±0.4004  [p25=0.0488, p75=0.9014]
+[eval] kmeans subgroup=flux1schnell|sp|random     recall: n=1000  med=0.8144  mean=0.6733±0.3378  [p25=0.4625, p75=0.9393]
+[eval] kmeans subgroup=flux1schnell|sp|semantic (n_splice=1000 n_real=0):
+[eval] kmeans subgroup=flux1schnell|sp|semantic         f1: n=1000  med=0.0908  mean=0.2527±0.3222  [p25=0.0120, p75=0.3756]
+[eval] kmeans subgroup=flux1schnell|sp|semantic        iou: n=1000  med=0.0476  mean=0.1968±0.2853  [p25=0.0060, p75=0.2312]
+[eval] kmeans subgroup=flux1schnell|sp|semantic  precision: n=1000  med=0.0489  mean=0.2316±0.3446  [p25=0.0065, p75=0.2420]
+[eval] kmeans subgroup=flux1schnell|sp|semantic     recall: n=1000  med=0.8619  mean=0.6322±0.4105  [p25=0.0864, p75=0.9876]
+[eval] kmeans subgroup=real (n_splice=0 n_real=334):
+[eval] kmeans subgroup=real: n=0 (no splice records)
+[eval] kmeans subgroup=real reals accuracy: n= 334  med=0.5397  mean=0.5452±0.1416  [p25=0.4422, p75=0.6349]
+[eval] saving flat summary to /media/ssd/runs/ablation_eval/res_sweep_e4_nozoom/res_336_tgif/eval_summary.json

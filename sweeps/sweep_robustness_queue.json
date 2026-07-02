@@ -1,0 +1,18 @@
+{
+  "base_args": {
+    "device": "cuda",
+    "max_items": 500,
+    "decoder": ["kmeans", "hdbscan"],
+    "zoom": true,
+    "imd2020_root": "/content/IMD2020",
+    "tgif2_root": "/media/ssd/DINO_SCOPE_DATA/content/flux_originals",
+    "checkpoint": "{env:DINO_SCOPE_RUNS,/content/drive/MyDrive/DINO_SCOPE_RUNS}/Margin15_60_heavy_bfree_contrativenorm1/epoch_004.pt"
+  },
+  "runs": [
+    {
+      "name": "robustness_contrativenorm1_epoch04",
+      "module": "experiments.scripts.eval_robustness",
+      "args": {}
+    }
+  ]
+}

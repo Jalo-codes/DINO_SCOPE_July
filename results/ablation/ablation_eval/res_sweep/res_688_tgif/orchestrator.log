@@ -1,0 +1,16 @@
+===== [2026-06-22T02:46:23] orchestrate launch: /home/fri-team-4/dino_venv/bin/python -m experiments.scripts.eval --device cuda --amp_dtype float16 --decoder kmeans --zoom --imd2020_root /media/ssd/DINO_SCOPE_DATA/IMD2020 --casia_root /media/ssd/DINO_SCOPE_DATA/casia --sagid_root /media/ssd/DINO_SCOPE_DATA/SAGI_D --coco_inpaint_root /media/ssd/DINO_SCOPE_DATA/INPAINT_COCO/content/inpaint_coco/images --tgif2_root /media/ssd/DINO_SCOPE_DATA/content/flux_originals --checkpoint /media/ssd/runs/ablation/res_sweep/res_688/best.pt --sources tgif2 --tgif_eval_per_cell 500 --summary_out /media/ssd/runs/ablation_eval/res_sweep/res_688_tgif/eval_summary.json =====
+[eval] loading checkpoint: /media/ssd/runs/ablation/res_sweep/res_688/best.pt
+Traceback (most recent call last):
+  File "/usr/lib/python3.10/runpy.py", line 196, in _run_module_as_main
+    return _run_code(code, main_globals, None,
+  File "/usr/lib/python3.10/runpy.py", line 86, in _run_code
+    exec(code, run_globals)
+  File "/home/fri-team-4/fri-team4/DINO_SCOPE_final/experiments/scripts/eval.py", line 389, in <module>
+    main()
+  File "/home/fri-team-4/fri-team4/DINO_SCOPE_final/experiments/scripts/eval.py", line 195, in main
+    model, cfg, res = load_eval_model(args.checkpoint, device=device, strict=False)
+  File "/home/fri-team-4/fri-team4/DINO_SCOPE_final/lab_utils/eval/load_model.py", line 103, in load_eval_model
+    state = load_ckpt(checkpoint_path)
+  File "/home/fri-team-4/fri-team4/DINO_SCOPE_final/lab_utils/train/checkpoint.py", line 90, in load
+    raise DataError(f"checkpoint.load: file not found: {path}")
+lab_utils.errors.DataError: checkpoint.load: file not found: /media/ssd/runs/ablation/res_sweep/res_688/best.pt

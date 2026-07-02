@@ -1,0 +1,44 @@
+{
+  "_doc": "Ablation sweep - fully frozen DINOv3 ViT-H/16+ backbone with no LoRA (lora_rank=0, lora_alpha=0), 448 res. Only heads are trained. Configured for the RTX 6000 Ada machine.",
+  "base_args": {
+    "device": "cuda",
+    "imd2020_root": "/home/studentresearch2/DINO_SCOPE_DATA/IMD2020",
+    "casia_root": "/home/studentresearch2/DINO_SCOPE_DATA/casia",
+    "sagid_root": "/home/studentresearch2/DINO_SCOPE_DATA/SAGI_D",
+    "coco_inpaint_root": "/home/studentresearch2/DINO_SCOPE_DATA/INPAINT_COCO/content/inpaint_coco/images",
+    "tgif2_root": "/home/studentresearch2/DINO_SCOPE_DATA/content/flux_originals",
+    "casia_train": true,
+    "imd_val_only": true,
+    "image_size": 448,
+    "lora_rank": 0,
+    "lora_alpha": 0,
+    "batch_size": 8,
+    "grad_accum": 1,
+    "contrastive_dim": 64,
+    "pool_hidden": 256,
+    "lambda_image_bce": 1.0,
+    "lambda_contrastive": 2.0,
+    "paste_frac": 0.5,
+    "noise_prob": 0.8,
+    "jpeg_prob": 0.55,
+    "train_samples": 3000,
+    "num_workers": 8,
+    "num_epochs": 10,
+    "min_epochs": 5,
+    "warmup_epochs": 1.0,
+    "early_stop_patience": 2,
+    "early_stop_reduce": "mean",
+    "val_zoom": true,
+    "tgif_val_models": "flux1dev",
+    "val_per_cell": 100
+  },
+  "runs": [
+    {
+      "name": "frozen_vith16plus",
+      "module": "experiments.scripts.train",
+      "args": {
+        "model_name": "facebook/dinov3-vith16plus-pretrain-lvd1689m"
+      }
+    }
+  ]
+}

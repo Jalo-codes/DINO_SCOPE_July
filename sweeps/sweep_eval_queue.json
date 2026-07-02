@@ -1,0 +1,34 @@
+{
+  "base_args": {
+    "device": "cuda",
+    "max_items": 500,
+    "bench": true,
+    "decoder": ["kmeans", "hdbscan"],
+    "imd2020_root": "/content/IMD2020",
+    "casia_root": "/content/casia",
+    "indoor_root": "/content/indoor",
+    "coco_inpaint_root": "/content/coco_inpaint",
+    "sagid_root": "/content/sagid",
+    "bfree_root": "/content/bfree",
+    "anyedit_root": "/content/anyedit",
+    "tgif2_root": "/media/ssd/DINO_SCOPE_DATA/content/flux_originals",
+    "cocoglide_root": "/content/cocoglide",
+    "opensdi_root": "/content/OpenSDI"
+  },
+  "runs": [
+    {
+      "name": "contrativenorm1_epoch04",
+      "module": "experiments.scripts.eval",
+      "args": {
+        "checkpoint": "{env:DINO_SCOPE_RUNS,/content/drive/MyDrive/DINO_SCOPE_RUNS}/Margin15_60_heavy_bfree_contrativenorm1/epoch_004.pt"
+      }
+    },
+    {
+      "name": "anyedit_noise_epoch04",
+      "module": "experiments.scripts.eval",
+      "args": {
+        "checkpoint": "{env:DINO_SCOPE_RUNS,/content/drive/MyDrive/DINO_SCOPE_RUNS}/Margin15_60_heavy_bfree_anyedit_NOISE/epoch_004.pt"
+      }
+    }
+  ]
+}

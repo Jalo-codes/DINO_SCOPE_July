@@ -1,0 +1,25 @@
+{
+  "_doc": "Re-eval of the LoRA-rank sweep on the FIXED epoch_0004.pt for every cell (controls for early-stop epoch/seed variance that produced the r016 spike on best.pt). Only tgif2 + imd2020, 1000 items each, --zoom (two-pass). '<cell>_tgif' caps 1000 items/cell on tgif2; '<cell>_imd' caps 1000 on imd2020 (held out via imd_val_only at train). Separate entries per source because val_sources slices the combined list by max_items, which would otherwise collapse tgif.",
+  "base_args": {
+    "device": "cuda",
+    "amp_dtype": "float16",
+    "decoder": ["kmeans"],
+    "zoom": true,
+    "imd2020_root": "/media/ssd/DINO_SCOPE_DATA/IMD2020",
+    "tgif2_root": "/media/ssd/DINO_SCOPE_DATA/content/flux_originals"
+  },
+  "runs": [
+    {"name": "r008_tgif", "module": "experiments.scripts.eval", "args": {"checkpoint": "/media/ssd/runs/ablation/lora_rank_sweep/r008/epoch_0004.pt", "sources": ["tgif2"], "tgif_eval_per_cell": 1000}},
+    {"name": "r008_imd",  "module": "experiments.scripts.eval", "args": {"checkpoint": "/media/ssd/runs/ablation/lora_rank_sweep/r008/epoch_0004.pt", "sources": ["imd2020"], "max_items": 1000}},
+    {"name": "r016_tgif", "module": "experiments.scripts.eval", "args": {"checkpoint": "/media/ssd/runs/ablation/lora_rank_sweep/r016/epoch_0004.pt", "sources": ["tgif2"], "tgif_eval_per_cell": 1000}},
+    {"name": "r016_imd",  "module": "experiments.scripts.eval", "args": {"checkpoint": "/media/ssd/runs/ablation/lora_rank_sweep/r016/epoch_0004.pt", "sources": ["imd2020"], "max_items": 1000}},
+    {"name": "r032_tgif", "module": "experiments.scripts.eval", "args": {"checkpoint": "/media/ssd/runs/ablation/lora_rank_sweep/r032/epoch_0004.pt", "sources": ["tgif2"], "tgif_eval_per_cell": 1000}},
+    {"name": "r032_imd",  "module": "experiments.scripts.eval", "args": {"checkpoint": "/media/ssd/runs/ablation/lora_rank_sweep/r032/epoch_0004.pt", "sources": ["imd2020"], "max_items": 1000}},
+    {"name": "r064_tgif", "module": "experiments.scripts.eval", "args": {"checkpoint": "/media/ssd/runs/ablation/lora_rank_sweep/r064/epoch_0004.pt", "sources": ["tgif2"], "tgif_eval_per_cell": 1000}},
+    {"name": "r064_imd",  "module": "experiments.scripts.eval", "args": {"checkpoint": "/media/ssd/runs/ablation/lora_rank_sweep/r064/epoch_0004.pt", "sources": ["imd2020"], "max_items": 1000}},
+    {"name": "r128_tgif", "module": "experiments.scripts.eval", "args": {"checkpoint": "/media/ssd/runs/ablation/lora_rank_sweep/r128/epoch_0004.pt", "sources": ["tgif2"], "tgif_eval_per_cell": 1000}},
+    {"name": "r128_imd",  "module": "experiments.scripts.eval", "args": {"checkpoint": "/media/ssd/runs/ablation/lora_rank_sweep/r128/epoch_0004.pt", "sources": ["imd2020"], "max_items": 1000}},
+    {"name": "r256_tgif", "module": "experiments.scripts.eval", "args": {"checkpoint": "/media/ssd/runs/ablation/lora_rank_sweep/r256/epoch_0004.pt", "sources": ["tgif2"], "tgif_eval_per_cell": 1000}},
+    {"name": "r256_imd",  "module": "experiments.scripts.eval", "args": {"checkpoint": "/media/ssd/runs/ablation/lora_rank_sweep/r256/epoch_0004.pt", "sources": ["imd2020"], "max_items": 1000}}
+  ]
+}

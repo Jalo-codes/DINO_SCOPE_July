@@ -1,0 +1,29 @@
+{
+  "_doc": "Resolution-sweep eval on the FIXED epoch_0004.pt (mirrors sweep_ablation_eval_lora_rank_e4.json so the whole ablation suite uses one fixed-epoch methodology and res_448 cross-checks against rank r032). Each checkpoint evaluates at its OWN trained resolution (load_eval_model reads image_size from the saved cfg — do NOT pass --image_size). tgif2 @1000/cell + imd2020 @1000, --zoom (default legacy padding; main pad term is frame-fraction/resolution-invariant, only base_pad=2px and min_box_size=8px patch-unit floors drift slightly tighter at high res). Separate _tgif/_imd entries because val_sources slices the combined list by max_items.",
+  "base_args": {
+    "device": "cuda",
+    "amp_dtype": "float16",
+    "decoder": ["kmeans"],
+    "zoom": true,
+    "imd2020_root": "/media/ssd/DINO_SCOPE_DATA/IMD2020",
+    "tgif2_root": "/media/ssd/DINO_SCOPE_DATA/content/flux_originals"
+  },
+  "runs": [
+    {"name": "res_224_tgif", "module": "experiments.scripts.eval", "args": {"checkpoint": "/media/ssd/runs/ablation/res_sweep/res_224/epoch_0004.pt", "sources": ["tgif2"], "tgif_eval_per_cell": 1000}},
+    {"name": "res_224_imd",  "module": "experiments.scripts.eval", "args": {"checkpoint": "/media/ssd/runs/ablation/res_sweep/res_224/epoch_0004.pt", "sources": ["imd2020"], "max_items": 1000}},
+    {"name": "res_336_tgif", "module": "experiments.scripts.eval", "args": {"checkpoint": "/media/ssd/runs/ablation/res_sweep/res_336/epoch_0004.pt", "sources": ["tgif2"], "tgif_eval_per_cell": 1000}},
+    {"name": "res_336_imd",  "module": "experiments.scripts.eval", "args": {"checkpoint": "/media/ssd/runs/ablation/res_sweep/res_336/epoch_0004.pt", "sources": ["imd2020"], "max_items": 1000}},
+    {"name": "res_448_tgif", "module": "experiments.scripts.eval", "args": {"checkpoint": "/media/ssd/runs/ablation/res_sweep/res_448/epoch_0004.pt", "sources": ["tgif2"], "tgif_eval_per_cell": 1000}},
+    {"name": "res_448_imd",  "module": "experiments.scripts.eval", "args": {"checkpoint": "/media/ssd/runs/ablation/res_sweep/res_448/epoch_0004.pt", "sources": ["imd2020"], "max_items": 1000}},
+    {"name": "res_496_tgif", "module": "experiments.scripts.eval", "args": {"checkpoint": "/media/ssd/runs/ablation/res_sweep/res_496/epoch_0004.pt", "sources": ["tgif2"], "tgif_eval_per_cell": 1000}},
+    {"name": "res_496_imd",  "module": "experiments.scripts.eval", "args": {"checkpoint": "/media/ssd/runs/ablation/res_sweep/res_496/epoch_0004.pt", "sources": ["imd2020"], "max_items": 1000}},
+    {"name": "res_512_tgif", "module": "experiments.scripts.eval", "args": {"checkpoint": "/media/ssd/runs/ablation/res_sweep/res_512/epoch_0004.pt", "sources": ["tgif2"], "tgif_eval_per_cell": 1000}},
+    {"name": "res_512_imd",  "module": "experiments.scripts.eval", "args": {"checkpoint": "/media/ssd/runs/ablation/res_sweep/res_512/epoch_0004.pt", "sources": ["imd2020"], "max_items": 1000}},
+    {"name": "res_592_tgif", "module": "experiments.scripts.eval", "args": {"checkpoint": "/media/ssd/runs/ablation/res_sweep/res_592/epoch_0004.pt", "sources": ["tgif2"], "tgif_eval_per_cell": 1000}},
+    {"name": "res_592_imd",  "module": "experiments.scripts.eval", "args": {"checkpoint": "/media/ssd/runs/ablation/res_sweep/res_592/epoch_0004.pt", "sources": ["imd2020"], "max_items": 1000}},
+    {"name": "res_608_tgif", "module": "experiments.scripts.eval", "args": {"checkpoint": "/media/ssd/runs/ablation/res_sweep/res_608/epoch_0004.pt", "sources": ["tgif2"], "tgif_eval_per_cell": 1000}},
+    {"name": "res_608_imd",  "module": "experiments.scripts.eval", "args": {"checkpoint": "/media/ssd/runs/ablation/res_sweep/res_608/epoch_0004.pt", "sources": ["imd2020"], "max_items": 1000}},
+    {"name": "res_688_tgif", "module": "experiments.scripts.eval", "args": {"checkpoint": "/media/ssd/runs/ablation/res_sweep/res_688/epoch_0004.pt", "sources": ["tgif2"], "tgif_eval_per_cell": 1000}},
+    {"name": "res_688_imd",  "module": "experiments.scripts.eval", "args": {"checkpoint": "/media/ssd/runs/ablation/res_sweep/res_688/epoch_0004.pt", "sources": ["imd2020"], "max_items": 1000}}
+  ]
+}

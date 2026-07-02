@@ -1,0 +1,43 @@
+{
+  "_doc": "RANK-16 res_1024 epoch_4 hdbscan — NO ZOOM. imd + indomain + tgif. GPU 0. Pair with gpu1 sweep (zoom). Checkpoint: epoch_0004.pt from res_sweep_r16/res_1024.",
+  "base_args": {
+    "device": "cuda",
+    "amp_dtype": "float16",
+    "decoder": ["hdbscan"],
+    "zoom": false,
+    "imd2020_root": "/home/studentresearch2/DINO_SCOPE_DATA/IMD2020",
+    "casia_root": "/home/studentresearch2/DINO_SCOPE_DATA/casia",
+    "sagid_root": "/home/studentresearch2/DINO_SCOPE_DATA/SAGI_D",
+    "coco_inpaint_root": "/home/studentresearch2/DINO_SCOPE_DATA/INPAINT_COCO/content/inpaint_coco/images",
+    "tgif2_root": "/home/studentresearch2/DINO_SCOPE_DATA/content/flux_originals"
+  },
+  "runs": [
+    {
+      "name": "res_1024_imd_hdbscan_nozoom",
+      "module": "experiments.scripts.eval",
+      "args": {
+        "checkpoint": "/home/studentresearch2/runs/ablation/res_sweep_r16/res_1024/epoch_0004.pt",
+        "sources": ["imd2020"],
+        "imd_val_split": 1.0
+      }
+    },
+    {
+      "name": "res_1024_indomain_hdbscan_nozoom",
+      "module": "experiments.scripts.eval",
+      "args": {
+        "checkpoint": "/home/studentresearch2/runs/ablation/res_sweep_r16/res_1024/epoch_0004.pt",
+        "sources": ["casia", "coco_inpaint", "sagid"],
+        "max_items": 500
+      }
+    },
+    {
+      "name": "res_1024_tgif_hdbscan_nozoom",
+      "module": "experiments.scripts.eval",
+      "args": {
+        "checkpoint": "/home/studentresearch2/runs/ablation/res_sweep_r16/res_1024/epoch_0004.pt",
+        "sources": ["tgif2"],
+        "tgif_eval_per_cell": 1000
+      }
+    }
+  ]
+}

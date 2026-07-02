@@ -1,0 +1,29 @@
+{
+  "_doc": "NO-ZOOM twin of sweep_ablation_eval_resolution_e4.json — identical epoch_0004.pt checkpoints, 1k tgif + 1k imd, but zoom OFF (single forward pass, no attention-zoom second pass). Eval only, no retraining. Pair with the zoomed res_sweep_e4 rollup to isolate how much the two-pass zoom contributes at each resolution (expectation: bigger lift at low res where the patch grid is coarse, smaller at high res). kmeans polarity is still attention-selected from the single-pass attention. Each checkpoint evaluates at its OWN trained resolution (read from cfg).",
+  "base_args": {
+    "device": "cuda",
+    "amp_dtype": "float16",
+    "decoder": ["kmeans"],
+    "zoom": false,
+    "imd2020_root": "/media/ssd/DINO_SCOPE_DATA/IMD2020",
+    "tgif2_root": "/media/ssd/DINO_SCOPE_DATA/content/flux_originals"
+  },
+  "runs": [
+    {"name": "res_224_tgif", "module": "experiments.scripts.eval", "args": {"checkpoint": "/media/ssd/runs/ablation/res_sweep/res_224/epoch_0004.pt", "sources": ["tgif2"], "tgif_eval_per_cell": 1000}},
+    {"name": "res_224_imd",  "module": "experiments.scripts.eval", "args": {"checkpoint": "/media/ssd/runs/ablation/res_sweep/res_224/epoch_0004.pt", "sources": ["imd2020"], "max_items": 1000}},
+    {"name": "res_336_tgif", "module": "experiments.scripts.eval", "args": {"checkpoint": "/media/ssd/runs/ablation/res_sweep/res_336/epoch_0004.pt", "sources": ["tgif2"], "tgif_eval_per_cell": 1000}},
+    {"name": "res_336_imd",  "module": "experiments.scripts.eval", "args": {"checkpoint": "/media/ssd/runs/ablation/res_sweep/res_336/epoch_0004.pt", "sources": ["imd2020"], "max_items": 1000}},
+    {"name": "res_448_tgif", "module": "experiments.scripts.eval", "args": {"checkpoint": "/media/ssd/runs/ablation/res_sweep/res_448/epoch_0004.pt", "sources": ["tgif2"], "tgif_eval_per_cell": 1000}},
+    {"name": "res_448_imd",  "module": "experiments.scripts.eval", "args": {"checkpoint": "/media/ssd/runs/ablation/res_sweep/res_448/epoch_0004.pt", "sources": ["imd2020"], "max_items": 1000}},
+    {"name": "res_496_tgif", "module": "experiments.scripts.eval", "args": {"checkpoint": "/media/ssd/runs/ablation/res_sweep/res_496/epoch_0004.pt", "sources": ["tgif2"], "tgif_eval_per_cell": 1000}},
+    {"name": "res_496_imd",  "module": "experiments.scripts.eval", "args": {"checkpoint": "/media/ssd/runs/ablation/res_sweep/res_496/epoch_0004.pt", "sources": ["imd2020"], "max_items": 1000}},
+    {"name": "res_512_tgif", "module": "experiments.scripts.eval", "args": {"checkpoint": "/media/ssd/runs/ablation/res_sweep/res_512/epoch_0004.pt", "sources": ["tgif2"], "tgif_eval_per_cell": 1000}},
+    {"name": "res_512_imd",  "module": "experiments.scripts.eval", "args": {"checkpoint": "/media/ssd/runs/ablation/res_sweep/res_512/epoch_0004.pt", "sources": ["imd2020"], "max_items": 1000}},
+    {"name": "res_592_tgif", "module": "experiments.scripts.eval", "args": {"checkpoint": "/media/ssd/runs/ablation/res_sweep/res_592/epoch_0004.pt", "sources": ["tgif2"], "tgif_eval_per_cell": 1000}},
+    {"name": "res_592_imd",  "module": "experiments.scripts.eval", "args": {"checkpoint": "/media/ssd/runs/ablation/res_sweep/res_592/epoch_0004.pt", "sources": ["imd2020"], "max_items": 1000}},
+    {"name": "res_608_tgif", "module": "experiments.scripts.eval", "args": {"checkpoint": "/media/ssd/runs/ablation/res_sweep/res_608/epoch_0004.pt", "sources": ["tgif2"], "tgif_eval_per_cell": 1000}},
+    {"name": "res_608_imd",  "module": "experiments.scripts.eval", "args": {"checkpoint": "/media/ssd/runs/ablation/res_sweep/res_608/epoch_0004.pt", "sources": ["imd2020"], "max_items": 1000}},
+    {"name": "res_688_tgif", "module": "experiments.scripts.eval", "args": {"checkpoint": "/media/ssd/runs/ablation/res_sweep/res_688/epoch_0004.pt", "sources": ["tgif2"], "tgif_eval_per_cell": 1000}},
+    {"name": "res_688_imd",  "module": "experiments.scripts.eval", "args": {"checkpoint": "/media/ssd/runs/ablation/res_sweep/res_688/epoch_0004.pt", "sources": ["imd2020"], "max_items": 1000}}
+  ]
+}

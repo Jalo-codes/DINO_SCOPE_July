@@ -1,0 +1,31 @@
+{
+  "_doc": "Extended eval of the frozen DINOv3 ViT-H/16+ backbone (no LoRA) on epoch_0004.pt. tgif2 (1000/cell) + imd2020 (all images), --zoom (two-pass) and kmeans decoder. Configured for the RTX 6000 Ada machine.",
+  "base_args": {
+    "device": "cuda",
+    "amp_dtype": "float16",
+    "decoder": ["kmeans"],
+    "zoom": true,
+    "imd2020_root": "/home/studentresearch2/DINO_SCOPE_DATA/IMD2020",
+    "tgif2_root": "/home/studentresearch2/DINO_SCOPE_DATA/content/flux_originals"
+  },
+  "runs": [
+    {
+      "name": "frozen_vith16plus_tgif",
+      "module": "experiments.scripts.eval",
+      "args": {
+        "checkpoint": "/home/studentresearch2/runs/ablation/frozen_backbone_sweep/frozen_vith16plus/epoch_0004.pt",
+        "sources": ["tgif2"],
+        "tgif_eval_per_cell": 1000
+      }
+    },
+    {
+      "name": "frozen_vith16plus_imd",
+      "module": "experiments.scripts.eval",
+      "args": {
+        "checkpoint": "/home/studentresearch2/runs/ablation/frozen_backbone_sweep/frozen_vith16plus/epoch_0004.pt",
+        "sources": ["imd2020"],
+        "imd_val_split": 1.0
+      }
+    }
+  ]
+}

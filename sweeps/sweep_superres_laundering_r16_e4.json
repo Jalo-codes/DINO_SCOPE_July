@@ -1,0 +1,22 @@
+{
+  "_doc": "Overnight tail queue for the DEFAULT model = LoRA-rank-sweep r016 / epoch_0004.pt (448, r16), 2080 Ti, same checkpoint throughout. TWO module types share one queue, so base_args holds ONLY keys both accept (device, checkpoint, tgif2_root); everything module-specific lives in each run's args. (1) Super-res laundering (eval_laundering.py, TGIF-only): none + bicubic_x2 + bicubic_x4, kmeans, numbers-parser defaults (zoom on, otsu, 500/cell). real_esrgan_* omitted (need offline --prelaundered_root). (2) Decoder/zoom grid (eval.py) completing the 2x2 minus the already-done zoom+kmeans: full eval set = TGIF 1000/cell + FULL IMD (imd_val_split=1.0) for {nozoom+kmeans, zoom+hdbscan, nozoom+hdbscan}. eval.py uses --decoder (singular) and --zoom (store_true, omitted = off); eval_laundering uses --decoders (plural). Checkpoint: /media/ssd/runs/ablation/lora_rank_sweep/r016/epoch_0004.pt.",
+  "base_args": {
+    "device": "cuda",
+    "checkpoint": "/media/ssd/runs/ablation/lora_rank_sweep/r016/epoch_0004.pt",
+    "tgif2_root": "/media/ssd/DINO_SCOPE_DATA/content/flux_originals"
+  },
+  "runs": [
+    {"name": "launder_none",       "module": "experiments.scripts.eval_laundering", "args": {"launder_mode": "none",       "decoders": ["kmeans"]}},
+    {"name": "launder_bicubic_x2", "module": "experiments.scripts.eval_laundering", "args": {"launder_mode": "bicubic_x2", "decoders": ["kmeans"]}},
+    {"name": "launder_bicubic_x4", "module": "experiments.scripts.eval_laundering", "args": {"launder_mode": "bicubic_x4", "decoders": ["kmeans"]}},
+
+    {"name": "nozoom_kmeans_tgif",  "module": "experiments.scripts.eval", "args": {"decoder": ["kmeans"],  "sources": ["tgif2"],   "tgif_eval_per_cell": 1000}},
+    {"name": "nozoom_kmeans_imd",   "module": "experiments.scripts.eval", "args": {"decoder": ["kmeans"],  "sources": ["imd2020"], "imd_val_split": 1.0, "imd2020_root": "/media/ssd/DINO_SCOPE_DATA/IMD2020"}},
+
+    {"name": "zoom_hdbscan_tgif",   "module": "experiments.scripts.eval", "args": {"decoder": ["hdbscan"], "sources": ["tgif2"],   "tgif_eval_per_cell": 1000, "zoom": true}},
+    {"name": "zoom_hdbscan_imd",    "module": "experiments.scripts.eval", "args": {"decoder": ["hdbscan"], "sources": ["imd2020"], "imd_val_split": 1.0, "imd2020_root": "/media/ssd/DINO_SCOPE_DATA/IMD2020", "zoom": true}},
+
+    {"name": "nozoom_hdbscan_tgif", "module": "experiments.scripts.eval", "args": {"decoder": ["hdbscan"], "sources": ["tgif2"],   "tgif_eval_per_cell": 1000}},
+    {"name": "nozoom_hdbscan_imd",  "module": "experiments.scripts.eval", "args": {"decoder": ["hdbscan"], "sources": ["imd2020"], "imd_val_split": 1.0, "imd2020_root": "/media/ssd/DINO_SCOPE_DATA/IMD2020"}}
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "_doc": "Extended eval of the DINOv3 model-size sweep (r16) on the FIXED epoch_0004.pt for every cell. tgif2 + imd2020 only, 1000 items each, --zoom (two-pass). Checkpoints read from /media/ssd/runs/ablation/model_size_sweep_r16/<cell>/epoch_0004.pt.",
+  "base_args": {
+    "device": "cuda",
+    "amp_dtype": "float16",
+    "decoder": ["kmeans"],
+    "zoom": true,
+    "imd2020_root": "/media/ssd/DINO_SCOPE_DATA/IMD2020",
+    "tgif2_root": "/media/ssd/DINO_SCOPE_DATA/content/flux_originals"
+  },
+  "runs": [
+    {"name": "vits16_tgif",     "module": "experiments.scripts.eval", "args": {"checkpoint": "/media/ssd/runs/ablation/model_size_sweep_r16/vits16/epoch_0004.pt",     "sources": ["tgif2"], "tgif_eval_per_cell": 1000}},
+    {"name": "vits16_imd",      "module": "experiments.scripts.eval", "args": {"checkpoint": "/media/ssd/runs/ablation/model_size_sweep_r16/vits16/epoch_0004.pt",     "sources": ["imd2020"], "max_items": 1000}},
+    {"name": "vits16plus_tgif", "module": "experiments.scripts.eval", "args": {"checkpoint": "/media/ssd/runs/ablation/model_size_sweep_r16/vits16plus/epoch_0004.pt", "sources": ["tgif2"], "tgif_eval_per_cell": 1000}},
+    {"name": "vits16plus_imd",  "module": "experiments.scripts.eval", "args": {"checkpoint": "/media/ssd/runs/ablation/model_size_sweep_r16/vits16plus/epoch_0004.pt", "sources": ["imd2020"], "max_items": 1000}},
+    {"name": "vitb16_tgif",     "module": "experiments.scripts.eval", "args": {"checkpoint": "/media/ssd/runs/ablation/model_size_sweep_r16/vitb16/epoch_0004.pt",     "sources": ["tgif2"], "tgif_eval_per_cell": 1000}},
+    {"name": "vitb16_imd",      "module": "experiments.scripts.eval", "args": {"checkpoint": "/media/ssd/runs/ablation/model_size_sweep_r16/vitb16/epoch_0004.pt",     "sources": ["imd2020"], "max_items": 1000}},
+    {"name": "vitl16_tgif",     "module": "experiments.scripts.eval", "args": {"checkpoint": "/media/ssd/runs/ablation/model_size_sweep_r16/vitl16/epoch_0004.pt",     "sources": ["tgif2"], "tgif_eval_per_cell": 1000}},
+    {"name": "vitl16_imd",      "module": "experiments.scripts.eval", "args": {"checkpoint": "/media/ssd/runs/ablation/model_size_sweep_r16/vitl16/epoch_0004.pt",     "sources": ["imd2020"], "max_items": 1000}}
+  ]
+}

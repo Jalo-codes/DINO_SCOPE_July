@@ -1,0 +1,23 @@
+{
+  "_doc": "Eval of the fine-grain rank fill {12,14,18,20,24} on the FIXED epoch_0004.pt (matches sweep_ablation_eval_lora_rank_e4.json methodology). tgif2 @1000/cell + imd2020 @1000, --zoom. Writes into the same run_root as the e4 eval (lora_rank_sweep_e4) so the rollup tabulates all ranks together.",
+  "base_args": {
+    "device": "cuda",
+    "amp_dtype": "float16",
+    "decoder": ["kmeans"],
+    "zoom": true,
+    "imd2020_root": "/media/ssd/DINO_SCOPE_DATA/IMD2020",
+    "tgif2_root": "/media/ssd/DINO_SCOPE_DATA/content/flux_originals"
+  },
+  "runs": [
+    {"name": "r012_tgif", "module": "experiments.scripts.eval", "args": {"checkpoint": "/media/ssd/runs/ablation/lora_rank_sweep/r012/epoch_0004.pt", "sources": ["tgif2"], "tgif_eval_per_cell": 1000}},
+    {"name": "r012_imd",  "module": "experiments.scripts.eval", "args": {"checkpoint": "/media/ssd/runs/ablation/lora_rank_sweep/r012/epoch_0004.pt", "sources": ["imd2020"], "max_items": 1000}},
+    {"name": "r014_tgif", "module": "experiments.scripts.eval", "args": {"checkpoint": "/media/ssd/runs/ablation/lora_rank_sweep/r014/epoch_0004.pt", "sources": ["tgif2"], "tgif_eval_per_cell": 1000}},
+    {"name": "r014_imd",  "module": "experiments.scripts.eval", "args": {"checkpoint": "/media/ssd/runs/ablation/lora_rank_sweep/r014/epoch_0004.pt", "sources": ["imd2020"], "max_items": 1000}},
+    {"name": "r018_tgif", "module": "experiments.scripts.eval", "args": {"checkpoint": "/media/ssd/runs/ablation/lora_rank_sweep/r018/epoch_0004.pt", "sources": ["tgif2"], "tgif_eval_per_cell": 1000}},
+    {"name": "r018_imd",  "module": "experiments.scripts.eval", "args": {"checkpoint": "/media/ssd/runs/ablation/lora_rank_sweep/r018/epoch_0004.pt", "sources": ["imd2020"], "max_items": 1000}},
+    {"name": "r020_tgif", "module": "experiments.scripts.eval", "args": {"checkpoint": "/media/ssd/runs/ablation/lora_rank_sweep/r020/epoch_0004.pt", "sources": ["tgif2"], "tgif_eval_per_cell": 1000}},
+    {"name": "r020_imd",  "module": "experiments.scripts.eval", "args": {"checkpoint": "/media/ssd/runs/ablation/lora_rank_sweep/r020/epoch_0004.pt", "sources": ["imd2020"], "max_items": 1000}},
+    {"name": "r024_tgif", "module": "experiments.scripts.eval", "args": {"checkpoint": "/media/ssd/runs/ablation/lora_rank_sweep/r024/epoch_0004.pt", "sources": ["tgif2"], "tgif_eval_per_cell": 1000}},
+    {"name": "r024_imd",  "module": "experiments.scripts.eval", "args": {"checkpoint": "/media/ssd/runs/ablation/lora_rank_sweep/r024/epoch_0004.pt", "sources": ["imd2020"], "max_items": 1000}}
+  ]
+}

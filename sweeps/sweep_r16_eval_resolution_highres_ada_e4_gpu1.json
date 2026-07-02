@@ -1,0 +1,158 @@
+{
+  "_doc": "RANK-16 resolution eval \u2014 HIGH-RES half (big boy, RTX 6000 Ada). Evaluates best.pt from each high-res rank-16 training cell (496..1024, incl. the three new >688 cells). Same three-cell-per-resolution layout as the low-res eval: '<res>_imd' = FULL IMD2020 (imd_val_split=1.0, uncapped); '<res>_indomain' = casia+coco_inpaint+sagid capped 500/source; '<res>_tgif' = 500/cell on tgif2. Zoom on, amp fp16. Run on GPU 1 while the 7B holds GPU 0. Checkpoints read from /home/studentresearch2/runs/ablation/res_sweep_r16/<res>/best.pt.",
+  "base_args": {
+    "device": "cuda",
+    "amp_dtype": "float16",
+    "decoder": [
+      "kmeans"
+    ],
+    "zoom": true,
+    "imd2020_root": "/home/studentresearch2/DINO_SCOPE_DATA/IMD2020",
+    "casia_root": "/home/studentresearch2/DINO_SCOPE_DATA/casia",
+    "sagid_root": "/home/studentresearch2/DINO_SCOPE_DATA/SAGI_D",
+    "coco_inpaint_root": "/home/studentresearch2/DINO_SCOPE_DATA/INPAINT_COCO/content/inpaint_coco/images",
+    "tgif2_root": "/home/studentresearch2/DINO_SCOPE_DATA/content/flux_originals"
+  },
+  "runs": [
+    {
+      "name": "res_512_imd",
+      "module": "experiments.scripts.eval",
+      "args": {
+        "checkpoint": "/home/studentresearch2/runs/ablation/res_sweep_r16/res_512/epoch_0004.pt",
+        "sources": [
+          "imd2020"
+        ],
+        "imd_val_split": 1.0
+      }
+    },
+    {
+      "name": "res_512_indomain",
+      "module": "experiments.scripts.eval",
+      "args": {
+        "checkpoint": "/home/studentresearch2/runs/ablation/res_sweep_r16/res_512/epoch_0004.pt",
+        "sources": [
+          "casia",
+          "coco_inpaint",
+          "sagid"
+        ],
+        "max_items": 500
+      }
+    },
+    {
+      "name": "res_512_tgif",
+      "module": "experiments.scripts.eval",
+      "args": {
+        "checkpoint": "/home/studentresearch2/runs/ablation/res_sweep_r16/res_512/epoch_0004.pt",
+        "sources": [
+          "tgif2"
+        ],
+        "tgif_eval_per_cell": 1000
+      }
+    },
+    {
+      "name": "res_608_imd",
+      "module": "experiments.scripts.eval",
+      "args": {
+        "checkpoint": "/home/studentresearch2/runs/ablation/res_sweep_r16/res_608/epoch_0004.pt",
+        "sources": [
+          "imd2020"
+        ],
+        "imd_val_split": 1.0
+      }
+    },
+    {
+      "name": "res_608_indomain",
+      "module": "experiments.scripts.eval",
+      "args": {
+        "checkpoint": "/home/studentresearch2/runs/ablation/res_sweep_r16/res_608/epoch_0004.pt",
+        "sources": [
+          "casia",
+          "coco_inpaint",
+          "sagid"
+        ],
+        "max_items": 500
+      }
+    },
+    {
+      "name": "res_608_tgif",
+      "module": "experiments.scripts.eval",
+      "args": {
+        "checkpoint": "/home/studentresearch2/runs/ablation/res_sweep_r16/res_608/epoch_0004.pt",
+        "sources": [
+          "tgif2"
+        ],
+        "tgif_eval_per_cell": 1000
+      }
+    },
+    {
+      "name": "res_768_imd",
+      "module": "experiments.scripts.eval",
+      "args": {
+        "checkpoint": "/home/studentresearch2/runs/ablation/res_sweep_r16/res_768/epoch_0004.pt",
+        "sources": [
+          "imd2020"
+        ],
+        "imd_val_split": 1.0
+      }
+    },
+    {
+      "name": "res_768_indomain",
+      "module": "experiments.scripts.eval",
+      "args": {
+        "checkpoint": "/home/studentresearch2/runs/ablation/res_sweep_r16/res_768/epoch_0004.pt",
+        "sources": [
+          "casia",
+          "coco_inpaint",
+          "sagid"
+        ],
+        "max_items": 500
+      }
+    },
+    {
+      "name": "res_768_tgif",
+      "module": "experiments.scripts.eval",
+      "args": {
+        "checkpoint": "/home/studentresearch2/runs/ablation/res_sweep_r16/res_768/epoch_0004.pt",
+        "sources": [
+          "tgif2"
+        ],
+        "tgif_eval_per_cell": 1000
+      }
+    },
+    {
+      "name": "res_896_imd",
+      "module": "experiments.scripts.eval",
+      "args": {
+        "checkpoint": "/home/studentresearch2/runs/ablation/res_sweep_r16/res_896/epoch_0004.pt",
+        "sources": [
+          "imd2020"
+        ],
+        "imd_val_split": 1.0
+      }
+    },
+    {
+      "name": "res_896_indomain",
+      "module": "experiments.scripts.eval",
+      "args": {
+        "checkpoint": "/home/studentresearch2/runs/ablation/res_sweep_r16/res_896/epoch_0004.pt",
+        "sources": [
+          "casia",
+          "coco_inpaint",
+          "sagid"
+        ],
+        "max_items": 500
+      }
+    },
+    {
+      "name": "res_896_tgif",
+      "module": "experiments.scripts.eval",
+      "args": {
+        "checkpoint": "/home/studentresearch2/runs/ablation/res_sweep_r16/res_896/epoch_0004.pt",
+        "sources": [
+          "tgif2"
+        ],
+        "tgif_eval_per_cell": 1000
+      }
+    }
+  ]
+}

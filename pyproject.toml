@@ -1,0 +1,25 @@
+# DINO_SCOPE — rebuild root.
+#
+# Not a setuptools project. This file exists so `pytest` discovers the rebuilt
+# `tests/` tree from the repo root, and so the new `lab_utils` / `experiments`
+# packages import without an install step (pythonpath = repo root).
+#
+# The legacy tree under `legacy/` has its own `legacy/pyproject.toml`; run it in
+# isolation for the one-time "nothing lost" baseline:  cd legacy && pytest
+# (that run needs torch and belongs on the 2080 Ti box / Colab-GPU.)
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-ra --strict-markers"
+markers = [
+    # Test tiers (GAMEPLAN C3). The default (unmarked) tier is torch-free and
+    # runs anywhere, including a CPU dev box. Select the torch tier explicitly:
+    #   torch-free only:  pytest -m "not needs_gpu and not needs_data"
+    #   on the GPU box:   pytest
+    "needs_gpu: requires torch + CUDA (fetch, checkpoint-compat, decode-on-signal, train smoke)",
+    "needs_data: integration test that requires the dataset roots on disk",
+]

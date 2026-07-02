@@ -1,0 +1,19 @@
+{
+  "_doc": "TGIF robustness for the default r016/epoch_0004.pt, SPLIT into condition-groups so each orchestrate cell is a fresh process (the single 17-condition run OOM-killed host RAM at ~100k accumulated records). Each cell runs ~3-4 conditions via --conditions over the full TGIF set (500/cell). 5 cells; run group_a/c/e on one GPU and group_b/d on the other (or any split). Per-cell eval_summary.json holds that group's per-condition metrics; concatenate the 5 for the full robustness table. IMD robustness already completed in the original run (only 212 val items, no OOM). Checkpoint: /media/ssd/runs/ablation/lora_rank_sweep/r016/epoch_0004.pt.",
+  "base_args": {
+    "device": "cuda",
+    "amp_dtype": "float16",
+    "decoder": ["kmeans"],
+    "zoom": true,
+    "tgif2_root": "/media/ssd/DINO_SCOPE_DATA/content/flux_originals",
+    "checkpoint": "/media/ssd/runs/ablation/lora_rank_sweep/r016/epoch_0004.pt",
+    "sources": ["tgif2"]
+  },
+  "runs": [
+    {"name": "group_a", "module": "experiments.scripts.eval_robustness", "args": {"conditions": ["clean", "jpeg_90", "jpeg_80", "jpeg_70"]}},
+    {"name": "group_b", "module": "experiments.scripts.eval_robustness", "args": {"conditions": ["jpeg_60", "jpeg_50", "jpeg_40", "jpeg_30"]}},
+    {"name": "group_c", "module": "experiments.scripts.eval_robustness", "args": {"conditions": ["noise_0.01", "noise_0.02", "noise_0.04"]}},
+    {"name": "group_d", "module": "experiments.scripts.eval_robustness", "args": {"conditions": ["noise_0.06", "noise_0.08", "noise_0.10"]}},
+    {"name": "group_e", "module": "experiments.scripts.eval_robustness", "args": {"conditions": ["noise_0.15", "blur_1.0", "blur_2.0"]}}
+  ]
+}

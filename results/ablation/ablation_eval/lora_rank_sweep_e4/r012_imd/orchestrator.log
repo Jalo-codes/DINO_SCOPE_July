@@ -1,0 +1,57 @@
+===== [2026-06-23T23:49:05] orchestrate launch: /home/fri-team-4/dino_venv/bin/python -m experiments.scripts.eval --device cuda --amp_dtype float16 --decoder kmeans --zoom --imd2020_root /media/ssd/DINO_SCOPE_DATA/IMD2020 --tgif2_root /media/ssd/DINO_SCOPE_DATA/content/flux_originals --checkpoint /media/ssd/runs/ablation/lora_rank_sweep/r012/epoch_0004.pt --sources imd2020 --max_items 1000 --summary_out /media/ssd/runs/ablation_eval/lora_rank_sweep_e4/r012_imd/eval_summary.json =====
+[eval] loading checkpoint: /media/ssd/runs/ablation/lora_rank_sweep/r012/epoch_0004.pt
+[ckpt] loaded epoch=4 ← /media/ssd/runs/ablation/lora_rank_sweep/r012/epoch_0004.pt
+
+Loading weights:   0%|          | 0/615 [00:00<?, ?it/s]
+Loading weights: 100%|██████████| 615/615 [00:00<00:00, 9641.29it/s]
+trainable params: 8,847,360 || all params: 849,440,000 || trainable%: 1.0416
+[data] Indexing IMD2020: /media/ssd/DINO_SCOPE_DATA/IMD2020
+[data] imd2020 train kept=2189 dropped=21/2210 reasons=mask_area_too_small:21
+[data] imd2020 val kept=212 dropped=2/214 reasons=mask_area_too_small:2
+[data] IMD2020: train=2189 val=212 real_cases=414 splices=2010 skipped_unmasked=0
+[eval] imd2020: 212 val items
+[eval] decoder=kmeans
+[eval] processing 212 items for kmeans...
+[eval] kmeans ─── summary: n_splice=171 n_real=41 ───
+[eval] kmeans image_auc: 0.9683
+[eval] kmeans splices (all):
+[eval] kmeans all         f1: n= 171  med=0.7478  mean=0.6099±0.3431  [p25=0.2919, p75=0.9028]
+[eval] kmeans all        iou: n= 171  med=0.5971  mean=0.5198±0.3327  [p25=0.1709, p75=0.8229]
+[eval] kmeans all  precision: n= 171  med=0.7270  mean=0.5863±0.3615  [p25=0.2018, p75=0.9142]
+[eval] kmeans all     recall: n= 171  med=0.9371  mean=0.7706±0.3135  [p25=0.7025, p75=0.9751]
+[eval] kmeans splices bucket=tiny (n=92):
+[eval] kmeans bucket=tiny         f1: n=  92  med=0.6889  mean=0.5390±0.3606  [p25=0.1397, p75=0.8747]
+[eval] kmeans bucket=tiny        iou: n=  92  med=0.5255  mean=0.4516±0.3383  [p25=0.0751, p75=0.7773]
+[eval] kmeans bucket=tiny  precision: n=  92  med=0.5635  mean=0.5005±0.3704  [p25=0.0798, p75=0.8723]
+[eval] kmeans bucket=tiny     recall: n=  92  med=0.9340  mean=0.7748±0.3176  [p25=0.7193, p75=0.9776]
+[eval] kmeans splices bucket=small (n=62):
+[eval] kmeans bucket=small         f1: n=  62  med=0.8103  mean=0.7029±0.2884  [p25=0.5802, p75=0.9395]
+[eval] kmeans bucket=small        iou: n=  62  med=0.6817  mean=0.6072±0.2991  [p25=0.4088, p75=0.8859]
+[eval] kmeans bucket=small  precision: n=  62  med=0.7999  mean=0.6780±0.3118  [p25=0.4529, p75=0.9331]
+[eval] kmeans bucket=small     recall: n=  62  med=0.9452  mean=0.8019±0.2831  [p25=0.7540, p75=0.9688]
+[eval] kmeans splices bucket=medium (n=15):
+[eval] kmeans bucket=medium         f1: n=  15  med=0.7941  mean=0.6581±0.3628  [p25=0.4607, p75=0.9414]
+[eval] kmeans bucket=medium        iou: n=  15  med=0.6585  mean=0.5849±0.3536  [p25=0.3164, p75=0.8895]
+[eval] kmeans bucket=medium  precision: n=  15  med=0.9149  mean=0.6842±0.3715  [p25=0.5022, p75=0.9664]
+[eval] kmeans bucket=medium     recall: n=  15  med=0.8438  mean=0.6563±0.3755  [p25=0.3506, p75=0.9837]
+[eval] kmeans splices bucket=large (n=2):
+[eval] kmeans bucket=large         f1: n=   2  med=0.6249  mean=0.6249±0.0194  [p25=0.6152, p75=0.6346]
+[eval] kmeans bucket=large        iou: n=   2  med=0.4547  mean=0.4547±0.0205  [p25=0.4445, p75=0.4650]
+[eval] kmeans bucket=large  precision: n=   2  med=0.9586  mean=0.9586±0.0226  [p25=0.9473, p75=0.9699]
+[eval] kmeans bucket=large     recall: n=   2  med=0.4635  mean=0.4635±0.0160  [p25=0.4555, p75=0.4715]
+[eval] kmeans reals accuracy: n=  41  med=0.5089  mean=0.5498±0.1809  [p25=0.4375, p75=0.5791]
+[eval] saving flat summary to /media/ssd/runs/ablation_eval/lora_rank_sweep_e4/r012_imd/eval_summary.json
+terminate called after throwing an instance of 'c10::Error'
+  what():  op.schema().operator_name() == op_name INTERNAL ASSERT FAILED at "/pytorch/aten/src/ATen/core/dispatch/Dispatcher.cpp":268, please report a bug to PyTorch. 
+Exception raised from deregisterDef_ at /pytorch/aten/src/ATen/core/dispatch/Dispatcher.cpp:268 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0x98 (0x7f93897785e8 in /home/fri-team-4/dino_venv/lib/python3.10/site-packages/torch/lib/libc10.so)
+frame #1: c10::detail::torchCheckFail(char const*, char const*, unsigned int, char const*) + 0x6a (0x7f938970d5b6 in /home/fri-team-4/dino_venv/lib/python3.10/site-packages/torch/lib/libc10.so)
+frame #2: c10::Dispatcher::deregisterDef_(c10::OperatorHandle const&, c10::OperatorName const&) + 0x5b (0x7f937234e0cb in /home/fri-team-4/dino_venv/lib/python3.10/site-packages/torch/lib/libtorch_cpu.so)
+frame #3: <unknown function> + 0x18a9531 (0x7f937234e531 in /home/fri-team-4/dino_venv/lib/python3.10/site-packages/torch/lib/libtorch_cpu.so)
+frame #4: <unknown function> + 0x1606fe5 (0x7f93720abfe5 in /home/fri-team-4/dino_venv/lib/python3.10/site-packages/torch/lib/libtorch_cpu.so)
+frame #5: <unknown function> + 0x45495 (0x7f93bf06e495 in /lib/x86_64-linux-gnu/libc.so.6)
+frame #6: on_exit + 0 (0x7f93bf06e610 in /lib/x86_64-linux-gnu/libc.so.6)
+frame #7: <unknown function> + 0x29d97 (0x7f93bf052d97 in /lib/x86_64-linux-gnu/libc.so.6)
+frame #8: __libc_start_main + 0x80 (0x7f93bf052e40 in /lib/x86_64-linux-gnu/libc.so.6)
+frame #9: _start + 0x25 (0x55737bf0bf25 in /home/fri-team-4/dino_venv/bin/python)
+

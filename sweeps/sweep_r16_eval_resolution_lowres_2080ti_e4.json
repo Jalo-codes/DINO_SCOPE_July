@@ -1,0 +1,27 @@
+{
+  "_doc": "RANK-16 resolution eval — LOW-RES half (2080 Ti). Evaluates best.pt from each low-res rank-16 training cell. Three cells per resolution: '<res>_imd' = the FULL IMD2020 set (imd_val_split=1.0, uncapped) — the point of this rerun; '<res>_indomain' = casia+coco_inpaint+sagid capped 500/source (unchanged from the original eval so those numbers stay comparable); '<res>_tgif' = 500 items/cell on tgif2. Zoom on (two-pass), amp fp16 to match the original eval pipeline. Checkpoints read from /media/ssd/runs/ablation/res_sweep_r16/<res>/epoch_0004.pt.",
+  "base_args": {
+    "device": "cuda",
+    "amp_dtype": "float16",
+    "decoder": ["kmeans"],
+    "zoom": true,
+    "imd2020_root": "/media/ssd/DINO_SCOPE_DATA/IMD2020",
+    "casia_root": "/media/ssd/DINO_SCOPE_DATA/casia",
+    "sagid_root": "/media/ssd/DINO_SCOPE_DATA/SAGI_D",
+    "coco_inpaint_root": "/media/ssd/DINO_SCOPE_DATA/INPAINT_COCO/content/inpaint_coco/images",
+    "tgif2_root": "/media/ssd/DINO_SCOPE_DATA/content/flux_originals"
+  },
+  "runs": [
+    {"name": "res_224_imd",      "module": "experiments.scripts.eval", "args": {"checkpoint": "/media/ssd/runs/ablation/res_sweep_r16/res_224/epoch_0004.pt", "sources": ["imd2020"], "imd_val_split": 1.0}},
+    {"name": "res_224_indomain", "module": "experiments.scripts.eval", "args": {"checkpoint": "/media/ssd/runs/ablation/res_sweep_r16/res_224/epoch_0004.pt", "sources": ["casia", "coco_inpaint", "sagid"], "max_items": 500}},
+    {"name": "res_224_tgif",     "module": "experiments.scripts.eval", "args": {"checkpoint": "/media/ssd/runs/ablation/res_sweep_r16/res_224/epoch_0004.pt", "sources": ["tgif2"], "tgif_eval_per_cell": 1000}},
+
+    {"name": "res_336_imd",      "module": "experiments.scripts.eval", "args": {"checkpoint": "/media/ssd/runs/ablation/res_sweep_r16/res_336/epoch_0004.pt", "sources": ["imd2020"], "imd_val_split": 1.0}},
+    {"name": "res_336_indomain", "module": "experiments.scripts.eval", "args": {"checkpoint": "/media/ssd/runs/ablation/res_sweep_r16/res_336/epoch_0004.pt", "sources": ["casia", "coco_inpaint", "sagid"], "max_items": 500}},
+    {"name": "res_336_tgif",     "module": "experiments.scripts.eval", "args": {"checkpoint": "/media/ssd/runs/ablation/res_sweep_r16/res_336/epoch_0004.pt", "sources": ["tgif2"], "tgif_eval_per_cell": 1000}},
+
+    {"name": "res_448_imd",      "module": "experiments.scripts.eval", "args": {"checkpoint": "/media/ssd/runs/ablation/res_sweep_r16/res_448/epoch_0004.pt", "sources": ["imd2020"], "imd_val_split": 1.0}},
+    {"name": "res_448_indomain", "module": "experiments.scripts.eval", "args": {"checkpoint": "/media/ssd/runs/ablation/res_sweep_r16/res_448/epoch_0004.pt", "sources": ["casia", "coco_inpaint", "sagid"], "max_items": 500}},
+    {"name": "res_448_tgif",     "module": "experiments.scripts.eval", "args": {"checkpoint": "/media/ssd/runs/ablation/res_sweep_r16/res_448/epoch_0004.pt", "sources": ["tgif2"], "tgif_eval_per_cell": 1000}}
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "image_auc": 0.7307344494684103,
+  "f1_median": 0.25514961430872257,
+  "f1_mean": 0.4127665984704247,
+  "iou_median": 0.14623008161678974,
+  "iou_mean": 0.35352222934701877,
+  "precision_median": 0.18465493248757703,
+  "precision_mean": 0.4162115229695318,
+  "recall_median": 0.7314000130381627,
+  "recall_mean": 0.5692195901044396,
+  "reals_acc": 0.5460279516700018,
+  "bucket_tiny_f1_median": 0.02922882379752391,
+  "bucket_small_f1_median": 0.38600691927701397,
+  "bucket_medium_f1_median": 0.7181236673773987,
+  "bucket_large_f1_median": 0.7325530077234133
+}

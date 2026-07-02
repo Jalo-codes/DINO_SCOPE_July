@@ -1,0 +1,107 @@
+{
+  "_doc": "RANK-16 resolution sweep \u2014 HIGH-RES half, runs on the big boy (studentresearch2, RTX 6000 Ada 48GB, /home/studentresearch2). Same recipe as the low-res half (lora_rank 16 / alpha 32, fp32 base/amp defaults for one continuous resolution curve; per-epoch val on the default 10% IMD split \u2014 full IMD is reported only in the eval sweep). Extends the original sweep with three NEW cells above 688 (768/896/1024) that only fit in 48 GB. Effective batch 8 everywhere. The Ada has plenty of room (49 GB/card); micro-batch is raised to 8 wherever it fits to cut accum loops \u2014 375 steps/epoch is unchanged so the LR schedule is byte-identical. NOTE: while the 7B run occupies GPU 0, launch this on GPU 1 only (GPU=1). The top two cells are pinned to batch 4/ga 2 as an OOM cushion under the two-pass val-zoom spike; with GPU 1 fully free they can safely go to 8/1. Launch: GPU=1 RUNS_ROOT=/home/studentresearch2/runs/ablation bash run_scripts/run_ablation_resolution.sh (point --queue at this file).",
+  "base_args": {
+    "device": "cuda",
+    "imd2020_root": "/home/studentresearch2/DINO_SCOPE_DATA/IMD2020",
+    "casia_root": "/home/studentresearch2/DINO_SCOPE_DATA/casia",
+    "sagid_root": "/home/studentresearch2/DINO_SCOPE_DATA/SAGI_D",
+    "coco_inpaint_root": "/home/studentresearch2/DINO_SCOPE_DATA/INPAINT_COCO/content/inpaint_coco/images",
+    "tgif2_root": "/home/studentresearch2/DINO_SCOPE_DATA/content/flux_originals",
+    "casia_train": true,
+    "imd_val_only": true,
+    "lora_rank": 16,
+    "lora_alpha": 32,
+    "contrastive_dim": 64,
+    "pool_hidden": 256,
+    "lambda_image_bce": 1.0,
+    "lambda_contrastive": 2.0,
+    "paste_frac": 0.5,
+    "noise_prob": 0.8,
+    "jpeg_prob": 0.55,
+    "train_samples": 3000,
+    "num_workers": 8,
+    "num_epochs": 10,
+    "min_epochs": 5,
+    "warmup_epochs": 1.0,
+    "early_stop_patience": 2,
+    "early_stop_reduce": "mean",
+    "val_zoom": true,
+    "tgif_val_models": "flux1dev",
+    "val_per_cell": 100,
+    "max_train_epochs": 5
+  },
+  "runs": [
+    {
+      "name": "res_496",
+      "module": "experiments.scripts.train",
+      "args": {
+        "image_size": 496,
+        "batch_size": 8,
+        "grad_accum": 1
+      }
+    },
+    {
+      "name": "res_512",
+      "module": "experiments.scripts.train",
+      "args": {
+        "image_size": 512,
+        "batch_size": 8,
+        "grad_accum": 1
+      }
+    },
+    {
+      "name": "res_592",
+      "module": "experiments.scripts.train",
+      "args": {
+        "image_size": 592,
+        "batch_size": 8,
+        "grad_accum": 1
+      }
+    },
+    {
+      "name": "res_608",
+      "module": "experiments.scripts.train",
+      "args": {
+        "image_size": 608,
+        "batch_size": 8,
+        "grad_accum": 1
+      }
+    },
+    {
+      "name": "res_688",
+      "module": "experiments.scripts.train",
+      "args": {
+        "image_size": 688,
+        "batch_size": 8,
+        "grad_accum": 1
+      }
+    },
+    {
+      "name": "res_768",
+      "module": "experiments.scripts.train",
+      "args": {
+        "image_size": 768,
+        "batch_size": 8,
+        "grad_accum": 1
+      }
+    },
+    {
+      "name": "res_896",
+      "module": "experiments.scripts.train",
+      "args": {
+        "image_size": 896,
+        "batch_size": 4,
+        "grad_accum": 2
+      }
+    },
+    {
+      "name": "res_1024",
+      "module": "experiments.scripts.train",
+      "args": {
+        "image_size": 1024,
+        "batch_size": 4,
+        "grad_accum": 2
+      }
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "_doc": "Full eval on best.pt from each LoRA-rank ablation cell, with --zoom (two-pass) and the canonical eval.py defaults (attn_percentile=peak, attn_thresh_mult=0.08, attn_pad_frac=0.10, attn_min_pad_frac=0.06). Two entries per checkpoint: '<cell>_indomain' caps 500 items/source on imd2020+casia+coco_inpaint+sagid; '<cell>_tgif' caps 500 items/cell on tgif2 (no --max_items so the per-cell cap actually governs). Each entry writes eval_summary.json into <run_root>/<entry>/.",
+  "base_args": {
+    "device": "cuda",
+    "amp_dtype": "float16",
+    "decoder": ["kmeans"],
+    "zoom": true,
+    "imd2020_root": "/media/ssd/DINO_SCOPE_DATA/IMD2020",
+    "casia_root": "/media/ssd/DINO_SCOPE_DATA/casia",
+    "sagid_root": "/media/ssd/DINO_SCOPE_DATA/SAGI_D",
+    "coco_inpaint_root": "/media/ssd/DINO_SCOPE_DATA/INPAINT_COCO/content/inpaint_coco/images",
+    "tgif2_root": "/media/ssd/DINO_SCOPE_DATA/content/flux_originals"
+  },
+  "runs": [
+    {"name": "r008_indomain", "module": "experiments.scripts.eval", "args": {"checkpoint": "/media/ssd/runs/ablation/lora_rank_sweep/r008/best.pt", "sources": ["imd2020", "casia", "coco_inpaint", "sagid"], "max_items": 500}},
+    {"name": "r008_tgif",     "module": "experiments.scripts.eval", "args": {"checkpoint": "/media/ssd/runs/ablation/lora_rank_sweep/r008/best.pt", "sources": ["tgif2"], "tgif_eval_per_cell": 500}},
+    {"name": "r016_indomain", "module": "experiments.scripts.eval", "args": {"checkpoint": "/media/ssd/runs/ablation/lora_rank_sweep/r016/best.pt", "sources": ["imd2020", "casia", "coco_inpaint", "sagid"], "max_items": 500}},
+    {"name": "r016_tgif",     "module": "experiments.scripts.eval", "args": {"checkpoint": "/media/ssd/runs/ablation/lora_rank_sweep/r016/best.pt", "sources": ["tgif2"], "tgif_eval_per_cell": 500}},
+    {"name": "r032_indomain", "module": "experiments.scripts.eval", "args": {"checkpoint": "/media/ssd/runs/ablation/lora_rank_sweep/r032/best.pt", "sources": ["imd2020", "casia", "coco_inpaint", "sagid"], "max_items": 500}},
+    {"name": "r032_tgif",     "module": "experiments.scripts.eval", "args": {"checkpoint": "/media/ssd/runs/ablation/lora_rank_sweep/r032/best.pt", "sources": ["tgif2"], "tgif_eval_per_cell": 500}},
+    {"name": "r064_indomain", "module": "experiments.scripts.eval", "args": {"checkpoint": "/media/ssd/runs/ablation/lora_rank_sweep/r064/best.pt", "sources": ["imd2020", "casia", "coco_inpaint", "sagid"], "max_items": 500}},
+    {"name": "r064_tgif",     "module": "experiments.scripts.eval", "args": {"checkpoint": "/media/ssd/runs/ablation/lora_rank_sweep/r064/best.pt", "sources": ["tgif2"], "tgif_eval_per_cell": 500}},
+    {"name": "r128_indomain", "module": "experiments.scripts.eval", "args": {"checkpoint": "/media/ssd/runs/ablation/lora_rank_sweep/r128/best.pt", "sources": ["imd2020", "casia", "coco_inpaint", "sagid"], "max_items": 500}},
+    {"name": "r128_tgif",     "module": "experiments.scripts.eval", "args": {"checkpoint": "/media/ssd/runs/ablation/lora_rank_sweep/r128/best.pt", "sources": ["tgif2"], "tgif_eval_per_cell": 500}},
+    {"name": "r256_indomain", "module": "experiments.scripts.eval", "args": {"checkpoint": "/media/ssd/runs/ablation/lora_rank_sweep/r256/best.pt", "sources": ["imd2020", "casia", "coco_inpaint", "sagid"], "max_items": 500}},
+    {"name": "r256_tgif",     "module": "experiments.scripts.eval", "args": {"checkpoint": "/media/ssd/runs/ablation/lora_rank_sweep/r256/best.pt", "sources": ["tgif2"], "tgif_eval_per_cell": 500}}
+  ]
+}

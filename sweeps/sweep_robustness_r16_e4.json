@@ -1,0 +1,18 @@
+{
+  "_doc": "Robustness pass for the DEFAULT model = LoRA-rank-sweep r016 / epoch_0004.pt (448, r16) on the 2080 Ti. Evaluates every CONDITIONS level in eval_robustness.py (clean + 7 JPEG + 7 noise + 2 blur) on TGIF (all cells, 500/cell) and IMD2020 (1000). eval_robustness persists per-condition metrics into eval_summary.json, so the supplemental robustness-vs-degradation table is machine-readable; the per-TGIF-cell breakdown within each condition is captured in orchestrator.log. kmeans decoder, --zoom (two-pass), matching the rest of the suite. Checkpoint: /media/ssd/runs/ablation/lora_rank_sweep/r016/epoch_0004.pt.",
+  "base_args": {
+    "device": "cuda",
+    "amp_dtype": "float16",
+    "decoder": ["kmeans"],
+    "zoom": true,
+    "imd2020_root": "/media/ssd/DINO_SCOPE_DATA/IMD2020",
+    "tgif2_root": "/media/ssd/DINO_SCOPE_DATA/content/flux_originals",
+    "checkpoint": "/media/ssd/runs/ablation/lora_rank_sweep/r016/epoch_0004.pt"
+  },
+  "runs": [
+    {"name": "robust_tgif", "module": "experiments.scripts.eval_robustness",
+     "args": {"sources": ["tgif2"], "tgif_eval_per_cell": 500}},
+    {"name": "robust_imd",  "module": "experiments.scripts.eval_robustness",
+     "args": {"sources": ["imd2020"], "max_items": 1000}}
+  ]
+}

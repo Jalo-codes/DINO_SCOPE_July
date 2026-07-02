@@ -1,0 +1,21 @@
+{
+  "_doc": "Extended eval of the DINOv3 model-size sweep on the FIXED epoch_0004.pt for every cell, mirroring the rank-sweep e4 harness. The size cells trained to best (early-stop, no e4 cap), but they early-stop at different epochs on a shared num_epochs=10 LR schedule, so 'best.pt' would confound model size with training duration/LR-point — epoch_0004.pt fixes everyone at the same training point, apples-to-apples, and keeps the whole ablation suite (rank e4 / res e4 / deep e4) on one footing. tgif2 + imd2020 only, 1000 items each, --zoom (two-pass). '<cell>_tgif' caps 1000/cell on tgif2; '<cell>_imd' caps 1000 on imd2020 (held out via imd_val_only at train). Separate entries per source so val_sources' max_items slice does not collapse tgif. Overlay the H+/16 baseline = rank-sweep r032 cell (== res_448).",
+  "base_args": {
+    "device": "cuda",
+    "amp_dtype": "float16",
+    "decoder": ["kmeans"],
+    "zoom": true,
+    "imd2020_root": "/media/ssd/DINO_SCOPE_DATA/IMD2020",
+    "tgif2_root": "/media/ssd/DINO_SCOPE_DATA/content/flux_originals"
+  },
+  "runs": [
+    {"name": "vits16_tgif",     "module": "experiments.scripts.eval", "args": {"checkpoint": "/media/ssd/runs/ablation/model_size_sweep/vits16/epoch_0004.pt",     "sources": ["tgif2"], "tgif_eval_per_cell": 1000}},
+    {"name": "vits16_imd",      "module": "experiments.scripts.eval", "args": {"checkpoint": "/media/ssd/runs/ablation/model_size_sweep/vits16/epoch_0004.pt",     "sources": ["imd2020"], "max_items": 1000}},
+    {"name": "vits16plus_tgif", "module": "experiments.scripts.eval", "args": {"checkpoint": "/media/ssd/runs/ablation/model_size_sweep/vits16plus/epoch_0004.pt", "sources": ["tgif2"], "tgif_eval_per_cell": 1000}},
+    {"name": "vits16plus_imd",  "module": "experiments.scripts.eval", "args": {"checkpoint": "/media/ssd/runs/ablation/model_size_sweep/vits16plus/epoch_0004.pt", "sources": ["imd2020"], "max_items": 1000}},
+    {"name": "vitb16_tgif",     "module": "experiments.scripts.eval", "args": {"checkpoint": "/media/ssd/runs/ablation/model_size_sweep/vitb16/epoch_0004.pt",     "sources": ["tgif2"], "tgif_eval_per_cell": 1000}},
+    {"name": "vitb16_imd",      "module": "experiments.scripts.eval", "args": {"checkpoint": "/media/ssd/runs/ablation/model_size_sweep/vitb16/epoch_0004.pt",     "sources": ["imd2020"], "max_items": 1000}},
+    {"name": "vitl16_tgif",     "module": "experiments.scripts.eval", "args": {"checkpoint": "/media/ssd/runs/ablation/model_size_sweep/vitl16/epoch_0004.pt",     "sources": ["tgif2"], "tgif_eval_per_cell": 1000}},
+    {"name": "vitl16_imd",      "module": "experiments.scripts.eval", "args": {"checkpoint": "/media/ssd/runs/ablation/model_size_sweep/vitl16/epoch_0004.pt",     "sources": ["imd2020"], "max_items": 1000}}
+  ]
+}
