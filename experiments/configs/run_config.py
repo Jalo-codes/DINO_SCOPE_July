@@ -38,6 +38,7 @@ class RunConfig:
     bfree_root:         Optional[str] = None
     anyedit_root:       Optional[str] = None
     tgif2_root:         Optional[str] = None
+    pico_pseudo_root:   Optional[str] = None
 
     # ── Checkpoint / run dir ──────────────────────────────────────────────────
     run_dir:            Optional[str] = None
@@ -174,6 +175,7 @@ def resolve_config(args, *, hw: Optional[HardwareInfo] = None) -> RunConfig:
         bfree_root=getattr(args, 'bfree_root', None),
         anyedit_root=getattr(args, 'anyedit_root', None),
         tgif2_root=getattr(args, 'tgif2_root', None),
+        pico_pseudo_root=getattr(args, 'pico_pseudo_root', None),
         # ckpt/run dir
         run_dir=getattr(args, 'checkpoint_root', None) or getattr(args, 'run_dir', None),
         resume=getattr(args, 'resume', None),

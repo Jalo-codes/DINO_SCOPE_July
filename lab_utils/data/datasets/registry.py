@@ -37,6 +37,7 @@ REGISTRY: Dict[str, Callable] = {
     'casia':        _casia.build,
     'coco_inpaint': lambda root, **kw: _inpaint.build(root, source='coco_inpaint', **kw),
     'sagid':        lambda root, **kw: _inpaint.build(root, source='sagid', **kw),
+    'pico_pseudo':  lambda root, **kw: _inpaint.build(root, source='pico_pseudo', **kw),
     'anyedit':      _anyedit.build,
     'bfree':        _bfree.build,
     'indoor':       _indoor.build,

@@ -65,6 +65,9 @@ def _build_parser() -> argparse.ArgumentParser:
     g.add_argument('--bfree_root',        default=None)
     g.add_argument('--anyedit_root',      default=None)
     g.add_argument('--tgif2_root',        default=None)
+    g.add_argument('--pico_pseudo_root',  default=None,
+                   help='PicoBanana pseudo-mask inpaint-triplet root '
+                        '(experiments/scripts/export_pico_masks.py output)')
 
     # run management
     g = p.add_argument_group('run management')
@@ -229,6 +232,7 @@ def _build_datasets(cfg, res: Resolution):
         'bfree':        ('bfree_root',   {}),
         'anyedit':      ('anyedit_root', {}),
         'indoor':       ('indoor_root',  {}),
+        'pico_pseudo':  ('pico_pseudo_root', {}),
     }
 
     for source, (root_attr, kwargs) in source_map.items():
