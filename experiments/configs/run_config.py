@@ -71,8 +71,8 @@ class RunConfig:
                                          # trainable LoRA/head params are kept in fp32 for stable optimization regardless.
     image_size:          int   = 448
     patch_size:          int   = 16
-    lora_rank:           int   = 32   # LoRA rank; 0 = no LoRA (fully frozen backbone, heads-only training)
-    lora_alpha:          int   = 64
+    lora_rank:           int   = 16   # LoRA rank; 0 = no LoRA (fully frozen backbone, heads-only training). 16 = the "optimal" ablation-winning rank (optimal_h16plus_688_r16).
+    lora_alpha:          int   = 32   # 2x rank, matching the ablation sweep's alpha=2xrank convention
     lora_dropout:        float = 0.1
     lora_block_start:    Optional[int] = None  # adapt only blocks with index >= this (None = from block 0)
     lora_block_end:      Optional[int] = None  # adapt only blocks with index <  this (None = through last); half-open [start, end)
@@ -205,8 +205,8 @@ def resolve_config(args, *, hw: Optional[HardwareInfo] = None) -> RunConfig:
         base_dtype=getattr(args, 'base_dtype', 'fp32'),
         image_size=getattr(args, 'image_size', 448),
         patch_size=getattr(args, 'patch_size', 16),
-        lora_rank=getattr(args, 'lora_rank', 32),
-        lora_alpha=getattr(args, 'lora_alpha', 64),
+        lora_rank=getattr(args, 'lora_rank', 16),
+        lora_alpha=getattr(args, 'lora_alpha', 32),
         lora_dropout=getattr(args, 'lora_dropout', 0.1),
         lora_block_start=getattr(args, 'lora_block_start', None),
         lora_block_end=getattr(args, 'lora_block_end', None),

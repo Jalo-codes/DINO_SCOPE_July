@@ -120,9 +120,11 @@ def _build_parser() -> argparse.ArgumentParser:
                         'do NOT combine with a large micro-batch — the val-zoom pass will OOM.')
     g.add_argument('--image_size',      type=int,   default=448)
     g.add_argument('--patch_size',      type=int,   default=16)
-    g.add_argument('--lora_rank',       type=int,   default=32,
-                   help='LoRA rank. 0 disables LoRA (fully frozen backbone, heads-only).')
-    g.add_argument('--lora_alpha',      type=int,   default=64)
+    g.add_argument('--lora_rank',       type=int,   default=16,
+                   help='LoRA rank. 0 disables LoRA (fully frozen backbone, heads-only). '
+                        'Default 16 = the ablation-winning "optimal" rank (optimal_h16plus_688_r16).')
+    g.add_argument('--lora_alpha',      type=int,   default=32,
+                   help='2x lora_rank by convention (matches the ablation sweep).')
     g.add_argument('--lora_dropout',    type=float, default=0.1)
     g.add_argument('--lora_block_start', type=int,  default=None,
                    help='Adapt only transformer blocks with index >= this (None = from 0)')
