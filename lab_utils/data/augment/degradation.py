@@ -29,6 +29,68 @@ from lab_utils.data.resolution import Resolution
 
 
 # ---------------------------------------------------------------------------
+# Severity tiers — bundle firing probability + corruption strength into one
+# named preset, so callers set a single knob instead of tuning probability
+# and severity ranges independently (which invites accidentally strong
+# severity at low probability, or the reverse).
+# ---------------------------------------------------------------------------
+
+SEVERITY_TIERS: Dict[str, Dict[str, Any]] = {
+    # 'light' fires the heavy harness 0% of the time — caller falls back to
+    # the mild default appearance stage (jpeg/noise/resize jitter only).
+    'light': {
+        'prob': 0.0,
+        'sampler_kwargs': {},
+    },
+    'medium': {
+        'prob': 0.35,
+        'sampler_kwargs': dict(
+            jpeg_q_min=55, jpeg_q_max=80,
+            gaussian_std_min=0.04, gaussian_std_max=0.12,
+            resize_min=0.70, resize_max=0.92,
+            poisson_peak_choices=(32, 48, 64, 96),
+        ),
+    },
+    'heavy': {
+        'prob': 0.65,
+        # == sample_corruption_spec's own module defaults.
+        'sampler_kwargs': dict(
+            jpeg_q_min=35, jpeg_q_max=65,
+            gaussian_std_min=0.10, gaussian_std_max=0.30,
+            resize_min=0.55, resize_max=0.90,
+            poisson_peak_choices=(16, 24, 32, 48, 64, 96),
+        ),
+    },
+    'extreme': {
+        'prob': 0.90,
+        'sampler_kwargs': dict(
+            jpeg_q_min=15, jpeg_q_max=45,
+            gaussian_std_min=0.20, gaussian_std_max=0.45,
+            resize_min=0.35, resize_max=0.65,
+            poisson_peak_choices=(8, 12, 16, 24, 32),
+        ),
+    },
+}
+
+
+def resolve_severity(tier: str) -> Tuple[float, Dict[str, Any]]:
+    """Look up (prob, sampler_kwargs) for a named severity tier.
+
+    sampler_kwargs is forwarded to build_degradation_example's
+    **sampler_kwargs (-> sample_corruption_spec), overriding its jpeg/
+    gaussian/resize/poisson ranges. double_jpeg ranges are left at module
+    defaults across all tiers.
+    """
+    if tier not in SEVERITY_TIERS:
+        raise ValueError(
+            f"resolve_severity: unknown tier {tier!r}, "
+            f"expected one of {sorted(SEVERITY_TIERS)}"
+        )
+    spec = SEVERITY_TIERS[tier]
+    return float(spec['prob']), dict(spec['sampler_kwargs'])
+
+
+# ---------------------------------------------------------------------------
 # Internal helpers (all torch-free)
 # ---------------------------------------------------------------------------
 

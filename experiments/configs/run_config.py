@@ -98,8 +98,7 @@ class RunConfig:
     train_crop_max:          float = 1.00
     train_crop_ratio_min:    float = 0.60
     train_crop_ratio_max:    float = 1.70
-    use_splice_degradation:  bool  = False
-    use_real_degradation:    Optional[bool] = None
+    aug_severity:            str   = 'light'  # light|medium|heavy|extreme (prob+strength preset)
     paste_frac:              float = 0.40   # inpaint paste-back prob == sp share (rest = fr)
     noise_prob:              Optional[float] = None
     jpeg_prob:               Optional[float] = None
@@ -230,8 +229,7 @@ def resolve_config(args, *, hw: Optional[HardwareInfo] = None) -> RunConfig:
         train_crop_max=getattr(args, 'train_crop_max', 1.00),
         train_crop_ratio_min=getattr(args, 'train_crop_ratio_min', 0.60),
         train_crop_ratio_max=getattr(args, 'train_crop_ratio_max', 1.70),
-        use_splice_degradation=getattr(args, 'use_splice_degradation', False),
-        use_real_degradation=getattr(args, 'use_real_degradation', None),
+        aug_severity=getattr(args, 'aug_severity', 'light'),
         paste_frac=getattr(args, 'paste_frac', 0.40),
         noise_prob=getattr(args, 'noise_prob', None),
         jpeg_prob=getattr(args, 'jpeg_prob', None),

@@ -31,6 +31,7 @@ import torch
 from experiments.configs.run_config import from_dict, resolve_config, to_dict
 from lab_utils.data.dataset import Dataset, lab_collate_fn
 from lab_utils.data.datasets.registry import REGISTRY
+from lab_utils.data.augment.degradation import resolve_severity
 from lab_utils.data.resolution import Resolution
 from lab_utils.logging.run_config import log_run_config
 from lab_utils.logging.text import log_line
@@ -157,9 +158,17 @@ def _build_parser() -> argparse.ArgumentParser:
     g.add_argument('--train_crop_max',         type=float, default=1.00)
     g.add_argument('--train_crop_ratio_min',   type=float, default=0.60)
     g.add_argument('--train_crop_ratio_max',   type=float, default=1.70)
-    g.add_argument('--use_splice_degradation', action='store_true')
-    g.add_argument('--use_real_degradation',   type=lambda x: x.lower() == 'true',
-                   default=None)
+    g.add_argument('--aug_severity',           choices=['light', 'medium', 'heavy', 'extreme'],
+                   default='light',
+                   help='Preset bundling BOTH how often the appearance stage '
+                        'is replaced by heavy multi-region corruption (jpeg/'
+                        'gaussian/resize/poisson) AND how strong that '
+                        'corruption is, applied identically to real and '
+                        'splice/fake items. light=off (today\'s mild jpeg/'
+                        'noise/resize jitter only, prob=0.0); medium/heavy/'
+                        'extreme progressively raise both fire-probability '
+                        '(0.35/0.65/0.90) and corruption strength. See '
+                        'lab_utils/data/augment/degradation.py SEVERITY_TIERS.')
     g.add_argument('--paste_frac',             type=float, default=0.40,
                    help='Per-item paste-back probability for inpaint items == the '
                         '"sp" share; the rest keep the whole-image diffusion '
@@ -329,7 +338,15 @@ def _build_datasets(cfg, res: Resolution):
         paste_frac=cfg.paste_frac,
         edge_crop_frac=cfg.edge_crop_frac,
         light_aug_kwargs=train_light_aug if train_light_aug else None,
+        aug_severity=cfg.aug_severity,
     )
+    if cfg.aug_severity != 'light':
+        _sev_prob, _ = resolve_severity(cfg.aug_severity)
+        log_line(
+            f'[data] aug_severity={cfg.aug_severity} prob={_sev_prob:.2f} '
+            f'(replaces light appearance stage per-item when it fires, '
+            f'same treatment for real and splice/fake items)'
+        )
     # val keeps paste_frac=1.0 (always paste → all-sp) so per-source val metrics
     # stay comparable across runs and aren't perturbed by the fr/sp mix knob.
     # edge_crop_frac still applies — the border trim is a fixed preprocessing

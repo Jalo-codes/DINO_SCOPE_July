@@ -49,6 +49,7 @@ from lab_utils.data.augment.light import (
     apply_flip_h,
 )
 from lab_utils.data.augment.composite import paste_real_background
+from lab_utils.data.augment.degradation import build_degradation_example, resolve_severity
 from lab_utils.errors import DataError
 
 
@@ -115,6 +116,22 @@ class Dataset(TorchDataset):
                             whole-image diffusion fingerprint (fr). 1.0 = always
                             paste; e.g. 0.40 → 40% sp / 60% fr.
         light_aug_kwargs:   Override appearance aug probabilities / ranges.
+        aug_severity:       One of 'light' | 'medium' | 'heavy' | 'extreme'
+                            (see augment/degradation.py SEVERITY_TIERS).
+                            Bundles BOTH how often the appearance stage is
+                            replaced by heavy multi-region corruption AND how
+                            strong that corruption is, into one preset —
+                            applied identically to real and splice/fake items
+                            (no real/splice asymmetry, so corruption presence
+                            can never become a real/fake shortcut). 'light'
+                            (default) never fires the heavy path — falls back
+                            to the mild default appearance stage, i.e. prior
+                            behavior. Only the degraded IMAGE is used; its
+                            region mask/labels are discarded since this
+                            Dataset has no separate noise-supervision head.
+        degradation_kwargs: Override the tier's sampler_kwargs (jpeg/gaussian/
+                            resize/poisson ranges forwarded to
+                            build_degradation_example).
         deterministic_seed: Seed base for reproducible eval augmentation.
     """
 
@@ -137,6 +154,8 @@ class Dataset(TorchDataset):
         paste_background: bool = True,
         paste_frac: float = 1.0,
         light_aug_kwargs: Optional[Dict[str, Any]] = None,
+        aug_severity: str = 'light',
+        degradation_kwargs: Optional[Dict[str, Any]] = None,
         deterministic_seed: int = 0,
     ):
         self.items              = list(items)
@@ -155,6 +174,10 @@ class Dataset(TorchDataset):
         self.lak                = dict(_DEFAULT_LIGHT_AUG)
         if light_aug_kwargs:
             self.lak.update(light_aug_kwargs)
+        self.aug_severity = str(aug_severity)
+        self._severity_prob, self._severity_kwargs = resolve_severity(self.aug_severity)
+        if degradation_kwargs:
+            self._severity_kwargs = {**self._severity_kwargs, **degradation_kwargs}
         self.deterministic_seed = int(deterministic_seed)
         self.normalize          = transforms.Normalize(
             list(normalize_mean), list(normalize_std)
@@ -335,8 +358,15 @@ class Dataset(TorchDataset):
         is_supervised = (not item.is_real) and crop_valid
 
         # ── Appearance stage (train only) ─────────────────────────────────────
+        # Same treatment for real and splice/fake items — no is_real branch —
+        # so corruption presence itself can never become a real/fake shortcut.
         if self.augment:
-            out_img = self._appearance_stage(out_img)
+            if self._severity_prob > 0.0 and random.random() < self._severity_prob:
+                out_img = build_degradation_example(
+                    out_img, self.res, **self._severity_kwargs
+                ).image
+            else:
+                out_img = self._appearance_stage(out_img)
 
         # ── Tensorize ─────────────────────────────────────────────────────────
         img_t = self.normalize(TF.to_tensor(out_img))
