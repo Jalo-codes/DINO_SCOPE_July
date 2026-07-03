@@ -9,6 +9,7 @@ Public surface:
     build_scheduler(optimizer, *, cfg, steps_per_epoch) → SequentialLR / CosineAnnealingLR
     run_train_epoch(model, loader, optimizer, scaler, scheduler, *, epoch, cfg, device, ctx) → dict
     run_val_eval(model, val_items, res, *, device, cfg, log_tag) → (List[EvalRecord], Optional[float])
+    run_epoch_viz(model, val_items, res, *, device, cfg, epoch, run_dir, n) → None
 """
 
 import math
@@ -389,3 +390,91 @@ def _image_auc(records: List[EvalRecord]) -> Optional[float]:
     fpr   = np.cumsum(1 - sl) / n_neg
     auc   = float(trapz(tpr, fpr))
     return 1.0 + auc if auc < 0 else auc
+
+
+def run_epoch_viz(
+    model: torch.nn.Module,
+    val_items: List[Item],
+    res: Resolution,
+    *,
+    device: torch.device,
+    cfg,
+    epoch: int,
+    run_dir: str,
+    n: int = 15,
+    seed: int = 42,
+    decoder: str = 'auto',
+    log_tag: str = '[viz]',
+) -> None:
+    """Save (and, in a notebook, inline-display) a fixed sample of n splice
+    items each epoch: input | predicted mask | attention | derived GT mask.
+
+    The sample is chosen ONCE (seeded, from val_items' splice subset) and
+    reused every epoch — the point is watching the same hard cases evolve
+    across training, not a fresh random draw each time. Figures are written
+    to run_dir/viz/epoch_{epoch:04d}/{item_id}.png regardless of frontend;
+    inline display is opportunistic (no-op outside a notebook/graphics TTY).
+
+    Uses the flat (non-zoom) single-pass prediction — mirrors run_val_eval's
+    non-zoom branch, kept flat here for speed since this runs every epoch.
+    """
+    from pathlib import Path
+
+    from experiments.labs.viz import display_image_inline, plot_prediction
+    from lab_utils.eval.preprocess import load_image_tensor
+    from lab_utils.train.distributed import unwrap_model
+
+    bare_model = unwrap_model(model)
+    bare_model.eval()
+
+    has_contrastive = cfg.contrastive_dim > 0
+    has_patch_bce   = cfg.patch_bce
+    if decoder == 'auto':
+        decoder = 'kmeans' if has_contrastive else ('threshold' if has_patch_bce else 'none')
+
+    splices = [it for it in val_items if not it.is_real]
+    if not splices:
+        log_line(f'{log_tag} no splice items in val set — skipping')
+        return
+    sample = random.Random(seed).sample(splices, k=min(n, len(splices)))
+
+    out_dir = Path(run_dir) / 'viz' / f'epoch_{epoch:04d}'
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    import matplotlib.pyplot as plt
+
+    n_shown = 0
+    for item in sample:
+        try:
+            img_tensor, img_pil = load_image_tensor(item, res, device=device, return_pil=True)
+            info = model_info(bare_model, img_tensor, device=device, amp=cfg.use_amp)
+
+            if decoder == 'none':
+                n_side = info.grid_hw[0]
+                patch_mask = np.zeros((n_side, n_side), dtype=bool)
+            elif decoder == 'kmeans':
+                patch_mask = decode_kmeans(info)
+            elif decoder == 'threshold':
+                patch_mask = decode_threshold(info)
+            else:
+                raise ValueError(f'run_epoch_viz: unknown decoder {decoder!r}')
+
+            gt_mask = None
+            if item.mask is not None:
+                from PIL import Image as PILImage
+                gt_mask = np.asarray(PILImage.open(item.mask).convert('L')) > 127
+
+            fig = plot_prediction(
+                img_pil, patch_mask, info,
+                title=f'{item.item_id}  epoch={epoch}  decoder={decoder}',
+                gt_mask=gt_mask,
+            )
+            safe_name = item.item_id.replace('/', '_').replace(' ', '_')
+            fig.savefig(out_dir / f'{safe_name}.png', dpi=110, bbox_inches='tight')
+            display_image_inline(fig)
+            plt.close(fig)
+            n_shown += 1
+        except Exception as exc:
+            log_line(f'{log_tag} WARN: skipped item={item.item_id}: {exc}')
+
+    log_line(f'{log_tag} epoch={epoch} wrote {n_shown}/{len(sample)} figures -> {out_dir}')

@@ -41,6 +41,7 @@ from lab_utils.train.hardware import resolve_hardware
 from lab_utils.train.loop import (
     build_optimizer,
     build_scheduler,
+    run_epoch_viz,
     run_train_epoch,
     run_val_eval,
 )
@@ -196,6 +197,13 @@ def _build_parser() -> argparse.ArgumentParser:
     g.add_argument('--tgif_val_models', default=None,
                    help='Comma-separated generators to keep in TGIF per-epoch val '
                         "(e.g. 'flux1dev,flux1filldev'); reals always kept. Default: all")
+    g.add_argument('--viz_every_epoch', action=argparse.BooleanOptionalAction, default=False,
+                   help='Save (+ inline-display in a notebook) input/prediction/attention/GT '
+                        'figures for a fixed splice-item sample every epoch (lab_utils.train.loop.'
+                        'run_epoch_viz). Off by default — meant for small exploratory runs, not '
+                        'full sweeps, where per-epoch figure I/O would just be noise.')
+    g.add_argument('--viz_n', type=int, default=15,
+                   help='Number of (fixed, seeded) splice items to visualize per epoch')
 
     return p
 
@@ -538,6 +546,13 @@ def main() -> None:
                     reduce_fn = np.mean if cfg.early_stop_reduce == 'mean' else np.median
                     val_metric = float(reduce_fn([r.f1 for r in splice_records]))
                     log_line(f'[eval] epoch={epoch} {metric_label}={val_metric:.4f}')
+
+            if cfg.viz_every_epoch:
+                run_epoch_viz(
+                    model, val_ds.items, res,
+                    device=device, cfg=cfg, epoch=epoch,
+                    run_dir=cfg.run_dir, n=cfg.viz_n,
+                )
 
         # ── Checkpoint + early stop ───────────────────────────────────────────
         is_best = val_metric >= best_metric + cfg.early_stop_min_delta

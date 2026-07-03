@@ -119,6 +119,8 @@ class RunConfig:
     val_zoom_pad_frac:   Optional[float] = None  # area-based crop pad (frame fraction/side); None = legacy patch pad
     val_zoom_min_area:   float         = 0.0    # with val_zoom_pad_frac: floor padded crop to this frame-area fraction
     tgif_val_models:     Optional[Tuple[str, ...]] = None  # restrict tgif per-epoch val to these generators
+    viz_every_epoch:     bool          = False   # save+display a fixed splice-item sample every epoch (lab_utils.train.loop.run_epoch_viz)
+    viz_n:               int           = 15      # number of fixed, seeded splice items to visualize per epoch
     tgif_types:          Optional[tuple] = None # restrict TGIF to these manip types ('sp','fr'); None = all
     tgif_eval_decoders:  Tuple[str, ...] = ('kmeans', 'hdbscan')
     primary_surface:     str           = 'imd'  # early-stop driver surface: 'imd' (OOD) or 'tgif' (in-domain)
@@ -249,6 +251,8 @@ def resolve_config(args, *, hw: Optional[HardwareInfo] = None) -> RunConfig:
         ),
         tgif_types=(tuple(getattr(args, 'tgif_types')) if getattr(args, 'tgif_types', None) else None),
         primary_surface=getattr(args, 'primary_surface', 'imd'),
+        viz_every_epoch=getattr(args, 'viz_every_epoch', False),
+        viz_n=getattr(args, 'viz_n', 15),
         tgif_eval_decoders=tuple(getattr(args, 'val_decoders', None) or ('kmeans', 'hdbscan')),
         # hardware (from resolved HardwareInfo)
         device=hw_device,
