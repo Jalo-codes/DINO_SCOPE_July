@@ -168,6 +168,11 @@ def _build_parser() -> argparse.ArgumentParser:
     g.add_argument('--jpeg_prob',              type=float, default=None)
     g.add_argument('--whole_corrupt_prob',     type=float, default=0.0)
     g.add_argument('--oracle_crop',            action='store_true')
+    g.add_argument('--edge_crop_frac',         type=float, default=0.0,
+                   help='Fixed border trim applied to every image/mask (train '
+                        'AND val) before augmentation, e.g. 0.05 removes a '
+                        '5%%-wide border on all four sides. Training-time '
+                        'analog of predict.py/export_pico_masks.py crop_frac.')
 
     # hardware
     g = p.add_argument_group('hardware')
@@ -322,11 +327,14 @@ def _build_datasets(cfg, res: Resolution):
         crop_ratio=(cfg.train_crop_ratio_min, cfg.train_crop_ratio_max),
         oracle_crop=cfg.oracle_crop,
         paste_frac=cfg.paste_frac,
+        edge_crop_frac=cfg.edge_crop_frac,
         light_aug_kwargs=train_light_aug if train_light_aug else None,
     )
     # val keeps paste_frac=1.0 (always paste → all-sp) so per-source val metrics
     # stay comparable across runs and aren't perturbed by the fr/sp mix knob.
-    val_ds = Dataset(val_items, res, augment=False)
+    # edge_crop_frac still applies — the border trim is a fixed preprocessing
+    # normalization, not part of the fr/sp augmentation knob.
+    val_ds = Dataset(val_items, res, augment=False, edge_crop_frac=cfg.edge_crop_frac)
     return train_ds, val_ds
 
 

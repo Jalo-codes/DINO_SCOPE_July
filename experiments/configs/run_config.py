@@ -105,6 +105,7 @@ class RunConfig:
     jpeg_prob:               Optional[float] = None
     whole_corrupt_prob:      float = 0.0
     oracle_crop:             bool  = False
+    edge_crop_frac:          float = 0.0   # fixed border trim (train AND val) before augmentation
 
     # ── Recipe (which train harness produced this run) ─────────────────────────
     # 'standard' = experiments/scripts/train.py.  'tgif_finetune' = the isolated
@@ -236,6 +237,7 @@ def resolve_config(args, *, hw: Optional[HardwareInfo] = None) -> RunConfig:
         jpeg_prob=getattr(args, 'jpeg_prob', None),
         whole_corrupt_prob=getattr(args, 'whole_corrupt_prob', 0.0),
         oracle_crop=getattr(args, 'oracle_crop', False),
+        edge_crop_frac=getattr(args, 'edge_crop_frac', 0.0),
         # recipe / tgif-finetune
         recipe=getattr(args, 'recipe', 'standard'),
         init_checkpoint=getattr(args, 'init_checkpoint', None),

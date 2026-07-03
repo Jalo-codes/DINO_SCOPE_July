@@ -285,6 +285,11 @@ def run_val_eval(
     bare_model = unwrap_model(model)
     bare_model.eval()
 
+    # Must match the training Dataset's edge_crop_frac (§lab_utils.data.dataset)
+    # or the model is trained on cropped-then-resized images but scored here on
+    # uncropped-then-resized ones — a real geometry mismatch, not cosmetic.
+    edge_crop_frac = float(getattr(cfg, 'edge_crop_frac', 0.0) or 0.0)
+
     has_contrastive = cfg.contrastive_dim > 0
     has_patch_bce   = cfg.patch_bce
 
@@ -308,6 +313,11 @@ def run_val_eval(
     if zoom_val:
         from experiments.labs.attention_zoom import attention_zoom_single
         log_line(f'{log_tag} val zoom ON (two-pass, decoder={decoder})')
+        if edge_crop_frac:
+            log_line(f'{log_tag} WARN: edge_crop_frac={edge_crop_frac} is NOT applied on the '
+                     f'val_zoom path (attention_zoom_single loads its own crop internally) — '
+                     f'use --no-val_zoom for an apples-to-apples per-epoch metric while training '
+                     f'with a border crop')
 
     import dataclasses
 
@@ -331,7 +341,13 @@ def run_val_eval(
                 records.append(_tag_subgroup(rec, item))
                 continue
 
-            img_tensor = load_image_tensor(item, res, device=device)
+            img_src = item
+            if edge_crop_frac:
+                from PIL import Image as PILImage
+
+                from lab_utils.data.dataset import _crop_edges
+                img_src = _crop_edges(PILImage.open(item.image).convert('RGB'), edge_crop_frac)
+            img_tensor = load_image_tensor(img_src, res, device=device)
             info = model_info(bare_model, img_tensor, device=device, amp=use_amp)
 
             if decoder == 'none':
@@ -427,6 +443,12 @@ def run_epoch_viz(
     bare_model = unwrap_model(model)
     bare_model.eval()
 
+    # Must match the training Dataset's edge_crop_frac, and applied to the GT
+    # mask too — otherwise the predicted overlay (aligned to the cropped-then-
+    # resized image) would be shown against a GT mask still in full-frame
+    # coordinates and visibly misaligned.
+    edge_crop_frac = float(getattr(cfg, 'edge_crop_frac', 0.0) or 0.0)
+
     has_contrastive = cfg.contrastive_dim > 0
     has_patch_bce   = cfg.patch_bce
     if decoder == 'auto':
@@ -446,7 +468,13 @@ def run_epoch_viz(
     n_shown = 0
     for item in sample:
         try:
-            img_tensor, img_pil = load_image_tensor(item, res, device=device, return_pil=True)
+            from lab_utils.data.dataset import _crop_edges
+
+            img_src = item
+            if edge_crop_frac:
+                from PIL import Image as PILImage
+                img_src = _crop_edges(PILImage.open(item.image).convert('RGB'), edge_crop_frac)
+            img_tensor, img_pil = load_image_tensor(img_src, res, device=device, return_pil=True)
             info = model_info(bare_model, img_tensor, device=device, amp=cfg.use_amp)
 
             if decoder == 'none':
@@ -462,7 +490,10 @@ def run_epoch_viz(
             gt_mask = None
             if item.mask is not None:
                 from PIL import Image as PILImage
-                gt_mask = np.asarray(PILImage.open(item.mask).convert('L')) > 127
+                gt_pil = PILImage.open(item.mask).convert('L')
+                if edge_crop_frac:
+                    gt_pil = _crop_edges(gt_pil, edge_crop_frac)
+                gt_mask = np.asarray(gt_pil) > 127
 
             fig = plot_prediction(
                 img_pil, patch_mask, info,

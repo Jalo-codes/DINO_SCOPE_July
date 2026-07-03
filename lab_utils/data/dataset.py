@@ -65,6 +65,17 @@ _DEFAULT_LIGHT_AUG = dict(
 )
 
 
+def _crop_edges(img: Image.Image, frac: float) -> Image.Image:
+    """Crop `frac` off each of the four edges (e.g. 0.05 removes a 5%-wide
+    border). Mirrors predict.py / dino_diff_lab.py / export_pico_masks.py's
+    identically-named helper — same operation, applied here at training time."""
+    if not frac:
+        return img
+    w, h = img.size
+    dx, dy = int(round(w * frac)), int(round(h * frac))
+    return img.crop((dx, dy, w - dx, h - dy))
+
+
 class Dataset(TorchDataset):
     """General-purpose dataset for all DINO_SCOPE experiments.
 
@@ -83,6 +94,14 @@ class Dataset(TorchDataset):
         crop_max_tries:     Max random crop attempts before fallback.
         min_mask_area_frac: Minimum foreground fraction in crop to accept as
                             supervised for a splice item.
+        edge_crop_frac:     Fixed border trim applied to EVERY item before any
+                            other stage (e.g. 0.05 removes a 5%-wide border on
+                            all four sides). Applied identically to img, mask,
+                            and the pristine background used for paste
+                            compositing, so alignment is preserved — this is
+                            the training-time analog of predict.py/
+                            export_pico_masks.py's crop_frac, for sources with
+                            an upload/encode artifact right at the frame edge.
         oracle_crop:        If True, use oracle_mask_crop as the crop fallback
                             for splice items that random crops can't surface
                             (train-only; I1 controlled).
@@ -111,6 +130,7 @@ class Dataset(TorchDataset):
         crop_ratio: Tuple[float, float] = (0.60, 1.70),
         crop_max_tries: int = 24,
         min_mask_area_frac: float = 0.03,
+        edge_crop_frac: float = 0.0,
         oracle_crop: bool = False,
         oracle_target_cov: Tuple[float, float] = (0.10, 0.40),
         flip_prob: float = 0.50,
@@ -126,6 +146,7 @@ class Dataset(TorchDataset):
         self.crop_ratio         = tuple(crop_ratio)
         self.crop_max_tries     = int(crop_max_tries)
         self.min_mask_area_frac = float(min_mask_area_frac)
+        self.edge_crop_frac     = float(edge_crop_frac)
         self.oracle_crop        = bool(oracle_crop)
         self.oracle_target_cov  = tuple(oracle_target_cov)
         self.flip_prob          = float(flip_prob)
@@ -279,6 +300,16 @@ class Dataset(TorchDataset):
         mask = (Image.open(item.mask).convert('L')
                 if item.mask is not None else None)
 
+        # ── Pre-stage: fixed border trim (every item, before anything else) ────
+        # Applied to img/mask/real identically so paste-compositing below stays
+        # pixel-aligned (paste_real_background resizes real ONLY if its size
+        # differs from img's — cropping all three by the same frac keeps their
+        # sizes equal, so that resize is a no-op rather than a distorting one).
+        if self.edge_crop_frac:
+            img = _crop_edges(img, self.edge_crop_frac)
+            if mask is not None:
+                mask = _crop_edges(mask, self.edge_crop_frac)
+
         # ── Pre-stage: composite (inpaint items only) ─────────────────────────
         # Paste the pristine original over the un-manipulated background so that
         # only the inpainted region differs from the original.  This restricts
@@ -291,6 +322,8 @@ class Dataset(TorchDataset):
         if (self.paste_background and real_path is not None and mask is not None
                 and random.random() < self.paste_frac):
             real = Image.open(real_path).convert('RGB')
+            if self.edge_crop_frac:
+                real = _crop_edges(real, self.edge_crop_frac)
             img  = paste_real_background(img, real, mask)
 
         # ── Geometric stage ───────────────────────────────────────────────────
