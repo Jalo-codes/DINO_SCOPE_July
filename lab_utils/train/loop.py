@@ -418,11 +418,12 @@ def run_epoch_viz(
     epoch: int,
     run_dir: str,
     n: int = 15,
+    per_source: Optional[Dict[str, int]] = None,
     seed: int = 42,
     decoder: str = 'auto',
     log_tag: str = '[viz]',
 ) -> None:
-    """Save (and, in a notebook, inline-display) a fixed sample of n splice
+    """Save (and, in a notebook, inline-display) a fixed sample of splice
     items each epoch: input | predicted mask | attention | derived GT mask.
 
     The sample is chosen ONCE (seeded, from val_items' splice subset) and
@@ -430,6 +431,11 @@ def run_epoch_viz(
     across training, not a fresh random draw each time. Figures are written
     to run_dir/viz/epoch_{epoch:04d}/{item_id}.png regardless of frontend;
     inline display is opportunistic (no-op outside a notebook/graphics TTY).
+
+    With per_source (e.g. {'pico_pseudo': 35}), the sample is stratified: each
+    listed source gets exactly its count (capped by that source's pool size),
+    and any val sources NOT listed are pooled and topped up to n. Without
+    per_source, it's a flat random sample of n across all splice items.
 
     Uses the flat (non-zoom) single-pass prediction — mirrors run_val_eval's
     non-zoom branch, kept flat here for speed since this runs every epoch.
@@ -458,7 +464,28 @@ def run_epoch_viz(
     if not splices:
         log_line(f'{log_tag} no splice items in val set — skipping')
         return
-    sample = random.Random(seed).sample(splices, k=min(n, len(splices)))
+
+    rng = random.Random(seed)
+    if per_source:
+        sample = []
+        stratified_ids = set()
+        for src, k in per_source.items():
+            pool = [it for it in splices if it.source == src]
+            if len(pool) < k:
+                log_line(f'{log_tag} WARNING: viz_per_source[{src}]={k} but only '
+                          f'{len(pool)} splice items available — taking all of them')
+            picked = rng.sample(pool, k=min(k, len(pool)))
+            sample.extend(picked)
+            stratified_ids.update(id(it) for it in picked)
+        remainder_pool = [
+            it for it in splices
+            if id(it) not in stratified_ids and it.source not in per_source
+        ]
+        sample.extend(rng.sample(remainder_pool, k=min(n, len(remainder_pool))))
+        log_line(f'{log_tag} stratified sample: {per_source} + '
+                  f'{min(n, len(remainder_pool))} pooled from other sources')
+    else:
+        sample = rng.sample(splices, k=min(n, len(splices)))
 
     out_dir = Path(run_dir) / 'viz' / f'epoch_{epoch:04d}'
     out_dir.mkdir(parents=True, exist_ok=True)

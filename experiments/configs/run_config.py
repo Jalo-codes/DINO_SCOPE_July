@@ -104,7 +104,7 @@ class RunConfig:
     jpeg_prob:               Optional[float] = None
     whole_corrupt_prob:      float = 0.0
     oracle_crop:             bool  = False
-    edge_crop_frac:          float = 0.0   # fixed border trim (train AND val) before augmentation
+    edge_crop_frac:          float = 0.05  # fixed border trim (train AND val) before augmentation — matches export_pico_masks.py crop_frac default
 
     # ── Recipe (which train harness produced this run) ─────────────────────────
     # 'standard' = experiments/scripts/train.py.  'tgif_finetune' = the isolated
@@ -121,6 +121,7 @@ class RunConfig:
     tgif_val_models:     Optional[Tuple[str, ...]] = None  # restrict tgif per-epoch val to these generators
     viz_every_epoch:     bool          = False   # save+display a fixed splice-item sample every epoch (lab_utils.train.loop.run_epoch_viz)
     viz_n:               int           = 15      # number of fixed, seeded splice items to visualize per epoch
+    viz_per_source:      Optional[Dict[str, int]] = None  # {source: n} stratified viz counts; unlisted val sources pooled and sampled up to viz_n
     tgif_types:          Optional[tuple] = None # restrict TGIF to these manip types ('sp','fr'); None = all
     tgif_eval_decoders:  Tuple[str, ...] = ('kmeans', 'hdbscan')
     primary_surface:     str           = 'imd'  # early-stop driver surface: 'imd' (OOD) or 'tgif' (in-domain)
@@ -152,6 +153,14 @@ def resolve_config(args, *, hw: Optional[HardwareInfo] = None) -> RunConfig:
         for tok in pairs:
             src, _, frac = tok.partition('=')
             splice_mix[src.strip()] = float(frac)
+
+    viz_per_source: Optional[Dict[str, int]] = None
+    if getattr(args, 'viz_per_source', None):
+        pairs = args.viz_per_source if isinstance(args.viz_per_source, list) else [args.viz_per_source]
+        viz_per_source = {}
+        for tok in pairs:
+            src, _, n = tok.partition('=')
+            viz_per_source[src.strip()] = int(n)
 
     hw_device    = hw.device      if hw else getattr(args, 'device', 'cpu')
     hw_use_amp   = hw.use_amp     if hw else False
@@ -235,7 +244,7 @@ def resolve_config(args, *, hw: Optional[HardwareInfo] = None) -> RunConfig:
         jpeg_prob=getattr(args, 'jpeg_prob', None),
         whole_corrupt_prob=getattr(args, 'whole_corrupt_prob', 0.0),
         oracle_crop=getattr(args, 'oracle_crop', False),
-        edge_crop_frac=getattr(args, 'edge_crop_frac', 0.0),
+        edge_crop_frac=getattr(args, 'edge_crop_frac', 0.05),
         # recipe / tgif-finetune
         recipe=getattr(args, 'recipe', 'standard'),
         init_checkpoint=getattr(args, 'init_checkpoint', None),
@@ -253,6 +262,7 @@ def resolve_config(args, *, hw: Optional[HardwareInfo] = None) -> RunConfig:
         primary_surface=getattr(args, 'primary_surface', 'imd'),
         viz_every_epoch=getattr(args, 'viz_every_epoch', False),
         viz_n=getattr(args, 'viz_n', 15),
+        viz_per_source=viz_per_source,
         tgif_eval_decoders=tuple(getattr(args, 'val_decoders', None) or ('kmeans', 'hdbscan')),
         # hardware (from resolved HardwareInfo)
         device=hw_device,
@@ -281,4 +291,6 @@ def from_dict(d: dict) -> RunConfig:
     # Convert None splice_mix to None (not an empty dict)
     if 'splice_mix' in filtered and filtered['splice_mix'] == {}:
         filtered['splice_mix'] = None
+    if 'viz_per_source' in filtered and filtered['viz_per_source'] == {}:
+        filtered['viz_per_source'] = None
     return RunConfig(**filtered)

@@ -168,7 +168,7 @@ def show_pairs(
     source: str = 'pico_banana',
     k: int = 8,
     image_size: int = 448,
-    crop_frac: float = 0.0,
+    crop_frac: float = 0.05,
     show: bool = True,
     out_dir: Optional[str] = None,
     seed: int = 42,
@@ -263,7 +263,7 @@ def predict_one(
     device,
     use_amp: bool,
     amp_dtype: str,
-    crop_frac: float = 0.0,
+    crop_frac: float = 0.05,
     zoom: bool = False,
     attn_percentile='otsu',
     attn_thresh_mult: float = 1.0,
@@ -371,7 +371,7 @@ def run_predict(
     no_amp: bool = False,
     amp_dtype: str = 'float16',
     seed: int = 42,
-    crop_frac: float = 0.0,
+    crop_frac: float = 0.05,
     zoom: bool = False,
     attn_percentile='otsu',
     attn_thresh_mult: float = 1.0,
@@ -528,7 +528,7 @@ def _build_parser() -> argparse.ArgumentParser:
     p.add_argument('--no_amp', action='store_true')
     p.add_argument('--amp_dtype', default='float16', choices=['float16', 'bfloat16'])
     p.add_argument('--no_show', action='store_true', help='Skip inline display (CLI/headless use)')
-    p.add_argument('--crop_frac', type=float, default=0.0,
+    p.add_argument('--crop_frac', type=float, default=0.05,
                    help='Crop this fraction off each of the four edges before resizing '
                         '(e.g. 0.05 discards a 5%% border on all sides)')
     p.add_argument('--zoom', action='store_true',

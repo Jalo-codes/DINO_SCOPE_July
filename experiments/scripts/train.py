@@ -177,11 +177,13 @@ def _build_parser() -> argparse.ArgumentParser:
     g.add_argument('--jpeg_prob',              type=float, default=None)
     g.add_argument('--whole_corrupt_prob',     type=float, default=0.0)
     g.add_argument('--oracle_crop',            action='store_true')
-    g.add_argument('--edge_crop_frac',         type=float, default=0.0,
+    g.add_argument('--edge_crop_frac',         type=float, default=0.05,
                    help='Fixed border trim applied to every image/mask (train '
                         'AND val) before augmentation, e.g. 0.05 removes a '
                         '5%%-wide border on all four sides. Training-time '
-                        'analog of predict.py/export_pico_masks.py crop_frac.')
+                        'analog of predict.py/export_pico_masks.py crop_frac — '
+                        'default matches export_pico_masks.py\'s crop_frac=0.05 '
+                        'so mask geometry and training geometry line up.')
 
     # hardware
     g = p.add_argument_group('hardware')
@@ -213,13 +215,24 @@ def _build_parser() -> argparse.ArgumentParser:
     g.add_argument('--tgif_val_models', default=None,
                    help='Comma-separated generators to keep in TGIF per-epoch val '
                         "(e.g. 'flux1dev,flux1filldev'); reals always kept. Default: all")
+    g.add_argument('--tgif_types', nargs='*', default=None, choices=['sp', 'fr'],
+                   help="Restrict TGIF per-epoch val to these manipulation types "
+                        "(e.g. --tgif_types sp fr keeps both; omit for all). Combine "
+                        "with --tgif_val_models restricted to ONE generator to get "
+                        "exactly its 4 held-out cells (sp/fr x semantic/random).")
     g.add_argument('--viz_every_epoch', action=argparse.BooleanOptionalAction, default=False,
                    help='Save (+ inline-display in a notebook) input/prediction/attention/GT '
                         'figures for a fixed splice-item sample every epoch (lab_utils.train.loop.'
                         'run_epoch_viz). Off by default — meant for small exploratory runs, not '
                         'full sweeps, where per-epoch figure I/O would just be noise.')
     g.add_argument('--viz_n', type=int, default=15,
-                   help='Number of (fixed, seeded) splice items to visualize per epoch')
+                   help='Number of (fixed, seeded) splice items to visualize per epoch. '
+                        'With --viz_per_source set, this is instead the cap for the pooled '
+                        '"everything else" remainder (sources not explicitly listed).')
+    g.add_argument('--viz_per_source', nargs='*', default=None,
+                   metavar='source=n', help='Stratified per-epoch viz counts, e.g. '
+                        '--viz_per_source pico_pseudo=35 sagid=10. Sources not listed '
+                        'here are pooled and sampled up to --viz_n.')
 
     return p
 
@@ -297,6 +310,7 @@ def _build_datasets(cfg, res: Resolution):
         per_cell = cfg.val_per_cell or 100
         _, tg_val = _tgif2_mod.build(
             str(tgif_root), res=res, eval_per_cell=per_cell, include_reals=True,
+            types=set(cfg.tgif_types) if cfg.tgif_types else None,
         )
         keep_models = set(cfg.tgif_val_models or ())
         tg_items = [
@@ -453,9 +467,43 @@ def main() -> None:
         train_sampler = torch.utils.data.DistributedSampler(
             train_ds, num_replicas=hw.world_size, rank=hw.rank, shuffle=True,
         )
+        if cfg.splice_mix and hw.is_main:
+            log_line(f'[data] NOTE: --splice_mix={cfg.splice_mix} ignored under DDP '
+                     f'(DistributedSampler uses full dataset, unweighted)')
         if 0 < cap < len(train_ds) and hw.is_main:
             log_line(f'[data] NOTE: --train_samples={cap} ignored under DDP '
                      f'(DistributedSampler uses full dataset)')
+    elif cfg.splice_mix:
+        # Per-source weighted sampling so the mix ratio (e.g. sagid=0.33
+        # pico_pseudo=0.33 casia=0.34) is exact regardless of each source's
+        # pool size, instead of falling out of the concatenated pool's natural
+        # proportions. weight(item) = target_frac[source] / pool_size[source],
+        # so every item in a source shares that source's total probability mass
+        # evenly. replacement=True since a requested share can exceed a small
+        # source's pool size (e.g. 1000/epoch from a 600-item pico_pseudo set).
+        from collections import Counter
+        src_counts = Counter(it.source for it in train_ds.items)
+        unknown = sorted(set(cfg.splice_mix) - set(src_counts))
+        if unknown:
+            log_line(f'[data] WARNING: --splice_mix sources not present in '
+                      f'train set (no items loaded for them): {unknown}')
+        weights = [
+            cfg.splice_mix.get(it.source, 0.0) / src_counts[it.source]
+            for it in train_ds.items
+        ]
+        if sum(weights) <= 0:
+            raise RuntimeError(
+                'train.py: --splice_mix resolved to all-zero sampling weights — '
+                f'requested sources {sorted(cfg.splice_mix)} vs. loaded sources '
+                f'{sorted(src_counts)}; check source names match dataset roots.'
+            )
+        n_samples = cap if cap > 0 else len(train_ds)
+        train_sampler = torch.utils.data.WeightedRandomSampler(
+            torch.as_tensor(weights, dtype=torch.double),
+            num_samples=n_samples, replacement=True,
+        )
+        log_line(f'[data] splice_mix={cfg.splice_mix} weighted sampler '
+                  f'num_samples={n_samples} pool_sizes={dict(src_counts)}')
     elif 0 < cap < len(train_ds):
         train_sampler = torch.utils.data.RandomSampler(
             train_ds, replacement=False, num_samples=cap,
@@ -579,6 +627,7 @@ def main() -> None:
                     model, val_ds.items, res,
                     device=device, cfg=cfg, epoch=epoch,
                     run_dir=cfg.run_dir, n=cfg.viz_n,
+                    per_source=cfg.viz_per_source,
                 )
 
         # ── Checkpoint + early stop ───────────────────────────────────────────
