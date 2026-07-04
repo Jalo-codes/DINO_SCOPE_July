@@ -249,20 +249,15 @@ def main() -> None:
 
     # ── Cache forward pass ────────────────────────────────────────────────────
     if args.cache_dir:
-        if args.edge_crop_frac:
-            raise RuntimeError(
-                f'eval.py: --edge_crop_frac={args.edge_crop_frac} combined with --cache_dir '
-                f'{args.cache_dir} is not supported — build_cache() has no edge_crop_frac '
-                f'param and always runs the forward pass on the uncropped image regardless '
-                f'of --overwrite_cache, so any cache built here would silently mismatch the '
-                f'cropped-GT geometry scored against it. Drop --cache_dir to run forward '
-                f'passes fresh under the crop.'
-            )
         cache_dir = Path(args.cache_dir)
         log_line(f'[eval] building/loading cache: {cache_dir}')
+        # build_cache itself guards a crop-value mismatch against a cache
+        # directory built under a different edge_crop_frac (raises ValueError
+        # unless --overwrite_cache is passed to rebuild it under the new crop).
         build_cache(
             bare_model, all_items,
             device=device, amp=use_amp, amp_dtype=args.amp_dtype,
+            edge_crop_frac=args.edge_crop_frac,
             cache_dir=cache_dir,
             overwrite=args.overwrite_cache,
         )

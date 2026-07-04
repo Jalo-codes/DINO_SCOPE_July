@@ -11,6 +11,7 @@ without a model.
 Layout on disk (one .npz per item, or a single archive for bulk):
     <cache_dir>/
         index.json              item_ids in stable order
+        meta.json               {'edge_crop_frac': float} the cache was built under
         <item_id>.npz           ModelInfo arrays for one item
                                     keys: patch_logits, attention, embeddings,
                                           image_logit (0-d or empty), grid_hw, res_*
@@ -23,6 +24,7 @@ from typing import Dict, Iterator, List, Optional, Tuple
 
 import numpy as np
 
+from lab_utils.data.item import Item
 from lab_utils.eval.fetch import ModelInfo
 from lab_utils.data.resolution import Resolution
 from lab_utils.logging.text import log_line
@@ -90,59 +92,82 @@ def _arrays_to_info(arrays: dict) -> ModelInfo:
 
 def build_cache(
     model,
-    loader,
+    items: List[Item],
     *,
     device,
     amp: bool = True,
     amp_dtype: str = 'float16',
+    edge_crop_frac: float = 0.0,
     cache_dir: Path,
     overwrite: bool = False,
 ) -> List[str]:
     """Run one GPU pass; save one ModelInfo .npz per item to cache_dir.
 
     Args:
-        model:      MultiHeadDetector (or duck-typed equivalent with .res).
-        loader:     DataLoader yielding batches with 'img' and 'meta'
-                    (meta must contain 'item_id' per sample).
+        model:      MultiHeadDetector (or duck-typed equivalent with .res and
+                    a forward matching model_info's contract).
+        items:      List of Item — image loaded per item.image the same way
+                    eval.py's flat (non-cache) path does.
         device:     torch.device.
         amp:        Use autocast for the forward pass.
+        amp_dtype:  Data type for mixed precision.
+        edge_crop_frac: Border-crop this fraction off each of the four edges
+                    before the forward pass (matches train.py / eval.py's flat
+                    path). A cache directory remembers the edge_crop_frac it
+                    was built under (meta.json); rebuilding it under a
+                    different value without overwrite=True raises rather than
+                    silently mixing geometries.
         cache_dir:  Directory to write .npz files into.
         overwrite:  If False, skip items that already have a cached file.
 
     Returns:
         List of item_ids written (in order).
     """
-    import torch
+    from PIL import Image as PILImage
+
+    from lab_utils.data.dataset import _crop_edges
     from lab_utils.eval.fetch import model_info
+    from lab_utils.eval.preprocess import load_image_tensor
 
     cache_dir = Path(cache_dir)
     cache_dir.mkdir(parents=True, exist_ok=True)
+
+    meta_path = cache_dir / 'meta.json'
+    if meta_path.exists():
+        with open(meta_path) as f:
+            prev_crop = json.load(f).get('edge_crop_frac', 0.0)
+        if prev_crop != edge_crop_frac and not overwrite:
+            raise ValueError(
+                f'build_cache: {cache_dir} was previously built with '
+                f'edge_crop_frac={prev_crop}, but this call requested '
+                f'edge_crop_frac={edge_crop_frac} — reusing those cached '
+                f'ModelInfo arrays would silently score a different-crop '
+                f'checkpoint against a mismatched geometry. Pass '
+                f'overwrite=True to rebuild the cache under the new crop.'
+            )
 
     model.eval()
     written: List[str] = []
     skipped = 0
 
-    for batch in loader:
-        if batch is None:
+    for item in items:
+        item_id = item.item_id
+        out_path = cache_dir / f'{item_id}.npz'
+        if not overwrite and out_path.exists():
+            skipped += 1
             continue
-        imgs   = batch['img']
-        metas  = batch['meta']
 
-        n = imgs.shape[0]
-        for i in range(n):
-            img_i    = imgs[i:i+1]
-            meta_i   = (metas[i] if isinstance(metas, list)
-                        else {k: v[i] for k, v in metas.items()})
-            item_id  = str(meta_i.get('item_id', f'unk_{len(written)}'))
+        img_pil = PILImage.open(item.image).convert('RGB')
+        if edge_crop_frac:
+            img_pil = _crop_edges(img_pil, edge_crop_frac)
+        img_t = load_image_tensor(img_pil, model.res, device=device)
 
-            out_path = cache_dir / f'{item_id}.npz'
-            if not overwrite and out_path.exists():
-                skipped += 1
-                continue
+        info = model_info(model, img_t, device=device, amp=amp, amp_dtype=amp_dtype)
+        np.savez_compressed(str(out_path), **_info_to_arrays(info))
+        written.append(item_id)
 
-            info = model_info(model, img_i, device=device, amp=amp, amp_dtype=amp_dtype)
-            np.savez_compressed(str(out_path), **_info_to_arrays(info))
-            written.append(item_id)
+    with open(meta_path, 'w') as f:
+        json.dump({'edge_crop_frac': edge_crop_frac}, f, indent=2)
 
     # Write / update the index
     index_path = cache_dir / 'index.json'
@@ -159,7 +184,7 @@ def build_cache(
 
     log_line(
         f'[eval] cache built: wrote={len(written)} skipped={skipped} '
-        f'total={len(all_ids)} dir={cache_dir}'
+        f'total={len(all_ids)} edge_crop_frac={edge_crop_frac} dir={cache_dir}'
     )
     return written
 
