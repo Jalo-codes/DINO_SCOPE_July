@@ -15,6 +15,14 @@ Each matched triplet yields:
     - splice positive: image=modified, authentic=original, mask=mask,
                        meta['real_path']=original (drives paste_background in Dataset)
 
+paste_back=False omits meta['real_path'], disabling the paste. REQUIRED for
+full-re-render sources (pico_pseudo): the "fake" is a whole-frame regeneration,
+not pixel-aligned with the original outside the mask, so pasting the original
+back would composite two misaligned frames — an artificial seam at the mask
+boundary that trains the model on a trivial cue. Paste is only valid for true
+inpainting sources (SAGI-D, COCO-inpaint) where pixels outside the mask are
+byte-identical to the original.
+
 Returns (train_dataset, val_dataset).
 """
 
@@ -64,6 +72,7 @@ def build(
     val_split: float = 0.10,
     split_seed: int = 42,
     valid_exts: Optional[frozenset] = None,
+    paste_back: bool = True,
 ) -> Tuple[Dataset, Dataset]:
     """Discover and pair inpaint-triplet items; return (train_dataset, val_dataset).
 
@@ -74,6 +83,9 @@ def build(
         modified_subdir: Subdirectory containing inpainted images.
         original_subdir: Subdirectory containing pristine originals.
         mask_subdir:     Subdirectory containing inpaint-region masks.
+        paste_back:      Set meta['real_path'] on fakes (enables Dataset's
+                         paste_background). Must be False for full-re-render
+                         sources — see module docstring.
     """
     root = Path(root)
     exts = valid_exts or _VALID_EXTS
@@ -133,13 +145,16 @@ def build(
             item_id=make_item_id(source, orig_path),
             meta={'case_id': case_id},
         ))
+        fake_meta = {'case_id': case_id}
+        if paste_back:
+            fake_meta['real_path'] = orig_path
         bucket.append(Item(
             image=mod_path,
             authentic=orig_path,
             mask=mask_path,
             source=source,
             item_id=make_item_id(source, mod_path),
-            meta={'case_id': case_id, 'real_path': orig_path},
+            meta=fake_meta,
         ))
 
     train_kept, _ = verify_all(train_items, policy=verify_policy,

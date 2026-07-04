@@ -246,8 +246,12 @@ def build(
                 mask=mask_path,
                 source=source,
                 item_id=make_item_id(source, fakes[base]),
+                # No 'real_path': pico fakes are full Gemini re-renders, not
+                # pixel-aligned with the original — Dataset's paste_background
+                # would composite two misaligned frames and manufacture a seam
+                # at the mask boundary. Paste is inpainting-only.
                 meta={'case_id': case_id, 'category': category,
-                      'real_path': reals[base], 'gt_mask_reliable': False},
+                      'gt_mask_reliable': False},
             ))
         by_cat_label[category] = {'real': real_items, 'fake': fake_items}
 
