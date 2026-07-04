@@ -372,6 +372,11 @@ def main() -> None:
         summary_res = summarize(records, log_tag='[eval]', tag=decoder_name)
         summaries_dict[decoder_name] = summary_res
 
+        # Per-item scores as CSV alongside the figures — spreadsheet-side view.
+        if args.out_dir and records:
+            from lab_utils.eval.aggregate import write_records_csv
+            write_records_csv(records, str(Path(args.out_dir) / f'{decoder_name}_records.csv'))
+
         has_subgroups = any(r.subgroup is not None for r in records)
         if has_subgroups:
             from lab_utils.eval.aggregate import summarize_by_subgroup

@@ -335,3 +335,33 @@ def save_summary_json(path: str, summaries: Dict[str, dict]) -> None:
         os.makedirs(out_dir, exist_ok=True)
     with open(path, 'w') as f:
         json.dump(flat, f, indent=2)
+
+
+def write_records_csv(records: List[EvalRecord], path: str) -> None:
+    """Dump per-item scalar fields of EvalRecords to a CSV (one row per record).
+
+    Arrays (gt_mask/pred_mask/attention) are NOT written — this is the
+    spreadsheet-side view: per-item scores for sorting, per-source pivots,
+    and cross-run diffs. Columns are stable and explicit.
+    """
+    import csv
+    import os
+
+    out_dir = os.path.dirname(path)
+    if out_dir:
+        os.makedirs(out_dir, exist_ok=True)
+
+    cols = ['item_id', 'source', 'decoder', 'subgroup', 'is_real',
+            'f1', 'iou', 'precision', 'recall', 'accuracy',
+            'image_score', 'mask_area', 'bucket']
+    with open(path, 'w', newline='') as f:
+        w = csv.writer(f)
+        w.writerow(cols)
+        for r in records:
+            w.writerow([
+                r.item_id, r.source, r.decoder, r.subgroup or '', int(r.is_real),
+                f'{r.f1:.6f}', f'{r.iou:.6f}', f'{r.precision:.6f}',
+                f'{r.recall:.6f}', f'{r.accuracy:.6f}',
+                f'{r.image_score:.6f}', f'{r.mask_area:.6f}', r.bucket,
+            ])
+    log_line(f'[eval] wrote {len(records)} records -> {path}')

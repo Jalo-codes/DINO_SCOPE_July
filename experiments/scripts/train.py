@@ -243,6 +243,49 @@ def _root(cfg, attr: str) -> Optional[Path]:
     return Path(val) if val else None
 
 
+def _log_data_diet(train_items, val_items, cfg) -> None:
+    """One aligned [data] table: what this run actually trains and scores on.
+
+    Per source: train/val counts split real|fake, the fakes' mask kind
+    (gt / pseudo / sentinel), how many train fakes are paste-eligible
+    (meta['real_path'] present -> Dataset.paste_background can fire at
+    paste_frac), and the requested splice_mix weight. This is the one place
+    to catch a wrong diet before burning an epoch on it.
+    """
+    sources = sorted({it.source for it in train_items} | {it.source for it in val_items})
+    mix = cfg.splice_mix or {}
+
+    def _counts(items):
+        n_real = sum(1 for it in items if it.is_real)
+        return n_real, len(items) - n_real
+
+    def _mask_kind(fakes):
+        if not fakes:
+            return '-'
+        if all(it.meta.get('pseudo_mask') for it in fakes):
+            return 'pseudo'
+        if all(it.meta.get('gt_mask_reliable') is False for it in fakes):
+            return 'sentinel'
+        return 'gt'
+
+    header = (f'{"source":<14} {"train r|f":>12} {"val r|f":>12} '
+              f'{"mask":>8} {"paste-elig":>10} {"mix":>6}')
+    log_line(f'[data] ── data diet ── (paste_frac={cfg.paste_frac}, '
+             f'aug_severity={cfg.aug_severity}, oracle_crop={cfg.oracle_crop})')
+    log_line(f'[data]   {header}')
+    for src in sources:
+        tr = [it for it in train_items if it.source == src]
+        va = [it for it in val_items if it.source == src]
+        tr_fakes = [it for it in tr if not it.is_real]
+        tr_r, tr_f = _counts(tr)
+        va_r, va_f = _counts(va)
+        n_paste = sum(1 for it in tr_fakes if it.meta.get('real_path') is not None)
+        kind = _mask_kind(tr_fakes or [it for it in va if not it.is_real])
+        mix_s = f'{mix[src]:.2f}' if src in mix else '-'
+        log_line(f'[data]   {src:<14} {f"{tr_r}|{tr_f}":>12} {f"{va_r}|{va_f}":>12} '
+                 f'{kind:>8} {f"{n_paste}/{tr_f}":>10} {mix_s:>6}')
+
+
 def _build_datasets(cfg, res: Resolution):
     """Build and merge train + val datasets from all configured sources."""
     from lab_utils.data.datasets import imd2020 as _imd2020_mod
@@ -322,6 +365,8 @@ def _build_datasets(cfg, res: Resolution):
             'at least one non-val-only root (--casia_root, --bfree_root, '
             '--coco_inpaint_root, --sagid_root, ...) exists on disk.'
         )
+
+    _log_data_diet(train_items, val_items, cfg)
 
     train_ds = Dataset(
         train_items,
