@@ -101,14 +101,15 @@ def _build_parser() -> argparse.ArgumentParser:
                    help='Restrict to these source names (default: all configured)')
     g.add_argument('--subgroup', type=str, default=None,
                    help='Restrict evaluation to items in this comma-separated subgroup/cell (reals are preserved)')
-    g.add_argument('--edge_crop_frac', type=float, default=0.0,
+    g.add_argument('--edge_crop_frac', type=float, default=None,
                    help='Border-crop this fraction off each of the four edges before '
                         'the forward pass (both flat and --zoom paths), matching '
                         'train.py/export_pico_masks.py. The GT mask is cropped by the '
                         'identical fraction (lab_utils.eval.metric.metric) so scores '
                         'stay geometry-aligned with what the model actually saw. '
-                        'MUST match the edge_crop_frac the checkpoint was trained with '
-                        'for a fair number — 0.0 = old behaviour (no crop).')
+                        'Default: auto-taken from the checkpoint\'s saved cfg (the '
+                        'value it was trained with); pass explicitly to override '
+                        '(e.g. 0.0 to force no crop despite the checkpoint using one).')
     g.add_argument('--zoom', action='store_true',
                    help='Run attention-guided zoom (two-pass evaluation)')
     g.add_argument('--attn_percentile', default='peak',
@@ -202,6 +203,18 @@ def main() -> None:
     # ── Load checkpoint + build model (shared loader) ──────────────────────────
     log_line(f'[eval] loading checkpoint: {args.checkpoint}')
     model, cfg, res = load_eval_model(args.checkpoint, device=device, strict=False)
+
+    # Auto-default edge_crop_frac from the checkpoint's own cfg so a forgotten
+    # flag can't silently score a cropped-trained model on full-frame inputs.
+    # Explicit --edge_crop_frac always wins (e.g. to force 0.0 for comparison).
+    if args.edge_crop_frac is None:
+        ckpt_crop = float(getattr(cfg, 'edge_crop_frac', 0.0) or 0.0) if cfg is not None else 0.0
+        args.edge_crop_frac = ckpt_crop
+        log_line(f'[eval] --edge_crop_frac not passed — auto-set to {ckpt_crop} '
+                 f'from checkpoint cfg' + (' (no cfg slot, defaulting to 0.0)' if cfg is None else ''))
+    else:
+        log_line(f'[eval] --edge_crop_frac={args.edge_crop_frac} (explicit override)')
+
     if args.compile:
         log_line('[eval] compiling model with torch.compile...')
         model = torch.compile(model)
@@ -236,6 +249,15 @@ def main() -> None:
 
     # ── Cache forward pass ────────────────────────────────────────────────────
     if args.cache_dir:
+        if args.edge_crop_frac:
+            raise RuntimeError(
+                f'eval.py: --edge_crop_frac={args.edge_crop_frac} combined with --cache_dir '
+                f'{args.cache_dir} is not supported — build_cache() has no edge_crop_frac '
+                f'param and always runs the forward pass on the uncropped image regardless '
+                f'of --overwrite_cache, so any cache built here would silently mismatch the '
+                f'cropped-GT geometry scored against it. Drop --cache_dir to run forward '
+                f'passes fresh under the crop.'
+            )
         cache_dir = Path(args.cache_dir)
         log_line(f'[eval] building/loading cache: {cache_dir}')
         build_cache(
@@ -257,11 +279,7 @@ def main() -> None:
 
         if args.zoom and args.cache_dir:
             log_line('[eval] WARN: --cache_dir is ignored because zoom uses dynamic two-pass crops')
-        if args.edge_crop_frac and args.cache_dir:
-            log_line(f'[eval] WARN: --edge_crop_frac={args.edge_crop_frac} has no effect on '
-                     f'cached ModelInfo (--cache_dir) — the cache was built from uncropped '
-                     f'forward passes. Rebuild with --overwrite_cache after cropping, or drop '
-                     f'--cache_dir, for a correct number.')
+        # (edge_crop_frac + cache_dir is rejected earlier, before build_cache runs)
 
         n_viz = 0
         from tqdm import tqdm
