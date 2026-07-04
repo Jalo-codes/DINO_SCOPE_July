@@ -1,19 +1,29 @@
 """experiments.scripts.export_pico_masks — offline pseudo-mask export for PicoBanana.
 
 Runs the raw-DINOv3 feature-diff prototype (experiments/labs/dino_diff_lab.py)
-over real/modified PicoBanana pairs and materializes an **inpaint-triplet
-dataset** on disk that the existing ``inpaint`` builder ingests unchanged::
+over real/modified PicoBanana pairs and materializes a triplet dataset on disk
+for the ``pico_pseudo`` builder::
 
-    out_root/modified/<case_id>.<ext>    byte-for-byte copy of the edited image
-    out_root/original/<case_id>.<ext>    byte-for-byte copy of the source image
-    out_root/mask/<case_id>_mask.png     pseudo-mask (raw-backbone diff, adaptive
-                                         Otsu threshold, component filtering)
+    out_root/modified/<case_id>.png      edited image, crop_frac-CROPPED, lossless PNG
+    out_root/original/<case_id>.png      source image, crop_frac-CROPPED, lossless PNG
+    out_root/mask/<case_id>_mask.png     pseudo-mask at the SAME cropped geometry
+    out_root/export_format.json          {'version': 2, 'crop_baked_in': True, ...}
 
-Images are copied VERBATIM (no re-encode — recompression would perturb the
-exact statistics the detector trains on). The edge crop used to stabilize the
-diff (crop_frac) is applied only in feature space; the exported mask is placed
-back into full-image coordinates with a zero border, so masks always align
-with the untouched copied images.
+THE CROP IS BAKED INTO THE DATA. The border trim that stabilizes the diff
+(crop_frac — Gemini's re-encode fingerprints the frame edge) is applied to the
+exported images themselves, and the mask is rendered at exactly that cropped
+size. Image size == mask size on disk, by construction; no loader, trainer, or
+eval script performs any geometry adjustment downstream (the old runtime
+edge_crop_frac threading is gone).
+
+Cropping forces a re-encode, so images are saved as LOSSLESS PNG: the decoded
+pixels are identical to the cropped region of the decoded source — only the
+container changes, no recompression perturbs the statistics the detector
+trains on.
+
+v1 exports (full-frame verbatim copies + zero-border masks) are INCOMPATIBLE
+and are refused at startup: a populated out_root without the v2 format marker
+aborts with instructions to use a fresh directory.
 
 NOTE: any mask files already present under the PicoBanana root are known
 noise and are never read — this script only consumes originals/ + modified/
@@ -111,18 +121,18 @@ def otsu_eta(values: np.ndarray) -> float:
 
 # ── mask rendering ─────────────────────────────────────────────────────────────
 
-def render_full_mask(
+def render_cropped_mask(
     hot: np.ndarray,
     mod_size: Tuple[int, int],
     crop_frac: float,
 ):
-    """Map a patch-grid hot mask (computed on the crop_frac-cropped image) back
-    into FULL modified-image pixel coordinates.
+    """Render a patch-grid hot mask at the crop_frac-CROPPED image's pixel size.
 
-    The diff ran on the interior region [dx:W-dx, dy:H-dy]; the grid is
-    nearest-upsampled to that interior and pasted into a zero canvas, so the
-    border (never scored) is labeled negative and the exported images can be
-    byte-for-byte copies of the untouched files.
+    The diff ran on the interior region [dx:W-dx, dy:H-dy] — exactly the
+    region _crop_edges keeps and exactly what gets exported as the image
+    file. The grid is nearest-upsampled straight to that interior size, so
+    exported mask size == exported image size, always (same int(round(...))
+    arithmetic as _crop_edges).
     """
     from PIL import Image
 
@@ -131,10 +141,7 @@ def render_full_mask(
     iw, ih = w - 2 * dx, h - 2 * dy
 
     grid = Image.fromarray((hot.astype(np.uint8)) * 255, mode='L')
-    interior = grid.resize((iw, ih), Image.NEAREST)
-    canvas = Image.new('L', (w, h), 0)
-    canvas.paste(interior, (dx, dy))
-    return canvas
+    return grid.resize((iw, ih), Image.NEAREST)
 
 
 # ── batched GPU inference ───────────────────────────────────────────────────────
@@ -206,10 +213,14 @@ def _load_pair(real_path, mod_path, crop_frac: float, res: Resolution):
     return real_t, mod_t, mod_native_size
 
 
-def _write_outputs(mod_src, real_src, mod_out, orig_out, mask_img, mask_file):
-    """Runs on the I/O thread pool, overlapped with the next batch's GPU work."""
-    shutil.copy2(mod_src, mod_out)
-    shutil.copy2(real_src, orig_out)
+def _write_outputs(mod_src, real_src, mod_out, orig_out, mask_img, mask_file, crop_frac):
+    """Crop both images by crop_frac and save LOSSLESS PNG (see module doc);
+    runs on the I/O thread pool, overlapped with the next batch's GPU work."""
+    from PIL import Image as PILImage
+
+    for src, out in ((mod_src, mod_out), (real_src, orig_out)):
+        img = PILImage.open(src).convert('RGB')
+        _crop_edges(img, crop_frac).save(out)  # .png suffix → lossless
     mask_img.save(mask_file)
 
 
@@ -282,8 +293,32 @@ def run_export(
 
     out_path = Path(out_root)
     mod_dir, orig_dir, mask_dir = out_path / 'modified', out_path / 'original', out_path / 'mask'
+
+    # Refuse to resume into a v1 export (full-frame verbatim copies + zero-border
+    # masks): mixing geometries in one triplet dir would be a silent train-time
+    # misalignment. The v2 marker also pins crop_frac so a resume can't change it.
+    format_path = out_path / 'export_format.json'
+    if format_path.exists():
+        with open(format_path) as f:
+            fmt = json.load(f)
+        if fmt.get('version') != 2 or fmt.get('crop_frac') != crop_frac:
+            raise RuntimeError(
+                f'export_pico_masks: {out_root} was exported with format={fmt}, '
+                f'this run wants version=2 crop_frac={crop_frac}. Use a fresh '
+                f'out_root — geometries must not be mixed in one triplet dir.'
+            )
+    elif mask_dir.is_dir() and any(mask_dir.iterdir()):
+        raise RuntimeError(
+            f'export_pico_masks: {out_root} contains masks but no '
+            f'export_format.json — this is a v1 (full-frame) export, which is '
+            f'incompatible with the baked-in-crop v2 layout. Use a fresh '
+            f'out_root; discard the v1 triplets.'
+        )
+
     for d in (mod_dir, orig_dir, mask_dir):
         d.mkdir(parents=True, exist_ok=True)
+    with open(format_path, 'w') as f:
+        json.dump({'version': 2, 'crop_baked_in': True, 'crop_frac': crop_frac}, f, indent=2)
 
     _, val_ds = build_source(source, Path(root).expanduser(), res=res)
     pairs = _group_case_pairs(val_ds.items)
@@ -396,13 +431,14 @@ def run_export(
                 records.append(rec)
                 continue
 
-            # Byte-for-byte copies — no re-encode, original statistics preserved.
-            # Writes run on the I/O pool, overlapped with the next batch's GPU work.
-            mod_out = mod_dir / f'{name}{Path(mod_it.image).suffix.lower()}'
-            orig_out = orig_dir / f'{name}{Path(real_it.image).suffix.lower()}'
-            mask_img = render_full_mask(hot, mod_native_size, crop_frac)
+            # Cropped, lossless-PNG exports — crop baked in, mask at identical
+            # geometry. Writes run on the I/O pool, overlapped with GPU work.
+            mod_out = mod_dir / f'{name}.png'
+            orig_out = orig_dir / f'{name}.png'
+            mask_img = render_cropped_mask(hot, mod_native_size, crop_frac)
             write_futures.append(io_pool.submit(
-                _write_outputs, mod_it.image, real_it.image, mod_out, orig_out, mask_img, mask_file))
+                _write_outputs, mod_it.image, real_it.image, mod_out, orig_out,
+                mask_img, mask_file, crop_frac))
 
             n_kept += 1
             rec.update(kept=True, reason=None)
