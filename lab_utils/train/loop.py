@@ -314,10 +314,8 @@ def run_val_eval(
         from experiments.labs.attention_zoom import attention_zoom_single
         log_line(f'{log_tag} val zoom ON (two-pass, decoder={decoder})')
         if edge_crop_frac:
-            log_line(f'{log_tag} WARN: edge_crop_frac={edge_crop_frac} is NOT applied on the '
-                     f'val_zoom path (attention_zoom_single loads its own crop internally) — '
-                     f'use --no-val_zoom for an apples-to-apples per-epoch metric while training '
-                     f'with a border crop')
+            log_line(f'{log_tag} edge_crop_frac={edge_crop_frac} applied to the val_zoom '
+                     f'pass-1 image and the scored GT mask alike (attention_zoom_single)')
 
     import dataclasses
 
@@ -337,6 +335,7 @@ def run_val_eval(
                     device=device, use_amp=use_amp, decoder=decoder,
                     pad_side_frac=getattr(cfg, 'val_zoom_pad_frac', None),
                     min_area_frac=getattr(cfg, 'val_zoom_min_area', 0.0),
+                    edge_crop_frac=edge_crop_frac,
                 )
                 records.append(_tag_subgroup(rec, item))
                 continue
