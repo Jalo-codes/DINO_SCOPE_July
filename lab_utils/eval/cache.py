@@ -11,7 +11,6 @@ without a model.
 Layout on disk (one .npz per item, or a single archive for bulk):
     <cache_dir>/
         index.json              item_ids in stable order
-        meta.json               {'edge_crop_frac': float} the cache was built under
         <item_id>.npz           ModelInfo arrays for one item
                                     keys: patch_logits, attention, embeddings,
                                           image_logit (0-d or empty), grid_hw, res_*
@@ -97,7 +96,6 @@ def build_cache(
     device,
     amp: bool = True,
     amp_dtype: str = 'float16',
-    edge_crop_frac: float = 0.0,
     cache_dir: Path,
     overwrite: bool = False,
 ) -> List[str]:
@@ -111,12 +109,6 @@ def build_cache(
         device:     torch.device.
         amp:        Use autocast for the forward pass.
         amp_dtype:  Data type for mixed precision.
-        edge_crop_frac: Border-crop this fraction off each of the four edges
-                    before the forward pass (matches train.py / eval.py's flat
-                    path). A cache directory remembers the edge_crop_frac it
-                    was built under (meta.json); rebuilding it under a
-                    different value without overwrite=True raises rather than
-                    silently mixing geometries.
         cache_dir:  Directory to write .npz files into.
         overwrite:  If False, skip items that already have a cached file.
 
@@ -125,26 +117,11 @@ def build_cache(
     """
     from PIL import Image as PILImage
 
-    from lab_utils.data.dataset import _crop_edges
     from lab_utils.eval.fetch import model_info
     from lab_utils.eval.preprocess import load_image_tensor
 
     cache_dir = Path(cache_dir)
     cache_dir.mkdir(parents=True, exist_ok=True)
-
-    meta_path = cache_dir / 'meta.json'
-    if meta_path.exists():
-        with open(meta_path) as f:
-            prev_crop = json.load(f).get('edge_crop_frac', 0.0)
-        if prev_crop != edge_crop_frac and not overwrite:
-            raise ValueError(
-                f'build_cache: {cache_dir} was previously built with '
-                f'edge_crop_frac={prev_crop}, but this call requested '
-                f'edge_crop_frac={edge_crop_frac} — reusing those cached '
-                f'ModelInfo arrays would silently score a different-crop '
-                f'checkpoint against a mismatched geometry. Pass '
-                f'overwrite=True to rebuild the cache under the new crop.'
-            )
 
     model.eval()
     written: List[str] = []
@@ -158,16 +135,11 @@ def build_cache(
             continue
 
         img_pil = PILImage.open(item.image).convert('RGB')
-        if edge_crop_frac:
-            img_pil = _crop_edges(img_pil, edge_crop_frac)
         img_t = load_image_tensor(img_pil, model.res, device=device)
 
         info = model_info(model, img_t, device=device, amp=amp, amp_dtype=amp_dtype)
         np.savez_compressed(str(out_path), **_info_to_arrays(info))
         written.append(item_id)
-
-    with open(meta_path, 'w') as f:
-        json.dump({'edge_crop_frac': edge_crop_frac}, f, indent=2)
 
     # Write / update the index
     index_path = cache_dir / 'index.json'
@@ -184,7 +156,7 @@ def build_cache(
 
     log_line(
         f'[eval] cache built: wrote={len(written)} skipped={skipped} '
-        f'total={len(all_ids)} edge_crop_frac={edge_crop_frac} dir={cache_dir}'
+        f'total={len(all_ids)} dir={cache_dir}'
     )
     return written
 
