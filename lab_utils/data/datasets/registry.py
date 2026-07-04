@@ -29,6 +29,7 @@ import lab_utils.data.datasets.tgif2    as _tgif2
 import lab_utils.data.datasets.unpaired as _unpaired
 import lab_utils.data.datasets.opensdi  as _opensdi
 import lab_utils.data.datasets.pico_banana as _pico_banana
+import lab_utils.data.datasets.pico_pseudo as _pico_pseudo
 
 
 
@@ -37,11 +38,9 @@ REGISTRY: Dict[str, Callable] = {
     'casia':        _casia.build,
     'coco_inpaint': lambda root, **kw: _inpaint.build(root, source='coco_inpaint', **kw),
     'sagid':        lambda root, **kw: _inpaint.build(root, source='sagid', **kw),
-    # paste_back=False: pico fakes are full Gemini re-renders, NOT pixel-aligned
-    # with the original outside the mask — pasting the original back would
-    # manufacture an artificial seam at the mask boundary (trivial cue).
-    'pico_pseudo':  lambda root, **kw: _inpaint.build(root, source='pico_pseudo',
-                                                      paste_back=False, **kw),
+    # Own builder, NOT an inpaint alias: full re-render source — no paste-back
+    # (structural), v2 crop-baked-in format gate, per-pair alignment check.
+    'pico_pseudo':  _pico_pseudo.build,
     'anyedit':      _anyedit.build,
     'bfree':        _bfree.build,
     'indoor':       _indoor.build,

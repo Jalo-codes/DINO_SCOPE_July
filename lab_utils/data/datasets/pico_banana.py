@@ -43,7 +43,7 @@ from lab_utils.data.item import Item, make_item_id
 from lab_utils.data.dataset import Dataset
 from lab_utils.data.verify import VerifyPolicy, verify_all
 from lab_utils.data.resolution import Resolution
-from lab_utils.data.datasets.inpaint import _clean_name
+from lab_utils.data.datasets.inpaint import clean_name
 from lab_utils.logging.text import log_line
 
 _VALID_EXTS = frozenset({'.jpg', '.jpeg', '.png', '.tif', '.tiff'})
@@ -128,7 +128,7 @@ def _index_dir(folder: Path, exts: frozenset) -> Dict[str, Path]:
     out: Dict[str, Path] = {}
     for f in sorted(folder.iterdir()):
         if f.is_file() and f.suffix.lower() in exts:
-            out[_clean_name(f.name)] = f
+            out[clean_name(f.name)] = f
     return out
 
 

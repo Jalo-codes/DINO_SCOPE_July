@@ -26,7 +26,7 @@ from lab_utils.data.dataset import Dataset
 from lab_utils.data.verify import VerifyPolicy, verify_all
 from lab_utils.data.resolution import Resolution
 from lab_utils.logging.text import log_line
-from lab_utils.data.datasets.inpaint import _clean_name
+from lab_utils.data.datasets.inpaint import clean_name
 
 _VALID_EXTS = frozenset({'.jpg', '.jpeg', '.png', '.tif', '.tiff'})
 
@@ -67,7 +67,7 @@ def build(
         if not f.is_file() or f.suffix.lower() not in exts:
             continue
         stem = f.stem.lower()
-        base = _clean_name(f.name)
+        base = clean_name(f.name)
         if stem.endswith('_real') or stem.endswith('_original'):
             reals[base] = f
         elif stem.endswith('_fake') or stem.endswith('_modified'):
@@ -76,7 +76,7 @@ def build(
     masks: Dict[str, Path] = {}
     for f in sorted(mask_dir.iterdir()):
         if f.is_file() and f.suffix.lower() in mask_exts:
-            masks[_clean_name(f.name)] = f
+            masks[clean_name(f.name)] = f
 
     bases = sorted(set(reals) & set(fakes))
     if not bases:

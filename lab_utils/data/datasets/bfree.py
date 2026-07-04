@@ -29,7 +29,7 @@ from lab_utils.data.dataset import Dataset
 from lab_utils.data.verify import VerifyPolicy, verify_all
 from lab_utils.data.resolution import Resolution
 from lab_utils.logging.text import log_line
-from lab_utils.data.datasets.inpaint import _clean_name
+from lab_utils.data.datasets.inpaint import clean_name
 
 _VALID_EXTS = frozenset({'.jpg', '.jpeg', '.png', '.tif', '.tiff'})
 
@@ -77,7 +77,7 @@ def _file_dict(folder: Optional[Path], exts: frozenset) -> Dict[str, Path]:
     for root_d, _, files in os.walk(folder):
         for f in sorted(files):
             if os.path.splitext(f)[1].lower() in exts:
-                out[_clean_name(f).lower()] = Path(root_d) / f
+                out[clean_name(f).lower()] = Path(root_d) / f
     return out
 
 
