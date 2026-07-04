@@ -37,7 +37,7 @@ Step 2 — train MIL-only (no contrastive, same data recipe, epoch 4):
         --pool_hidden 256 \\
         --lambda_image_bce 1.0 \\
         --paste_frac 0.5 \\
-        --noise_prob 0.8 --jpeg_prob 0.55 \\
+        --aug_severity medium \\
         --train_samples 3000 \\
         --batch_size 8 --grad_accum 1 \\
         --num_epochs 4 --min_epochs 4 \\

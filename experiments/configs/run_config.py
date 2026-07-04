@@ -94,15 +94,14 @@ class RunConfig:
     imd_val_split:       Optional[float] = None  # override IMD val_split (1.0 = full IMD set); None = dataset default (0.10)
 
     # ── Augmentation ──────────────────────────────────────────────────────────
+    # CLI surface is aug_severity + paste_frac + oracle_crop only (I7). Crop
+    # geometry below is config-owned: change it here, in code, not per-run.
     train_crop_min:          float = 0.18
     train_crop_max:          float = 1.00
     train_crop_ratio_min:    float = 0.60
     train_crop_ratio_max:    float = 1.70
     aug_severity:            str   = 'light'  # light|medium|heavy|extreme (prob+strength preset)
     paste_frac:              float = 0.40   # inpaint paste-back prob == sp share (rest = fr)
-    noise_prob:              Optional[float] = None
-    jpeg_prob:               Optional[float] = None
-    whole_corrupt_prob:      float = 0.0
     oracle_crop:             bool  = False
 
     # ── Recipe (which train harness produced this run) ─────────────────────────
@@ -239,9 +238,6 @@ def resolve_config(args, *, hw: Optional[HardwareInfo] = None) -> RunConfig:
         train_crop_ratio_max=getattr(args, 'train_crop_ratio_max', 1.70),
         aug_severity=getattr(args, 'aug_severity', 'light'),
         paste_frac=getattr(args, 'paste_frac', 0.40),
-        noise_prob=getattr(args, 'noise_prob', None),
-        jpeg_prob=getattr(args, 'jpeg_prob', None),
-        whole_corrupt_prob=getattr(args, 'whole_corrupt_prob', 0.0),
         oracle_crop=getattr(args, 'oracle_crop', False),
         # recipe / tgif-finetune
         recipe=getattr(args, 'recipe', 'standard'),

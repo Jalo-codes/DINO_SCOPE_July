@@ -100,15 +100,12 @@ def _build_parser() -> argparse.ArgumentParser:
     g.add_argument('--lambda_patch_bce',   type=float, default=1.0)
     g.add_argument('--patch_pos_weight',   type=float, default=10.0)
 
+    # Same consolidated aug surface as train.py (I7): severity preset +
+    # oracle-crop switch. Crop geometry is RunConfig-owned.
     g = p.add_argument_group('augmentation')
-    g.add_argument('--train_crop_min',       type=float, default=0.18)
-    g.add_argument('--train_crop_max',       type=float, default=1.00)
-    g.add_argument('--train_crop_ratio_min', type=float, default=0.60)
-    g.add_argument('--train_crop_ratio_max', type=float, default=1.70)
-    g.add_argument('--noise_prob',           type=float, default=None)
-    g.add_argument('--jpeg_prob',            type=float, default=None)
-    g.add_argument('--whole_corrupt_prob',   type=float, default=0.0)
-    g.add_argument('--oracle_crop',          action='store_true')
+    g.add_argument('--aug_severity', choices=['light', 'medium', 'heavy', 'extreme'],
+                   default='light')
+    g.add_argument('--oracle_crop',  action='store_true')
 
     g = p.add_argument_group('tgif holdout + eval')
     g.add_argument('--eval_per_cell', type=int, default=500,
@@ -241,20 +238,12 @@ def main() -> None:
     if not tgif_train_ds.items:
         raise RuntimeError('train_tgif: TGIF train split is empty — check --tgif2_root / index.')
 
-    light_aug = {}
-    if cfg.noise_prob is not None:
-        light_aug['noise_prob'] = cfg.noise_prob
-    if cfg.jpeg_prob is not None:
-        light_aug['jpeg_prob'] = cfg.jpeg_prob
-    if cfg.whole_corrupt_prob > 0:
-        light_aug['whole_corrupt_prob'] = cfg.whole_corrupt_prob
-
     train_ds = Dataset(
         tgif_train_ds.items, res, augment=True,
         crop_scale=(cfg.train_crop_min, cfg.train_crop_max),
         crop_ratio=(cfg.train_crop_ratio_min, cfg.train_crop_ratio_max),
         oracle_crop=cfg.oracle_crop,
-        light_aug_kwargs=light_aug or None,
+        aug_severity=cfg.aug_severity,
     )
 
     _, imd_val_ds = REGISTRY['imd2020'](Path(cfg.imd2020_root), res=res)

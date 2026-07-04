@@ -152,12 +152,11 @@ def _build_parser() -> argparse.ArgumentParser:
                    help='Override IMD2020 val_split fraction for the per-epoch val '
                         '(use 1.0 with --imd_val_only to validate on the full IMD set)')
 
-    # augmentation
+    # augmentation — THREE knobs (I7): the severity preset, the sp/fr paste
+    # share, and the oracle-crop regime switch. Crop geometry, jpeg/noise
+    # probabilities etc. are RunConfig/Dataset defaults, not CLI surface —
+    # change them in code (with a commit) rather than per-run.
     g = p.add_argument_group('augmentation')
-    g.add_argument('--train_crop_min',         type=float, default=0.18)
-    g.add_argument('--train_crop_max',         type=float, default=1.00)
-    g.add_argument('--train_crop_ratio_min',   type=float, default=0.60)
-    g.add_argument('--train_crop_ratio_max',   type=float, default=1.70)
     g.add_argument('--aug_severity',           choices=['light', 'medium', 'heavy', 'extreme'],
                    default='light',
                    help='Preset bundling BOTH how often the appearance stage '
@@ -173,9 +172,6 @@ def _build_parser() -> argparse.ArgumentParser:
                    help='Per-item paste-back probability for inpaint items == the '
                         '"sp" share; the rest keep the whole-image diffusion '
                         'fingerprint (fr). Default 0.40 → 40%% sp / 60%% fr.')
-    g.add_argument('--noise_prob',             type=float, default=None)
-    g.add_argument('--jpeg_prob',              type=float, default=None)
-    g.add_argument('--whole_corrupt_prob',     type=float, default=0.0)
     g.add_argument('--oracle_crop',            action='store_true')
 
     # hardware
@@ -327,14 +323,6 @@ def _build_datasets(cfg, res: Resolution):
             '--coco_inpaint_root, --sagid_root, ...) exists on disk.'
         )
 
-    train_light_aug = {}
-    if cfg.noise_prob is not None:
-        train_light_aug['noise_prob'] = cfg.noise_prob
-    if cfg.jpeg_prob is not None:
-        train_light_aug['jpeg_prob'] = cfg.jpeg_prob
-    if cfg.whole_corrupt_prob > 0:
-        train_light_aug['whole_corrupt_prob'] = cfg.whole_corrupt_prob
-
     train_ds = Dataset(
         train_items,
         res,
@@ -343,7 +331,6 @@ def _build_datasets(cfg, res: Resolution):
         crop_ratio=(cfg.train_crop_ratio_min, cfg.train_crop_ratio_max),
         oracle_crop=cfg.oracle_crop,
         paste_frac=cfg.paste_frac,
-        light_aug_kwargs=train_light_aug if train_light_aug else None,
         aug_severity=cfg.aug_severity,
     )
     if cfg.aug_severity != 'light':
