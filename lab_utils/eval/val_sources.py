@@ -33,6 +33,7 @@ SOURCE_ROOT_ARGS: Dict[str, str] = {
     'opensdi':      'opensdi_root',
     'sid_set':      'sid_set_root',
     'pico_banana':  'pico_banana_root',
+    'pico_pseudo':  'pico_pseudo_root',
 }
 
 
