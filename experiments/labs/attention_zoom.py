@@ -89,6 +89,7 @@ def attention_zoom_single(
     min_area_frac: float = 0.0,
     return_debug: bool = False,
     override_image_pil = None,
+    edge_crop_frac: float = 0.0,
 ):
     """Attention-zoom inference for one item with a pluggable decoder.
 
@@ -116,6 +117,13 @@ def attention_zoom_single(
     Returns an EvalRecord, or (EvalRecord, debug_dict) when return_debug=True.
     The debug dict carries the pass-1 mask, pass-2 placed mask, and the bbox —
     everything the visualiser needs to draw boxes.
+
+    edge_crop_frac: border-crop the pass-1 image by this fraction before either
+    pass sees it (same _crop_edges training/inference use), and thread it into
+    every eval_metric() call so the GT mask is cropped identically — otherwise
+    the (cropped) prediction gets scored against a (full-frame) mask, a silent
+    misalignment. Ignored when override_image_pil is already pre-cropped by
+    the caller (the caller owns the crop in that case).
     """
     decode_fn, decoder_name = _resolve_decoder(decoder)
     zoom_label = f'{decoder_name}_zoom'
@@ -123,9 +131,14 @@ def attention_zoom_single(
     # Pass 1 — full image
     if override_image_pil is not None:
         img_pil = override_image_pil.convert('RGB')
-        img_tensor = load_image_tensor(img_pil, res, device=device)
     else:
-        img_tensor, img_pil = load_image_tensor(item, res, device=device, return_pil=True)
+        from PIL import Image as PILImage
+
+        img_pil = PILImage.open(item.image).convert('RGB')
+        if edge_crop_frac:
+            from lab_utils.data.dataset import _crop_edges
+            img_pil = _crop_edges(img_pil, edge_crop_frac)
+    img_tensor = load_image_tensor(img_pil, res, device=device)
     info1 = model_info(model, img_tensor, device=device, amp=use_amp, amp_dtype=amp_dtype)
     mask1 = decode_fn(info1)
 
@@ -135,7 +148,7 @@ def attention_zoom_single(
              'attn1': info1.attention, 'img_pil': img_pil}
 
     if info1.attention is None:
-        rec = eval_metric(mask1, info1, item, decoder=zoom_label)
+        rec = eval_metric(mask1, info1, item, decoder=zoom_label, edge_crop_frac=edge_crop_frac)
         return (rec, debug) if return_debug else rec
 
     bbox = attention_to_bbox(
@@ -148,7 +161,7 @@ def attention_zoom_single(
     debug['bbox'] = bbox
 
     if bbox_is_trivial(bbox, min_crop_frac=min_crop_frac):
-        rec = eval_metric(mask1, info1, item, decoder=zoom_label)
+        rec = eval_metric(mask1, info1, item, decoder=zoom_label, edge_crop_frac=edge_crop_frac)
         return (rec, debug) if return_debug else rec
 
     # Pass 2 — cropped region: decode in the crop, then place the crop mask back
@@ -170,7 +183,7 @@ def attention_zoom_single(
         'crop_pil': crop_pil, 'attn_crop': info2.attention,
         'crop_grid_hw': info2.grid_hw,
     })
-    rec = eval_metric(full_mask, info1, item, decoder=zoom_label)
+    rec = eval_metric(full_mask, info1, item, decoder=zoom_label, edge_crop_frac=edge_crop_frac)
     return (rec, debug) if return_debug else rec
 
 

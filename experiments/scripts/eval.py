@@ -101,6 +101,14 @@ def _build_parser() -> argparse.ArgumentParser:
                    help='Restrict to these source names (default: all configured)')
     g.add_argument('--subgroup', type=str, default=None,
                    help='Restrict evaluation to items in this comma-separated subgroup/cell (reals are preserved)')
+    g.add_argument('--edge_crop_frac', type=float, default=0.0,
+                   help='Border-crop this fraction off each of the four edges before '
+                        'the forward pass (both flat and --zoom paths), matching '
+                        'train.py/export_pico_masks.py. The GT mask is cropped by the '
+                        'identical fraction (lab_utils.eval.metric.metric) so scores '
+                        'stay geometry-aligned with what the model actually saw. '
+                        'MUST match the edge_crop_frac the checkpoint was trained with '
+                        'for a fair number — 0.0 = old behaviour (no crop).')
     g.add_argument('--zoom', action='store_true',
                    help='Run attention-guided zoom (two-pass evaluation)')
     g.add_argument('--attn_percentile', default='peak',
@@ -249,6 +257,11 @@ def main() -> None:
 
         if args.zoom and args.cache_dir:
             log_line('[eval] WARN: --cache_dir is ignored because zoom uses dynamic two-pass crops')
+        if args.edge_crop_frac and args.cache_dir:
+            log_line(f'[eval] WARN: --edge_crop_frac={args.edge_crop_frac} has no effect on '
+                     f'cached ModelInfo (--cache_dir) — the cache was built from uncropped '
+                     f'forward passes. Rebuild with --overwrite_cache after cropping, or drop '
+                     f'--cache_dir, for a correct number.')
 
         n_viz = 0
         from tqdm import tqdm
@@ -264,6 +277,9 @@ def main() -> None:
                 if need_viz:
                     from PIL import Image
                     img_pil = Image.open(item.image).convert('RGB')
+                    if args.edge_crop_frac:
+                        from lab_utils.data.dataset import _crop_edges
+                        img_pil = _crop_edges(img_pil, args.edge_crop_frac)
 
                 if args.zoom:
                     from experiments.labs.attention_zoom import attention_zoom_single
@@ -275,6 +291,7 @@ def main() -> None:
                         attn_pad_frac=args.attn_pad_frac,
                         min_box_size=args.min_box_size,
                         return_debug=need_viz,
+                        edge_crop_frac=args.edge_crop_frac,
                         **zoom_crop_kwargs,
                     )
                     rec, debug = rec_out if need_viz else (rec_out, None)
@@ -287,12 +304,19 @@ def main() -> None:
                             log_line(f'[eval] WARN: no cache entry for {item.item_id}')
                             continue
                     else:
-                        img_t = load_image_tensor(item, res, device=device)
+                        img_src = item
+                        if args.edge_crop_frac:
+                            from PIL import Image as PILImage
+
+                            from lab_utils.data.dataset import _crop_edges
+                            img_src = _crop_edges(PILImage.open(item.image).convert('RGB'), args.edge_crop_frac)
+                        img_t = load_image_tensor(img_src, res, device=device)
                         with torch.no_grad():
                             info = model_info(bare_model, img_t, device=device, amp=use_amp, amp_dtype=args.amp_dtype)
 
                     patch_mask = _decode(decoder_name, info)
-                    rec        = eval_metric(patch_mask, info, item, decoder=decoder_name)
+                    rec        = eval_metric(patch_mask, info, item, decoder=decoder_name,
+                                              edge_crop_frac=args.edge_crop_frac)
 
                 import dataclasses
                 subgroup = item.meta.get('generator') or item.meta.get('tgif_subcat')

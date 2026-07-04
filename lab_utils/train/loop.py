@@ -360,7 +360,8 @@ def run_val_eval(
             else:
                 raise ValueError(f'run_val_eval: unknown decoder {decoder!r}')
 
-            rec = eval_metric(patch_mask, info, item, decoder=decoder)
+            rec = eval_metric(patch_mask, info, item, decoder=decoder,
+                               edge_crop_frac=edge_crop_frac)
             records.append(_tag_subgroup(rec, item))
         except Exception as exc:
             log_line(f'{log_tag} WARN: skipped item={item.item_id}: {exc}')
