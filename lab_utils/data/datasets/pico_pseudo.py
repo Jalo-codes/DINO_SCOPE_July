@@ -23,10 +23,10 @@ Why this is its own builder and not an ``inpaint`` registry alias:
    on misaligned pairs. A missing/empty root just warns and returns empty
    (missing-mount convention, same as every other builder).
 
-3. ALIGNMENT HARD-CHECK. Every kept pair must satisfy image.size ==
-   mask.size (cheap PIL header reads at index time); mismatches are dropped
-   and counted. With a v2 export this should always be 0 — a nonzero count
-   means a corrupted/mixed export.
+3. ALIGNMENT HARD-CHECK. Every pair must satisfy image.size == mask.size
+   EXACTLY (cheap PIL header reads at index time) — the v2 export renders
+   the mask at the cropped image's size, so any difference means a
+   corrupted/mixed export dir and raises DataError immediately.
 
 Masks are pseudo-labels (raw-DINO feature diff, decisiveness-filtered at
 export) — real localization supervision, flagged ``meta['pseudo_mask']=True``
@@ -118,24 +118,20 @@ def build(
         empty = Dataset([], res=res, augment=False)
         return empty, empty
 
-    # Alignment hard-check: exported image and mask must agree in native size
-    # (v2 export guarantees this; a mismatch means a corrupted/mixed dir).
+    # Alignment hard-check: a v2 export guarantees image.size == mask.size
+    # EXACTLY (the mask is rendered at the cropped image's size). Any
+    # difference — even a same-aspect one — means a corrupted/mixed export
+    # dir, and per policy alignment bugs raise, never drop silently.
     # PIL .size on an opened-not-loaded file is a header read — cheap.
-    aligned: list = []
-    n_misaligned = 0
     for base in bases:
         with Image.open(mods[base]) as im, Image.open(masks[base]) as mk:
-            if im.size == mk.size:
-                aligned.append(base)
-            else:
-                n_misaligned += 1
-                log_line(f'[data] {source} WARN: dropping {base}: image '
-                         f'{im.size} != mask {mk.size}')
-    if n_misaligned:
-        log_line(f'[data] {source} WARN: dropped {n_misaligned} misaligned '
-                 f'pairs — the export dir looks corrupted/mixed, consider '
-                 f're-exporting')
-    bases = aligned
+            if im.size != mk.size:
+                raise DataError(
+                    f'{source}: {base}: image {im.size} != mask {mk.size} — '
+                    f'a v2 export guarantees exact size equality, so this '
+                    f'dir is corrupted/mixed. Re-run export_pico_masks into '
+                    f'a fresh out_root.'
+                )
 
     split_rng = random.Random(int(split_seed))
     shuffled  = list(bases)

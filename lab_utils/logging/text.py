@@ -25,7 +25,7 @@ _LOG_PATH: Optional[str] = None
 _LOG_LOCK = threading.Lock()
 
 ALLOWED_TAGS = frozenset([
-    '[data]', '[augment]', '[blob]', '[train]', '[eval]',
+    '[data]', '[augment]', '[blob]', '[train]', '[eval]', '[verify]',
     '[memory]', '[ckpt]', '[dist]', '[cfg]',
     '[robust]', '[oracle]', '[tgif]', '[zoom]', '[buckets]',
     '[ft]', '[ft-eval]', '[eval-num]', '[bp]', '[bp-eval]',

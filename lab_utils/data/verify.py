@@ -3,8 +3,18 @@
 TORCH-FREE (GAMEPLAN C3). Uses only PIL and numpy.
 
 Policy: drop-and-log (DESIGN_GUIDE §9.2). Failed items are filtered with a
-logged reason + aggregate counts. A shape mismatch at __getitem__ time is the
-only hard DataError; collection-time failures are soft drops.
+logged reason + aggregate counts — that covers junk DATA (corrupt files,
+degenerate images, empty masks). Alignment is different: an image/mask pair
+whose aspect ratios disagree means the PAIRING/WIRING is broken, not the file,
+so it raises DataError immediately rather than being dropped silently. The
+hard failures are: shape mismatch at __getitem__ time, and image/mask aspect
+misalignment at index time (here) or use time (dataset.py, eval/metric.py —
+all three share ``mask_alignment``).
+
+A same-aspect resolution difference (half-res masks, generator size snapping,
+CASIA off-by-one) is a legitimate data property: the pair is KEPT, counted in
+the verify summary as ``warn_mask_native_resize``, and NEAREST-normalized to
+the image frame at use time.
 """
 
 from __future__ import annotations
@@ -18,9 +28,40 @@ from typing import List, Optional, Tuple
 import numpy as np
 
 from lab_utils.data.item import Item
+from lab_utils.errors import DataError
 from lab_utils.logging.text import log_line
 
 SKIP_VERIFY = object()  # sentinel: pass verify_policy=SKIP_VERIFY to skip all checks
+
+# Aspect-ratio tolerance for mask_alignment: generous enough for integer
+# rounding at generator-snapped sizes (flux 672x1008 vs mask 680x1023 ≈ 0.3%)
+# and CASIA's off-by-one masks, far too tight for any wrong pairing.
+ASPECT_TOL = 0.02
+
+
+def mask_alignment(img_size, mask_size, *, aspect_tol: float = ASPECT_TOL) -> str:
+    """Classify native-size agreement between an image and its mask.
+
+    Returns:
+        'aligned'    identical pixel sizes.
+        'resizable'  different resolutions but the same aspect ratio (within
+                     aspect_tol) — a data property (half-res masks, generator
+                     size snapping); a NEAREST resize to the image frame is a
+                     faithful reprojection.
+        'misaligned' aspect ratios disagree — the mask cannot describe this
+                     image. This is a pairing bug and must be raised, never
+                     resized over or dropped silently.
+    """
+    if tuple(img_size) == tuple(mask_size):
+        return 'aligned'
+    iw, ih = img_size
+    mw, mh = mask_size
+    if min(iw, ih, mw, mh) <= 0:
+        return 'misaligned'
+    img_aspect, mask_aspect = iw / ih, mw / mh
+    if abs(img_aspect - mask_aspect) / img_aspect <= aspect_tol:
+        return 'resizable'
+    return 'misaligned'
 
 
 @dataclasses.dataclass(frozen=True)
@@ -63,6 +104,12 @@ def verify(
     Returns:
         None if the item passes.
         A short reason string describing the first failure.
+        A 'warn_*' string for items that PASS but carry a counted data
+        property (currently only warn_mask_native_resize).
+
+    Raises:
+        DataError: image/mask aspect misalignment — a pairing bug, never a
+        droppable item (see module docstring).
     """
     from PIL import Image, UnidentifiedImageError
 
@@ -101,6 +148,19 @@ def verify(
         if area > float(policy.max_mask_area):
             return "mask_area_too_large"
 
+        # 5. Alignment hard-check: aspect mismatch = broken pairing → raise.
+        #    Same-aspect resolution difference = data property → keep + count.
+        align = mask_alignment(img.size, mask_pil.size)
+        if align == 'misaligned':
+            raise DataError(
+                f'{item.item_id}: mask native size {mask_pil.size} is aspect-'
+                f'misaligned with image {img.size} (mask={item.mask}) — wrong '
+                f'pairing or corrupted export; alignment bugs are never '
+                f'dropped silently.'
+            )
+        if align == 'resizable':
+            return "warn_mask_native_resize"
+
     return None
 
 
@@ -135,6 +195,7 @@ def verify_all(
     rejected: List[Rejection] = []
 
     reason_counts: dict = {}
+    warn_counts:   dict = {}
 
     if max_workers is None:
         max_workers = min(16, (os.cpu_count() or 4) * 2)
@@ -149,6 +210,9 @@ def verify_all(
     for item, reason in zip(items, reasons):
         if reason is None:
             kept.append(item)
+        elif reason.startswith('warn_'):
+            kept.append(item)  # passes; counted data property, not a rejection
+            warn_counts[reason] = warn_counts.get(reason, 0) + 1
         else:
             rejected.append(Rejection(
                 item_id=item.item_id,
@@ -162,5 +226,7 @@ def verify_all(
         f'{log_tag} kept={len(kept)} dropped={len(rejected)}/{len(items)}'
         + ('' if not reason_counts else
            ' reasons=' + ','.join(f'{r}:{c}' for r, c in sorted(reason_counts.items())))
+        + ('' if not warn_counts else
+           ' warns=' + ','.join(f'{r}:{c}' for r, c in sorted(warn_counts.items())))
     )
     return kept, rejected

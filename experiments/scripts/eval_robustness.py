@@ -33,6 +33,7 @@ from lab_utils.eval.load_model import load_eval_model
 from lab_utils.eval.metric import metric as eval_metric
 from lab_utils.eval.record import EvalRecord
 from lab_utils.eval.val_sources import add_source_root_args, collect_val_items_by_source
+from lab_utils.errors import DataError
 from lab_utils.logging.text import log_line
 from lab_utils.train.distributed import unwrap_model
 from lab_utils.eval.preprocess import load_image_tensor
@@ -295,6 +296,8 @@ def main() -> None:
                         rec = dataclasses.replace(rec, subgroup=subgroup)
                         
                         records_by_dataset_decoder_condition[item.source][decoder_name][cond_name].append(rec)
+            except DataError:
+                raise  # alignment/pairing bug — abort the sweep, never a skip
             except Exception as exc:
                 log_line(f'[robust] WARN: skipped item={item.item_id} under {cond_name}: {exc}')
 

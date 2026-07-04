@@ -28,6 +28,7 @@ from lab_utils.eval.decode.kmeans import decode_kmeans
 from lab_utils.eval.decode.threshold import decode_threshold
 from lab_utils.eval.metric import metric as eval_metric
 from lab_utils.eval.record import EvalRecord
+from lab_utils.errors import DataError
 from lab_utils.logging.text import log_line
 
 
@@ -353,6 +354,8 @@ def run_val_eval(
 
             rec = eval_metric(patch_mask, info, item, decoder=decoder)
             records.append(_tag_subgroup(rec, item))
+        except DataError:
+            raise  # alignment/pairing bug — abort, never a skip
         except Exception as exc:
             log_line(f'{log_tag} WARN: skipped item={item.item_id}: {exc}')
 

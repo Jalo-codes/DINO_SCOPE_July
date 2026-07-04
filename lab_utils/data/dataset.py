@@ -50,6 +50,7 @@ from lab_utils.data.augment.light import (
 )
 from lab_utils.data.augment.composite import paste_real_background
 from lab_utils.data.augment.degradation import build_degradation_example, resolve_severity
+from lab_utils.data.verify import mask_alignment
 from lab_utils.errors import DataError
 
 
@@ -301,6 +302,19 @@ class Dataset(TorchDataset):
         img  = Image.open(item.image).convert('RGB')
         mask = (Image.open(item.mask).convert('L')
                 if item.mask is not None else None)
+
+        # Alignment hard-check (shared rule with verify.py / eval/metric.py):
+        # same-aspect resolution difference is a data property — normalize the
+        # mask to the image frame before anything composites or crops through
+        # it; an aspect mismatch is a pairing bug and refuses to train.
+        if mask is not None and mask.size != img.size:
+            if mask_alignment(img.size, mask.size) == 'misaligned':
+                raise DataError(
+                    f'{item.item_id}: mask {mask.size} aspect-misaligned with '
+                    f'image {img.size} (mask={item.mask}) — wrong pairing; '
+                    f'refusing to train on it.'
+                )
+            mask = mask.resize(img.size, Image.NEAREST)
 
         # ── Pre-stage: composite (inpaint items only) ─────────────────────────
         # Paste the pristine original over the un-manipulated background so that

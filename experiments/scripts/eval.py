@@ -47,6 +47,7 @@ from lab_utils.eval.fetch import model_info
 from lab_utils.eval.load_model import load_eval_model
 from lab_utils.eval.metric import metric as eval_metric
 from lab_utils.eval.record import EvalRecord
+from lab_utils.errors import DataError
 from lab_utils.eval.val_sources import add_source_root_args, collect_val_items_by_source
 from lab_utils.logging.text import log_line
 from lab_utils.train.distributed import unwrap_model
@@ -365,6 +366,8 @@ def main() -> None:
                         except ImportError:
                             pass
                     n_viz += 1
+            except DataError:
+                raise  # alignment/pairing bug — abort the eval, never a skip
             except Exception as exc:
                 log_line(f'[eval] WARN: skipped item={item.item_id}: {exc}')
 

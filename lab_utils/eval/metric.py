@@ -20,6 +20,8 @@ from lab_utils.eval.fetch import ModelInfo
 from lab_utils.eval.record import EvalRecord
 from lab_utils.eval.buckets import area_to_bucket
 from lab_utils.data.item import Item
+from lab_utils.data.verify import mask_alignment
+from lab_utils.errors import DataError
 from lab_utils.logging.text import log_line
 
 
@@ -46,15 +48,6 @@ def _binary_scores(
     }
 
 
-# Some datasets ship masks whose native size differs slightly from the image
-# they annotate (e.g. TGIF/flux masks are the pre-generation source masks:
-# 680x1023 mask vs 672x1008 generated image). The prediction covers the IMAGE
-# frame, so the mask is normalized to the image's native size before scoring.
-# Warn once per process, then count silently — this is a data property, not a
-# per-item error.
-_SIZE_MISMATCH_COUNT = 0
-
-
 def _load_gt_pixels(
     mask_path,
     threshold: float = 0.5,
@@ -68,25 +61,30 @@ def _load_gt_pixels(
     prediction is upsampled to meet the GT here.
 
     The scoring frame is the image's native frame (that is what the model saw
-    and what the prediction projects back onto). When the mask file's native
-    size differs from the image's, the mask is NEAREST-resized to the image
-    size so GT and prediction are always aligned by construction.
+    and what the prediction projects back onto). Alignment hard-check (shared
+    ``mask_alignment``, same rule as verify.py and dataset.py):
+
+    * same aspect, different resolution (generator size snapping — e.g. TGIF/
+      flux 680x1023 mask vs 672x1008 image — or half-res masks): a data
+      property; the mask is NEAREST-resized to the image frame and EVERY such
+      item is logged.
+    * aspect mismatch: the mask cannot describe this image — DataError,
+      immediately. Never resized over, never demoted to a skipped item.
     """
-    global _SIZE_MISMATCH_COUNT
     if mask_path is None:
         return None
     pil = Image.open(mask_path).convert('L')
     if image_path is not None:
         img_size = Image.open(image_path).size
         if img_size != pil.size:
-            if _SIZE_MISMATCH_COUNT == 0:
-                log_line(
-                    f'[eval] WARN: GT mask native size differs from image '
-                    f'(mask={pil.size} image={img_size}, e.g. {mask_path}); '
-                    f'masks are NEAREST-resized to the image frame. Warning '
-                    f'once — further mismatches handled silently.'
+            if mask_alignment(img_size, pil.size) == 'misaligned':
+                raise DataError(
+                    f'GT mask aspect-misaligned with image: mask {pil.size} '
+                    f'vs image {img_size} ({mask_path}) — wrong pairing or '
+                    f'corrupted data; refusing to score.'
                 )
-            _SIZE_MISMATCH_COUNT += 1
+            log_line(f'[eval] mask-resize: {pil.size} → {img_size} '
+                     f'(same aspect, NEAREST) {mask_path}')
             pil = pil.resize(img_size, Image.NEAREST)
     arr = np.asarray(pil, dtype=np.float32) / 255.0
     return arr >= threshold
