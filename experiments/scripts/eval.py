@@ -51,6 +51,8 @@ from lab_utils.eval.val_sources import add_source_root_args, collect_val_items_b
 from lab_utils.logging.text import log_line
 from lab_utils.train.distributed import unwrap_model
 
+from experiments.configs.zoom import DEFAULT_ZOOM
+
 
 # ── CLI ────────────────────────────────────────────────────────────────────────
 
@@ -101,26 +103,28 @@ def _build_parser() -> argparse.ArgumentParser:
                    help='Restrict to these source names (default: all configured)')
     g.add_argument('--subgroup', type=str, default=None,
                    help='Restrict evaluation to items in this comma-separated subgroup/cell (reals are preserved)')
+    # Zoom defaults come from experiments.configs.zoom.DEFAULT_ZOOM — the ONE
+    # operating point shared with predict.py / eval_robustness.py / val_zoom.
     g.add_argument('--zoom', action='store_true',
                    help='Run attention-guided zoom (two-pass evaluation)')
-    g.add_argument('--attn_percentile', default='peak',
+    g.add_argument('--attn_percentile', default=DEFAULT_ZOOM.attn_percentile,
                    help="Attention threshold method: 'peak' (>= thresh_mult*max, "
                         "recall-first), 'otsu', 'gap', or a numeric percentile.")
-    g.add_argument('--attn_thresh_mult', type=float, default=0.08,
+    g.add_argument('--attn_thresh_mult', type=float, default=DEFAULT_ZOOM.attn_thresh_mult,
                    help="Threshold scale for 'peak'/'otsu'/'gap'. With 'peak', "
                         'fraction of the max attention; lower = broader single box.')
-    g.add_argument('--attn_pad_frac', type=float, default=0.10,
+    g.add_argument('--attn_pad_frac', type=float, default=DEFAULT_ZOOM.attn_pad_frac,
                    help='Padding fraction around the attention crop box')
-    g.add_argument('--min_box_size', type=int, default=8,
+    g.add_argument('--min_box_size', type=int, default=DEFAULT_ZOOM.min_box_size,
                    help='Minimum crop size in patches')
-    g.add_argument('--attn_min_pad_frac', type=float, default=0.06,
+    g.add_argument('--attn_min_pad_frac', type=float, default=DEFAULT_ZOOM.attn_min_pad_frac,
                    help='Floor on per-side crop padding fraction so the margin does '
                         'not collapse to ~0 on medium/large boxes. 0 = legacy.')
-    g.add_argument('--zoom_pad_frac', type=float, default=None,
+    g.add_argument('--zoom_pad_frac', type=float, default=DEFAULT_ZOOM.pad_side_frac,
                    help='AREA-BASED crop padding: pad each side by this fraction of '
                         'the frame (resolution-invariant). Set it to switch off the '
                         'patch-based pad/min_box_size math. Default None = legacy.')
-    g.add_argument('--zoom_min_area', type=float, default=0.0,
+    g.add_argument('--zoom_min_area', type=float, default=DEFAULT_ZOOM.min_area_frac,
                    help='With --zoom_pad_frac, floor the padded crop to this fraction '
                         'of the frame area (grown symmetrically about center).')
 

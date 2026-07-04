@@ -41,6 +41,8 @@ from lab_utils.eval.zoom import (
 from lab_utils.logging.text import log_line
 from lab_utils.train.distributed import unwrap_model
 
+from experiments.configs.zoom import DEFAULT_ZOOM
+
 DecodeFn = Callable[[ModelInfo], np.ndarray]
 
 _NAMED_DECODERS: dict = {
@@ -79,14 +81,14 @@ def attention_zoom_single(
     use_amp: bool = False,
     amp_dtype: str = 'float16',
     decoder='kmeans',
-    attn_percentile: float | str = 'otsu',
-    attn_thresh_mult: float = 1.0,
-    attn_pad_frac: float = 0.10,
-    min_crop_frac: float = 0.25,
-    min_box_size: int = 8,
-    attn_min_pad_frac: float = 0.06,
-    pad_side_frac: float | None = None,
-    min_area_frac: float = 0.0,
+    attn_percentile: float | str = DEFAULT_ZOOM.attn_percentile,
+    attn_thresh_mult: float = DEFAULT_ZOOM.attn_thresh_mult,
+    attn_pad_frac: float = DEFAULT_ZOOM.attn_pad_frac,
+    min_crop_frac: float = DEFAULT_ZOOM.min_crop_frac,
+    min_box_size: int = DEFAULT_ZOOM.min_box_size,
+    attn_min_pad_frac: float = DEFAULT_ZOOM.attn_min_pad_frac,
+    pad_side_frac: float | None = DEFAULT_ZOOM.pad_side_frac,
+    min_area_frac: float = DEFAULT_ZOOM.min_area_frac,
     return_debug: bool = False,
     override_image_pil = None,
 ):
@@ -95,13 +97,12 @@ def attention_zoom_single(
     Falls back to the single-pass full-frame decode when attention is missing
     or the attention bbox is ~the whole frame (nothing to zoom into).
 
-    By default the bbox uses an Otsu hot/cold split of the attention map
-    (`attn_percentile='otsu'`, `attn_thresh_mult=1.0`) — the threshold every
-    prior config (DINO_SCOPE eval_zoom_tgif, legacy val-zoom early-stop) used,
-    giving a tight, genuinely-magnified crop.  Alternatives: `'gap'` (largest-gap
-    split) or `'peak'` (keep patches ≥ `attn_thresh_mult` × the peak — recall-first
-    / very broad; with a small mult the box can balloon past `min_crop_frac` and
-    trip the whole-frame fallback, no-opping the zoom).
+    Defaults come from experiments.configs.zoom.DEFAULT_ZOOM — the ONE
+    operating point shared by eval.py, eval_robustness.py, predict.py, and
+    per-epoch val_zoom. Threshold methods: `'peak'` keeps patches >=
+    `attn_thresh_mult` x the peak attention (recall-first; the canonical
+    point), `'otsu'` hot/cold split, `'gap'` largest-gap split, or a numeric
+    percentile.
 
     `attn_min_pad_frac` floors the per-side crop padding so the breathing room
     does not collapse to ~0 on medium/large boxes (the inverse-area scaling

@@ -38,6 +38,8 @@ from lab_utils.train.distributed import unwrap_model
 from lab_utils.eval.preprocess import load_image_tensor
 from lab_utils.eval.robustness import robustness_sweep
 
+from experiments.configs.zoom import DEFAULT_ZOOM
+
 
 # ── Corruption Helpers ─────────────────────────────────────────────────────────
 
@@ -110,20 +112,22 @@ def _build_parser() -> argparse.ArgumentParser:
     g = p.add_argument_group('dataset roots (at least one required)')
     add_source_root_args(g)
 
+    # Zoom defaults from experiments.configs.zoom.DEFAULT_ZOOM (shared with
+    # eval.py / predict.py / val_zoom — one operating point).
     g = p.add_argument_group('zoom (two-pass evaluation)')
     g.add_argument('--zoom', action='store_true',
                    help='Run attention-guided zoom (two-pass evaluation)')
-    g.add_argument('--attn_percentile', default='peak',
+    g.add_argument('--attn_percentile', default=DEFAULT_ZOOM.attn_percentile,
                    help="Attention threshold method: 'peak' (>= thresh_mult*max, "
                         "recall-first), 'otsu', 'gap', or a numeric percentile.")
-    g.add_argument('--attn_thresh_mult', type=float, default=0.08,
+    g.add_argument('--attn_thresh_mult', type=float, default=DEFAULT_ZOOM.attn_thresh_mult,
                    help="Threshold scale for 'peak'/'otsu'/'gap'. With 'peak', "
                         'fraction of the max attention; lower = broader single box.')
-    g.add_argument('--attn_pad_frac', type=float, default=0.10,
+    g.add_argument('--attn_pad_frac', type=float, default=DEFAULT_ZOOM.attn_pad_frac,
                    help='Padding fraction around the attention crop box')
-    g.add_argument('--min_box_size', type=int, default=8,
+    g.add_argument('--min_box_size', type=int, default=DEFAULT_ZOOM.min_box_size,
                    help='Minimum crop size in patches')
-    g.add_argument('--attn_min_pad_frac', type=float, default=0.06,
+    g.add_argument('--attn_min_pad_frac', type=float, default=DEFAULT_ZOOM.attn_min_pad_frac,
                    help='Floor on per-side crop padding fraction so the margin does '
                         'not collapse to ~0 on medium/large boxes. 0 = legacy.')
 

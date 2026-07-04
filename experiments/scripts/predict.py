@@ -54,6 +54,8 @@ from lab_utils.eval.preprocess import load_image_tensor
 from lab_utils.logging.text import log_line
 from lab_utils.train.distributed import unwrap_model
 
+from experiments.configs.zoom import DEFAULT_ZOOM
+
 _DECODERS = {
     'kmeans': decode_kmeans,
     'threshold': decode_threshold,
@@ -265,12 +267,12 @@ def predict_one(
     amp_dtype: str,
     crop_frac: float = 0.05,
     zoom: bool = False,
-    attn_percentile='otsu',
-    attn_thresh_mult: float = 1.0,
-    attn_pad_frac: float = 0.10,
-    min_crop_frac: float = 0.25,
-    min_box_size: int = 8,
-    attn_min_pad_frac: float = 0.06,
+    attn_percentile=DEFAULT_ZOOM.attn_percentile,
+    attn_thresh_mult: float = DEFAULT_ZOOM.attn_thresh_mult,
+    attn_pad_frac: float = DEFAULT_ZOOM.attn_pad_frac,
+    min_crop_frac: float = DEFAULT_ZOOM.min_crop_frac,
+    min_box_size: int = DEFAULT_ZOOM.min_box_size,
+    attn_min_pad_frac: float = DEFAULT_ZOOM.attn_min_pad_frac,
 ) -> Dict:
     """Run one image through the model. Returns a dict of image, mask, info, scores.
 
@@ -373,12 +375,12 @@ def run_predict(
     seed: int = 42,
     crop_frac: float = 0.05,
     zoom: bool = False,
-    attn_percentile='otsu',
-    attn_thresh_mult: float = 1.0,
-    attn_pad_frac: float = 0.10,
-    min_crop_frac: float = 0.25,
-    min_box_size: int = 8,
-    attn_min_pad_frac: float = 0.06,
+    attn_percentile=DEFAULT_ZOOM.attn_percentile,
+    attn_thresh_mult: float = DEFAULT_ZOOM.attn_thresh_mult,
+    attn_pad_frac: float = DEFAULT_ZOOM.attn_pad_frac,
+    min_crop_frac: float = DEFAULT_ZOOM.min_crop_frac,
+    min_box_size: int = DEFAULT_ZOOM.min_box_size,
+    attn_min_pad_frac: float = DEFAULT_ZOOM.attn_min_pad_frac,
 ) -> List[Dict]:
     """Notebook-friendly entry point — no shell-out, no CLI parsing.
 
@@ -534,15 +536,16 @@ def _build_parser() -> argparse.ArgumentParser:
     p.add_argument('--zoom', action='store_true',
                    help='Attention-guided two-pass decode (crop to the attention bbox, '
                         're-decode, place back) — same geometry as eval.py --zoom, GT-free')
-    p.add_argument('--attn_percentile', default='otsu',
-                   help="Attention threshold method for --zoom: 'otsu', 'gap', 'peak', or a numeric percentile")
-    p.add_argument('--attn_thresh_mult', type=float, default=1.0)
-    p.add_argument('--attn_pad_frac', type=float, default=0.10)
-    p.add_argument('--min_crop_frac', type=float, default=0.25,
+    p.add_argument('--attn_percentile', default=DEFAULT_ZOOM.attn_percentile,
+                   help="Attention threshold method for --zoom: 'peak', 'otsu', 'gap', or a numeric percentile "
+                        "(default: the shared operating point in experiments/configs/zoom.py)")
+    p.add_argument('--attn_thresh_mult', type=float, default=DEFAULT_ZOOM.attn_thresh_mult)
+    p.add_argument('--attn_pad_frac', type=float, default=DEFAULT_ZOOM.attn_pad_frac)
+    p.add_argument('--min_crop_frac', type=float, default=DEFAULT_ZOOM.min_crop_frac,
                    help='Attention bbox above this fraction of the frame is treated as '
                         'trivial (falls back to the unzoomed decode)')
-    p.add_argument('--min_box_size', type=int, default=8)
-    p.add_argument('--attn_min_pad_frac', type=float, default=0.06)
+    p.add_argument('--min_box_size', type=int, default=DEFAULT_ZOOM.min_box_size)
+    p.add_argument('--attn_min_pad_frac', type=float, default=DEFAULT_ZOOM.attn_min_pad_frac)
     return p
 
 

@@ -322,11 +322,18 @@ def run_val_eval(
     for item in items_to_eval:
         try:
             if zoom_val:
+                # Zoom params default to the shared DEFAULT_ZOOM operating point
+                # (attention_zoom_single's signature); cfg only overrides when
+                # explicitly set, so val-zoom == eval-zoom geometry by default.
+                zoom_overrides = {}
+                if getattr(cfg, 'val_zoom_pad_frac', None) is not None:
+                    zoom_overrides['pad_side_frac'] = cfg.val_zoom_pad_frac
+                if getattr(cfg, 'val_zoom_min_area', 0.0):
+                    zoom_overrides['min_area_frac'] = cfg.val_zoom_min_area
                 rec = attention_zoom_single(
                     bare_model, item, res,
                     device=device, use_amp=use_amp, decoder=decoder,
-                    pad_side_frac=getattr(cfg, 'val_zoom_pad_frac', None),
-                    min_area_frac=getattr(cfg, 'val_zoom_min_area', 0.0),
+                    **zoom_overrides,
                 )
                 records.append(_tag_subgroup(rec, item))
                 continue
