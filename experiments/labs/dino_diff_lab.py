@@ -134,7 +134,8 @@ HOT_MIN_PATCHES = 3         # straggler components < this leave the TP set
 PLUG_HOLES      = True      # enclosed background holes are filled
 MIN_OTSU_ETA    = 0.75
 MIN_HOT_FRAC    = 0.002
-MAX_HOT_FRAC    = 0.25
+MAX_HOT_FRAC    = 0.75      # big edits are fine when decisive (eta gate still
+                            # applies); only near-full-frame re-renders drop
 
 
 def otsu_eta(values: np.ndarray) -> float:

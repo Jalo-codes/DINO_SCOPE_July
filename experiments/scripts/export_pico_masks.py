@@ -8,6 +8,8 @@ for the ``pico_pseudo`` builder::
     out_root/original/<case_id>.png      source image, crop_frac-CROPPED, lossless PNG
     out_root/mask/<case_id>_mask.png     pseudo-mask at the SAME cropped geometry
     out_root/export_format.json          {'version': 2, 'crop_baked_in': True, ...}
+    out_root/index.json                  on-disk triplet index (rebuilt from the
+                                         dirs every run — complete across resumes)
 
 THE CROP IS BAKED INTO THE DATA. The border trim that stabilizes the diff
 (crop_frac — Gemini's re-encode fingerprints the frame edge) is applied to the
@@ -418,6 +420,25 @@ def run_export(
     _drain(exhaustive=True)
     io_pool.shutdown(wait=True)
 
+    # index.json — authoritative list of what is ON DISK. Unlike the manifest
+    # records (which only cover pairs processed in THIS session), this is
+    # rebuilt from the output dirs every run, so it stays complete across
+    # Colab-disconnect resumes. One entry per complete triplet.
+    index = []
+    for mask_file in sorted(mask_dir.glob('*_mask.png')):
+        name = mask_file.name[: -len('_mask.png')]
+        if (mod_dir / f'{name}.png').exists() and (orig_dir / f'{name}.png').exists():
+            index.append({
+                'name': name,
+                'modified': f'modified/{name}.png',
+                'original': f'original/{name}.png',
+                'mask': f'mask/{name}_mask.png',
+            })
+    with open(out_path / 'index.json', 'w') as f:
+        json.dump({'n_triplets': len(index), 'crop_frac': crop_frac,
+                   'triplets': index}, f, indent=1)
+    log_line(f'[dd] index.json: {len(index)} complete triplets on disk')
+
     summary = {
         'config': {
             'root': str(root), 'source': source, 'n_pairs': n_pairs,
@@ -430,6 +451,7 @@ def run_export(
             'dtype': dtype, 'batch_size': batch_size, 'io_workers': io_workers, 'seed': seed,
         },
         'n_kept': n_kept, 'n_dropped': n_dropped, 'n_resumed': n_resumed,
+        'n_indexed': len(index),
         'final_batch_size': state['batch_size'],
         'records': records,
     }
