@@ -208,6 +208,43 @@ def _label_components(mask: np.ndarray) -> List[List[Tuple[int, int]]]:
     return comps
 
 
+def plug_holes(mask: np.ndarray) -> np.ndarray:
+    """Fill fully-enclosed background holes in a boolean grid mask.
+
+    Background is flood-filled 8-connected from the border (the topological
+    dual of the 4-connected foreground in _label_components); any background
+    cell the flood never reaches is inside a closed foreground ring — an
+    enclosed hole — and is set True. Background regions touching the border
+    are never filled. Pure numpy flood-fill, no scipy.
+    """
+    m = np.asarray(mask, dtype=bool)
+    if not m.any() or m.all():
+        return m.copy()
+    n_rows, n_cols = m.shape
+    outside = np.zeros_like(m)
+    stack: List[Tuple[int, int]] = []
+    for r in range(n_rows):
+        for c in (0, n_cols - 1):
+            if not m[r, c] and not outside[r, c]:
+                outside[r, c] = True
+                stack.append((r, c))
+    for c in range(n_cols):
+        for r in (0, n_rows - 1):
+            if not m[r, c] and not outside[r, c]:
+                outside[r, c] = True
+                stack.append((r, c))
+    while stack:
+        r, c = stack.pop()
+        for dr in (-1, 0, 1):
+            for dc in (-1, 0, 1):
+                nr, nc = r + dr, c + dc
+                if (0 <= nr < n_rows and 0 <= nc < n_cols
+                        and not m[nr, nc] and not outside[nr, nc]):
+                    outside[nr, nc] = True
+                    stack.append((nr, nc))
+    return m | ~outside
+
+
 def mask_components_bboxes(
     patch_mask: np.ndarray,
     *,

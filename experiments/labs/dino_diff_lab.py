@@ -124,6 +124,84 @@ def neighborhood_max_diff(
     return diff.cpu().numpy().astype(np.float32)
 
 
+# THE pico pseudo-mask export operating point — single source of truth for
+# export_pico_masks.py and viz_pico_masks.py (scripts must not import each
+# other): what you eyeball in the viz is exactly what an export run keeps.
+CROP_FRAC       = 0.05      # border trim baked into the exported files
+HOT_PERCENTILE  = 'otsu'
+HOT_THRESH_MULT = 0.5       # tuned for TIGHT masks, precision over recall
+HOT_MIN_PATCHES = 3         # straggler components < this leave the TP set
+PLUG_HOLES      = True      # enclosed background holes are filled
+MIN_OTSU_ETA    = 0.75
+MIN_HOT_FRAC    = 0.002
+MAX_HOT_FRAC    = 0.25
+
+
+def otsu_eta(values: np.ndarray) -> float:
+    """Otsu's separability criterion: between-class variance at the best split
+    divided by total variance. 0 = unimodal mush, 1 = two perfectly separated
+    clusters. The direct "was there a decisive split" measure for a diff map.
+    """
+    flat = np.sort(np.asarray(values, dtype=np.float64).reshape(-1))
+    n = len(flat)
+    var_total = flat.var()
+    if n < 3 or var_total <= 0:
+        return 0.0
+    csum = np.cumsum(flat)
+    total = csum[-1]
+    i = np.arange(1, n)
+    m0 = csum[:-1] / i
+    m1 = (total - csum[:-1]) / (n - i)
+    var_between = (i * (n - i) * (m0 - m1) ** 2) / (n * n)
+    return float(var_between.max() / var_total)
+
+
+def render_cropped_mask(
+    hot: np.ndarray,
+    mod_size: Tuple[int, int],
+    crop_frac: float,
+):
+    """Render a patch-grid hot mask at the crop_frac-CROPPED image's pixel size.
+
+    The diff ran on the interior region [dx:W-dx, dy:H-dy] — exactly the
+    region _crop_edges keeps and exactly what gets exported as the image
+    file. The grid is nearest-upsampled straight to that interior size, so
+    exported mask size == exported image size, always (same int(round(...))
+    arithmetic as _crop_edges).
+    """
+    from PIL import Image
+
+    w, h = mod_size
+    dx, dy = int(round(w * crop_frac)), int(round(h * crop_frac))
+    iw, ih = w - 2 * dx, h - 2 * dy
+
+    grid = Image.fromarray((hot.astype(np.uint8)) * 255, mode='L')
+    return grid.resize((iw, ih), Image.NEAREST)
+
+
+def _round_robin_pairs(pairs: Dict[str, Dict], seed: int) -> List[Tuple[str, Dict]]:
+    """Order case pairs round-robin across categories (shuffled within each),
+    so a prefix of any length stays category-balanced."""
+    rng = random.Random(seed)
+    by_cat: Dict[str, List[Tuple[str, Dict]]] = {}
+    for cid, d in sorted(pairs.items()):
+        cat = d['real'].meta.get('category', '')
+        by_cat.setdefault(cat, []).append((cid, d))
+    for lst in by_cat.values():
+        rng.shuffle(lst)
+    ordered: List[Tuple[str, Dict]] = []
+    max_len = max(len(v) for v in by_cat.values())
+    for i in range(max_len):
+        for cat in sorted(by_cat):
+            if i < len(by_cat[cat]):
+                ordered.append(by_cat[cat][i])
+    return ordered
+
+
+def _safe_name(case_id: str) -> str:
+    return case_id.replace('/', '_').replace(' ', '_')
+
+
 def _crop_edges(img, frac: float):
     """Crop `frac` off each of the four edges (e.g. 0.05 removes a 5%-wide border)."""
     if not frac:
@@ -186,26 +264,39 @@ def hot_mask(
     percentile='otsu',
     thresh_mult: float = 1.0,
     min_patches: int = 3,
+    plug_holes: bool = True,
 ) -> np.ndarray:
     """Boolean hot-patch mask via an adaptive (Otsu/gap) split instead of a
-    fixed top-K% cutoff, then drops connected components smaller than
-    `min_patches` (kills isolated single-patch aliasing on textured regions).
+    fixed top-K% cutoff, then two cleanups in order:
 
-    Reuses lab_utils.eval.zoom.attention_hot_mask/_label_components as-is —
-    both are generic over any 2D score grid, not attention-specific, and
-    already power predict.py's --zoom pass on the trained model's attention.
+    1. drops connected components smaller than `min_patches` — kills isolated
+       single-patch aliasing on textured regions (removal only: the image is
+       kept, the straggler patches just leave the TP set);
+    2. plugs fully-enclosed background holes (`plug_holes`) — a splice's
+       interior is part of the splice; the generator keeping a few interior
+       patches feature-similar must not punch FALSE-NEGATIVE holes into the
+       pseudo-mask.
+
+    Reuses lab_utils.eval.zoom helpers as-is — all generic over any 2D score
+    grid, not attention-specific.
     """
-    from lab_utils.eval.zoom import _label_components, attention_hot_mask
+    from lab_utils.eval.zoom import (
+        _label_components,
+        attention_hot_mask,
+        plug_holes as _plug_holes,
+    )
 
     hot = attention_hot_mask(diff_map, grid_hw, percentile=percentile, thresh_mult=thresh_mult)
-    if min_patches <= 1:
-        return hot
-    kept = np.zeros_like(hot)
-    for cells in _label_components(hot):
-        if len(cells) >= min_patches:
-            for (r, c) in cells:
-                kept[r, c] = True
-    return kept
+    if min_patches > 1:
+        kept = np.zeros_like(hot)
+        for cells in _label_components(hot):
+            if len(cells) >= min_patches:
+                for (r, c) in cells:
+                    kept[r, c] = True
+        hot = kept
+    if plug_holes:
+        hot = _plug_holes(hot)
+    return hot
 
 
 def _plot_diff(

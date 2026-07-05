@@ -29,6 +29,14 @@ NOTE: any mask files already present under the PicoBanana root are known
 noise and are never read — this script only consumes originals/ + modified/
 via the pico_banana indexer (which likewise ignores them).
 
+Mask cleanup (hot_mask, in order): threshold → drop straggler components
+smaller than hot_min_patches (the patches leave the TP set; the image stays)
+→ plug fully-enclosed background holes (a splice's interior is part of the
+splice; no false-negative holes in the pseudo-mask). Pairs whose real/modified
+native sizes differ are dropped (pair_size_mismatch) so all three exported
+files always share one geometry. Preview the whole operating point with
+experiments/scripts/viz_pico_masks.py before a full run.
+
 Decisiveness filter — a pair is exported only if its diff map splits cleanly:
   * otsu_eta   between-class/total variance ratio at the Otsu split (bimodality,
                 in [0,1]) must be >= min_otsu_eta. Calibration note: a pure
@@ -79,7 +87,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import random
 import shutil
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
@@ -89,59 +96,35 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 
-from experiments.labs.dino_diff_lab import _crop_edges, _group_case_pairs, _load_raw_backbone, hot_mask
+from experiments.labs.dino_diff_lab import (
+    CROP_FRAC,
+    HOT_MIN_PATCHES,
+    HOT_PERCENTILE,
+    HOT_THRESH_MULT,
+    MAX_HOT_FRAC,
+    MIN_HOT_FRAC,
+    MIN_OTSU_ETA,
+    PLUG_HOLES,
+    _DEFAULT_MODEL_NAME,
+    _crop_edges,
+    _group_case_pairs,
+    _load_raw_backbone,
+    _round_robin_pairs,
+    _safe_name,
+    hot_mask,
+    otsu_eta,
+    render_cropped_mask,
+)
 from lab_utils.data.datasets.registry import build as build_source
 from lab_utils.data.resolution import Resolution
 from lab_utils.eval.preprocess import load_image_tensor
 from lab_utils.logging.text import log_line
 
-_DEFAULT_MODEL_NAME = 'facebook/dinov3-vith16plus-pretrain-lvd1689m'
-
-
-# ── decisiveness statistics ────────────────────────────────────────────────────
-
-def otsu_eta(values: np.ndarray) -> float:
-    """Otsu's separability criterion: between-class variance at the best split
-    divided by total variance. 0 = unimodal mush, 1 = two perfectly separated
-    clusters. The direct "was there a decisive split" measure for a diff map.
-    """
-    flat = np.sort(np.asarray(values, dtype=np.float64).reshape(-1))
-    n = len(flat)
-    var_total = flat.var()
-    if n < 3 or var_total <= 0:
-        return 0.0
-    csum = np.cumsum(flat)
-    total = csum[-1]
-    i = np.arange(1, n)
-    m0 = csum[:-1] / i
-    m1 = (total - csum[:-1]) / (n - i)
-    var_between = (i * (n - i) * (m0 - m1) ** 2) / (n * n)
-    return float(var_between.max() / var_total)
-
-
-# ── mask rendering ─────────────────────────────────────────────────────────────
-
-def render_cropped_mask(
-    hot: np.ndarray,
-    mod_size: Tuple[int, int],
-    crop_frac: float,
-):
-    """Render a patch-grid hot mask at the crop_frac-CROPPED image's pixel size.
-
-    The diff ran on the interior region [dx:W-dx, dy:H-dy] — exactly the
-    region _crop_edges keeps and exactly what gets exported as the image
-    file. The grid is nearest-upsampled straight to that interior size, so
-    exported mask size == exported image size, always (same int(round(...))
-    arithmetic as _crop_edges).
-    """
-    from PIL import Image
-
-    w, h = mod_size
-    dx, dy = int(round(w * crop_frac)), int(round(h * crop_frac))
-    iw, ih = w - 2 * dx, h - 2 * dy
-
-    grid = Image.fromarray((hot.astype(np.uint8)) * 255, mode='L')
-    return grid.resize((iw, ih), Image.NEAREST)
+# The operating point (CROP_FRAC, HOT_*, PLUG_HOLES, MIN_*/MAX_*), the model
+# default (_DEFAULT_MODEL_NAME) and the
+# shared helpers (otsu_eta, render_cropped_mask, ...) live in
+# experiments.labs.dino_diff_lab — one source of truth for this script and
+# viz_pico_masks.py (scripts must not import each other).
 
 
 # ── batched GPU inference ───────────────────────────────────────────────────────
@@ -207,10 +190,10 @@ def _load_pair(real_path, mod_path, crop_frac: float, res: Resolution):
 
     real_img = PILImage.open(real_path).convert('RGB')
     mod_img = PILImage.open(mod_path).convert('RGB')
-    mod_native_size = mod_img.size
+    native_sizes = (mod_img.size, real_img.size)
     real_t = load_image_tensor(_crop_edges(real_img, crop_frac), res, device=None, add_batch_dim=False)
     mod_t = load_image_tensor(_crop_edges(mod_img, crop_frac), res, device=None, add_batch_dim=False)
-    return real_t, mod_t, mod_native_size
+    return real_t, mod_t, native_sizes
 
 
 def _write_outputs(mod_src, real_src, mod_out, orig_out, mask_img, mask_file, crop_frac):
@@ -226,29 +209,6 @@ def _write_outputs(mod_src, real_src, mod_out, orig_out, mask_img, mask_file, cr
 
 # ── export ─────────────────────────────────────────────────────────────────────
 
-def _round_robin_pairs(pairs: Dict[str, Dict], seed: int) -> List[Tuple[str, Dict]]:
-    """Order case pairs round-robin across categories (shuffled within each),
-    so a prefix of any length stays category-balanced."""
-    rng = random.Random(seed)
-    by_cat: Dict[str, List[Tuple[str, Dict]]] = {}
-    for cid, d in sorted(pairs.items()):
-        cat = d['real'].meta.get('category', '')
-        by_cat.setdefault(cat, []).append((cid, d))
-    for lst in by_cat.values():
-        rng.shuffle(lst)
-    ordered: List[Tuple[str, Dict]] = []
-    max_len = max(len(v) for v in by_cat.values())
-    for i in range(max_len):
-        for cat in sorted(by_cat):
-            if i < len(by_cat[cat]):
-                ordered.append(by_cat[cat][i])
-    return ordered
-
-
-def _safe_name(case_id: str) -> str:
-    return case_id.replace('/', '_').replace(' ', '_')
-
-
 def run_export(
     root: str,
     out_root: str,
@@ -259,13 +219,14 @@ def run_export(
     model_name: str = _DEFAULT_MODEL_NAME,
     radius: int = 1,
     pool_ksize: int = 1,
-    crop_frac: float = 0.05,
-    hot_percentile='otsu',
-    hot_thresh_mult: float = 0.5,
-    hot_min_patches: int = 3,
-    min_otsu_eta: float = 0.75,
-    min_hot_frac: float = 0.002,
-    max_hot_frac: float = 0.25,
+    crop_frac: float = CROP_FRAC,
+    hot_percentile=HOT_PERCENTILE,
+    hot_thresh_mult: float = HOT_THRESH_MULT,
+    hot_min_patches: int = HOT_MIN_PATCHES,
+    plug_holes: bool = PLUG_HOLES,
+    min_otsu_eta: float = MIN_OTSU_ETA,
+    min_hot_frac: float = MIN_HOT_FRAC,
+    max_hot_frac: float = MAX_HOT_FRAC,
     device: str = 'cuda',
     dtype: str = 'fp16',
     batch_size: int = 16,
@@ -402,18 +363,24 @@ def run_export(
         if not batch_pairs:
             break  # pool exhausted (or hit target while skipping resumed items)
 
-        for (case_id, d, name), diff_map, mod_native_size in _run_forward(batch_pairs):
+        for (case_id, d, name), diff_map, (mod_native_size, real_native_size) in _run_forward(batch_pairs):
             real_it, mod_it = d['real'], d['modified']
             category = real_it.meta.get('category', '')
             mask_file = mask_dir / f'{name}_mask.png'
 
             hot = hot_mask(diff_map, grid_hw, percentile=hot_percentile,
-                           thresh_mult=hot_thresh_mult, min_patches=hot_min_patches)
+                           thresh_mult=hot_thresh_mult, min_patches=hot_min_patches,
+                           plug_holes=plug_holes)
             eta = otsu_eta(diff_map)
             hot_frac = float(hot.mean())
 
             reason = None
-            if eta < min_otsu_eta:
+            if real_native_size != mod_native_size:
+                # Both images get the same fractional crop, so equal native
+                # sizes are what guarantee all three exported files share one
+                # geometry. Unequal source pairs are dropped, never exported.
+                reason = f'pair_size_mismatch real={real_native_size} mod={mod_native_size}'
+            elif eta < min_otsu_eta:
                 reason = f'otsu_eta {eta:.3f} < {min_otsu_eta}'
             elif hot_frac < min_hot_frac:
                 reason = f'hot_frac {hot_frac:.4f} < {min_hot_frac}'
@@ -457,7 +424,8 @@ def run_export(
             'image_size': image_size, 'model_name': model_name,
             'radius': radius, 'pool_ksize': pool_ksize, 'crop_frac': crop_frac,
             'hot_percentile': str(hot_percentile), 'hot_thresh_mult': hot_thresh_mult,
-            'hot_min_patches': hot_min_patches, 'min_otsu_eta': min_otsu_eta,
+            'hot_min_patches': hot_min_patches, 'plug_holes': plug_holes,
+            'min_otsu_eta': min_otsu_eta,
             'min_hot_frac': min_hot_frac, 'max_hot_frac': max_hot_frac,
             'dtype': dtype, 'batch_size': batch_size, 'io_workers': io_workers, 'seed': seed,
         },
@@ -498,12 +466,12 @@ def main() -> None:
     p.add_argument('--model_name', default=_DEFAULT_MODEL_NAME)
     p.add_argument('--radius', type=int, default=1)
     p.add_argument('--pool_ksize', type=int, default=1)
-    p.add_argument('--crop_frac', type=float, default=0.05)
-    p.add_argument('--hot_thresh_mult', type=float, default=0.5)
-    p.add_argument('--hot_min_patches', type=int, default=3)
-    p.add_argument('--min_otsu_eta', type=float, default=0.75)
-    p.add_argument('--min_hot_frac', type=float, default=0.002)
-    p.add_argument('--max_hot_frac', type=float, default=0.25)
+    p.add_argument('--crop_frac', type=float, default=CROP_FRAC)
+    p.add_argument('--hot_thresh_mult', type=float, default=HOT_THRESH_MULT)
+    p.add_argument('--hot_min_patches', type=int, default=HOT_MIN_PATCHES)
+    p.add_argument('--min_otsu_eta', type=float, default=MIN_OTSU_ETA)
+    p.add_argument('--min_hot_frac', type=float, default=MIN_HOT_FRAC)
+    p.add_argument('--max_hot_frac', type=float, default=MAX_HOT_FRAC)
     p.add_argument('--device', default='cuda', choices=['cuda', 'cpu', 'mps'])
     p.add_argument('--dtype', default='fp16', choices=['fp32', 'fp16', 'bf16'])
     p.add_argument('--batch_size', type=int, default=16, help='Pairs per GPU forward call')
