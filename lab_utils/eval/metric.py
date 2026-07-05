@@ -53,6 +53,7 @@ def _load_gt_pixels(
     threshold: float = 0.5,
     *,
     image_path=None,
+    geometry_free: bool = False,
 ) -> Optional[np.ndarray]:
     """Load GT mask at the IMAGE's native pixel resolution; binarise.
 
@@ -70,6 +71,9 @@ def _load_gt_pixels(
       item is logged.
     * aspect mismatch: the mask cannot describe this image — DataError,
       immediately. Never resized over, never demoted to a skipped item.
+    * geometry_free=True (sentinel masks, meta['gt_mask_reliable'] = False —
+      e.g. pico_banana's full-frame placeholder, all-white at any size):
+      alignment is meaningless by declaration; resize silently.
     """
     if mask_path is None:
         return None
@@ -77,14 +81,15 @@ def _load_gt_pixels(
     if image_path is not None:
         img_size = Image.open(image_path).size
         if img_size != pil.size:
-            if mask_alignment(img_size, pil.size) == 'misaligned':
-                raise DataError(
-                    f'GT mask aspect-misaligned with image: mask {pil.size} '
-                    f'vs image {img_size} ({mask_path}) — wrong pairing or '
-                    f'corrupted data; refusing to score.'
-                )
-            log_line(f'[eval] mask-resize: {pil.size} → {img_size} '
-                     f'(same aspect, NEAREST) {mask_path}')
+            if not geometry_free:
+                if mask_alignment(img_size, pil.size) == 'misaligned':
+                    raise DataError(
+                        f'GT mask aspect-misaligned with image: mask {pil.size} '
+                        f'vs image {img_size} ({mask_path}) — wrong pairing or '
+                        f'corrupted data; refusing to score.'
+                    )
+                log_line(f'[eval] mask-resize: {pil.size} → {img_size} '
+                         f'(same aspect, NEAREST) {mask_path}')
             pil = pil.resize(img_size, Image.NEAREST)
     arr = np.asarray(pil, dtype=np.float32) / 255.0
     return arr >= threshold
@@ -157,6 +162,7 @@ def metric(
     # GT at the image's native pixel resolution (sole touch of triplet.mask).
     gt = _load_gt_pixels(
         triplet.mask, threshold=gt_threshold, image_path=triplet.image,
+        geometry_free=triplet.meta.get('gt_mask_reliable') is False,
     )
     if gt is not None:
         pred = _upsample_pred_to(pred_patch, gt.shape)          # → (H_gt, W_gt)

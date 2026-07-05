@@ -117,3 +117,24 @@ class TestVerifyAlignment:
         _mask_image(mask, (60, 60))
         with pytest.raises(DataError, match='misaligned'):
             verify_all([_fake_item(img, mask)], log_tag='[verify]')
+
+    def test_sentinel_mask_exempt_from_alignment(self, tmp_path):
+        # pico_banana's synthetic full-frame sentinel: a tiny all-white square
+        # (geometry-free by declaration, meta['gt_mask_reliable']=False) paired
+        # with an arbitrarily-sized image must NOT trip the alignment check.
+        from lab_utils.data.verify import VerifyPolicy
+
+        img, mask = tmp_path / 'e.png', tmp_path / 'e_mask.png'
+        _noise_image(img, (128, 96))                 # 4:3, like 1024x768
+        _mask_image(mask, (32, 32), fg_frac=1.0)     # all-white 32x32 sentinel
+        item = Item(
+            image=img,
+            authentic=None,
+            mask=mask,
+            source='pico_banana',
+            item_id=make_item_id('pico_banana', img),
+            meta={'gt_mask_reliable': False},
+        )
+        # max_mask_area=1.0 mirrors the pico_banana builder's policy (the
+        # sentinel is 100% foreground on purpose).
+        assert verify(item, policy=VerifyPolicy(max_mask_area=1.0)) is None

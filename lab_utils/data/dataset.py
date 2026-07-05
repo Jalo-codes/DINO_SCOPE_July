@@ -307,8 +307,11 @@ class Dataset(TorchDataset):
         # same-aspect resolution difference is a data property — normalize the
         # mask to the image frame before anything composites or crops through
         # it; an aspect mismatch is a pairing bug and refuses to train.
+        # Sentinel masks (meta['gt_mask_reliable'] = False) are geometry-free
+        # by declaration and just get resized.
         if mask is not None and mask.size != img.size:
-            if mask_alignment(img.size, mask.size) == 'misaligned':
+            if (item.meta.get('gt_mask_reliable') is not False
+                    and mask_alignment(img.size, mask.size) == 'misaligned'):
                 raise DataError(
                     f'{item.item_id}: mask {mask.size} aspect-misaligned with '
                     f'image {img.size} (mask={item.mask}) — wrong pairing; '

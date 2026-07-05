@@ -150,16 +150,21 @@ def verify(
 
         # 5. Alignment hard-check: aspect mismatch = broken pairing → raise.
         #    Same-aspect resolution difference = data property → keep + count.
-        align = mask_alignment(img.size, mask_pil.size)
-        if align == 'misaligned':
-            raise DataError(
-                f'{item.item_id}: mask native size {mask_pil.size} is aspect-'
-                f'misaligned with image {img.size} (mask={item.mask}) — wrong '
-                f'pairing or corrupted export; alignment bugs are never '
-                f'dropped silently.'
-            )
-        if align == 'resizable':
-            return "warn_mask_native_resize"
+        #    Sentinel masks (meta['gt_mask_reliable'] = False, e.g.
+        #    pico_banana's full-frame placeholder) are geometry-free by
+        #    declaration — all-white at any size — so alignment is meaningless
+        #    for them and the check is skipped.
+        if item.meta.get('gt_mask_reliable') is not False:
+            align = mask_alignment(img.size, mask_pil.size)
+            if align == 'misaligned':
+                raise DataError(
+                    f'{item.item_id}: mask native size {mask_pil.size} is aspect-'
+                    f'misaligned with image {img.size} (mask={item.mask}) — wrong '
+                    f'pairing or corrupted export; alignment bugs are never '
+                    f'dropped silently.'
+                )
+            if align == 'resizable':
+                return "warn_mask_native_resize"
 
     return None
 
