@@ -140,6 +140,9 @@ class TestFetchIsSoleModelEntry:
         'experiments/labs/zoom_box_lab.py',
         'experiments/scripts/bench_resolution.py',
         'experiments/scripts/train_zoom_box.py',
+        'experiments/scripts/predict.py',       # GT-free qualitative inference; docstring names I2
+        'experiments/scripts/eval_oracle.py',   # isolated cheating-oracle eval; reuses fetch.model_info by design
+        'experiments/scripts/gen_size_bucket_visuals.py',  # per-item viz forward, same shape as attention_zoom.py
     }
 
     def test_model_info_not_called_elsewhere(self):

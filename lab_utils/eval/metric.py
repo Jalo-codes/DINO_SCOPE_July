@@ -54,6 +54,7 @@ def _load_gt_pixels(
     *,
     image_path=None,
     geometry_free: bool = False,
+    crop_window=None,
 ) -> Optional[np.ndarray]:
     """Load GT mask at the IMAGE's native pixel resolution; binarise.
 
@@ -91,6 +92,12 @@ def _load_gt_pixels(
                 log_line(f'[eval] mask-resize: {pil.size} → {img_size} '
                          f'(same aspect, NEAREST) {mask_path}')
             pil = pil.resize(img_size, Image.NEAREST)
+    # Region-probe items: the model saw a windowed crop, so the scoring frame
+    # is the window — crop the GT with the same fractional box (same rounding
+    # rule as the image side via apply_crop_window).
+    if crop_window is not None:
+        from lab_utils.data.crop_conditions import apply_crop_window
+        pil = apply_crop_window(pil, crop_window)
     arr = np.asarray(pil, dtype=np.float32) / 255.0
     return arr >= threshold
 
@@ -163,6 +170,7 @@ def metric(
     gt = _load_gt_pixels(
         triplet.mask, threshold=gt_threshold, image_path=triplet.image,
         geometry_free=triplet.meta.get('gt_mask_reliable') is False,
+        crop_window=triplet.meta.get('crop_window'),
     )
     if gt is not None:
         pred = _upsample_pred_to(pred_patch, gt.shape)          # → (H_gt, W_gt)

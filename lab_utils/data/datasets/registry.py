@@ -30,6 +30,7 @@ import lab_utils.data.datasets.unpaired as _unpaired
 import lab_utils.data.datasets.opensdi  as _opensdi
 import lab_utils.data.datasets.pico_banana as _pico_banana
 import lab_utils.data.datasets.pico_pseudo as _pico_pseudo
+import lab_utils.data.datasets.region_probes as _region_probes
 
 
 
@@ -49,6 +50,17 @@ REGISTRY: Dict[str, Callable] = {
     'opensdi':      _opensdi.build,
     'sid_set':      lambda root, **kw: _unpaired.build(root, source='sid_set', **kw),
     'pico_banana':  _pico_banana.build,
+    # Region-probe eval conditions (BCE-emergence study) — eval-only builders
+    # over a PARENT dataset's val split; the flag root is the PARENT root.
+    # ai_* / real_crop / fr_bg default to inpaint-layout parents (sagid root or
+    # a purpose-built clean dir, e.g. the sagid-fr dir for fr_bg); sp_* wrap
+    # casia. Windows/floors/determinism: lab_utils/data/crop_conditions.py.
+    'ai_interior':  lambda root, **kw: _region_probes.build(root, condition='ai_interior', parent=kw.pop('parent', 'sagid'), **kw),
+    'ai_boundary':  lambda root, **kw: _region_probes.build(root, condition='ai_boundary', parent=kw.pop('parent', 'sagid'), **kw),
+    'sp_interior':  lambda root, **kw: _region_probes.build(root, condition='sp_interior', parent=kw.pop('parent', 'casia'), **kw),
+    'sp_boundary':  lambda root, **kw: _region_probes.build(root, condition='sp_boundary', parent=kw.pop('parent', 'casia'), **kw),
+    'fr_bg':        lambda root, **kw: _region_probes.build(root, condition='fr_bg',       parent=kw.pop('parent', 'sagid'), **kw),
+    'real_crop':    lambda root, **kw: _region_probes.build(root, condition='real_crop',   parent=kw.pop('parent', 'sagid'), **kw),
 }
 
 

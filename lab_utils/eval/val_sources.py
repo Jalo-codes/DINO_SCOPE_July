@@ -34,6 +34,15 @@ SOURCE_ROOT_ARGS: Dict[str, str] = {
     'sid_set':      'sid_set_root',
     'pico_banana':  'pico_banana_root',
     'pico_pseudo':  'pico_pseudo_root',
+    # Region-probe eval conditions (BCE-emergence study). Each flag points at
+    # the PARENT dataset root (ai_*/real_crop → sagid-layout root; fr_bg → an
+    # fr-typed inpaint-layout dir; sp_* → casia root).
+    'ai_interior':  'ai_interior_root',
+    'ai_boundary':  'ai_boundary_root',
+    'sp_interior':  'sp_interior_root',
+    'sp_boundary':  'sp_boundary_root',
+    'fr_bg':        'fr_bg_root',
+    'real_crop':    'real_crop_root',
 }
 
 

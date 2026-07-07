@@ -97,6 +97,10 @@ class Dataset(TorchDataset):
                             items read as local splices (sp); the rest keep the
                             whole-image diffusion fingerprint (fr). 1.0 = always
                             paste; e.g. 0.40 → 40% sp / 60% fr.
+        fr_bg_negative_prob: For UN-pasted inpaint items (fr-style), probability
+                            of replacing the sample with a window fully outside
+                            the edit mask served as a clean negative (mask=zeros,
+                            is_real=True). Train-only. 0.0 = off.
         light_aug_kwargs:   Override appearance aug probabilities / ranges.
         aug_severity:       One of 'light' | 'medium' | 'heavy' | 'extreme'
                             (see augment/degradation.py SEVERITY_TIERS).
@@ -134,6 +138,7 @@ class Dataset(TorchDataset):
         flip_prob: float = 0.50,
         paste_background: bool = True,
         paste_frac: float = 1.0,
+        fr_bg_negative_prob: float = 0.0,
         light_aug_kwargs: Optional[Dict[str, Any]] = None,
         aug_severity: str = 'light',
         degradation_kwargs: Optional[Dict[str, Any]] = None,
@@ -151,6 +156,7 @@ class Dataset(TorchDataset):
         self.flip_prob          = float(flip_prob)
         self.paste_background   = bool(paste_background)
         self.paste_frac         = float(paste_frac)
+        self.fr_bg_negative_prob = float(fr_bg_negative_prob)
         self.lak                = dict(_DEFAULT_LIGHT_AUG)
         if light_aug_kwargs:
             self.lak.update(light_aug_kwargs)
@@ -319,6 +325,17 @@ class Dataset(TorchDataset):
                 )
             mask = mask.resize(img.size, Image.NEAREST)
 
+        # ── Probe crop window (region-probe eval conditions) ──────────────────
+        # Items built by datasets/region_probes.py carry a fractional window in
+        # meta['crop_window']; the crop IS the sample — applied before anything
+        # else so paste/geometric/resize all operate on the windowed frame.
+        crop_window = item.meta.get('crop_window')
+        if crop_window is not None:
+            from lab_utils.data.crop_conditions import apply_crop_window
+            img = apply_crop_window(img, crop_window)
+            if mask is not None:
+                mask = apply_crop_window(mask, crop_window)
+
         # ── Pre-stage: composite (inpaint items only) ─────────────────────────
         # Paste the pristine original over the un-manipulated background so that
         # only the inpainted region differs from the original.  This restricts
@@ -328,10 +345,35 @@ class Dataset(TorchDataset):
         # items behave like a local splice (sp); the rest keep the whole-image
         # diffusion fingerprint (fr).  paste_frac=1.0 → always paste (all sp).
         real_path = item.meta.get('real_path')
+        pasted = False
         if (self.paste_background and real_path is not None and mask is not None
                 and random.random() < self.paste_frac):
             real = Image.open(real_path).convert('RGB')
             img  = paste_real_background(img, real, mask)
+            pasted = True
+
+        # ── fr-background negative (train only) ───────────────────────────────
+        # For an UN-pasted inpaint item (fr-style: the whole frame carries the
+        # regen fingerprint), occasionally train on a window fully OUTSIDE the
+        # edit mask, labeled clean — regen texture without a semantic edit is
+        # a negative.  Forces the fingerprint out of the semantic heads instead
+        # of letting "decoder noise anywhere" score as manipulation.
+        fr_bg_negative = False
+        if (self.augment and self.fr_bg_negative_prob > 0.0 and not pasted
+                and real_path is not None and mask is not None
+                and random.random() < self.fr_bg_negative_prob):
+            from lab_utils.data.crop_conditions import (
+                apply_crop_window, sample_outside_windows,
+            )
+            m_arr = np.asarray(mask) > 127
+            wins = sample_outside_windows(
+                m_arr, self.res, item_id=item.item_id, k=1,
+                rng=random.Random(random.getrandbits(64)),   # fresh each epoch
+            )
+            if wins:
+                img  = apply_crop_window(img, wins[0].window)
+                mask = None                     # clean background crop
+                fr_bg_negative = True
 
         # ── Geometric stage ───────────────────────────────────────────────────
         out_img, out_mask, crop_valid = self._geometric_stage(img, mask, item)
@@ -339,7 +381,7 @@ class Dataset(TorchDataset):
             return None
 
         # Mark splice as unsupervised if crop missed the splice region
-        is_supervised = (not item.is_real) and crop_valid
+        is_supervised = (not item.is_real) and crop_valid and not fr_bg_negative
 
         # ── Appearance stage (train only) ─────────────────────────────────────
         # Same treatment for real and splice/fake items — no is_real branch —
@@ -374,7 +416,9 @@ class Dataset(TorchDataset):
             'meta': {
                 'item_id':       item.item_id,
                 'source':        item.source,
-                'is_real':       item.is_real,
+                # fr-background negatives are served AS clean reals: zero mask,
+                # negative image label — the whole point of the sample.
+                'is_real':       item.is_real or fr_bg_negative,
                 'is_supervised': is_supervised,
             },
         }

@@ -34,8 +34,14 @@ def _resolve_pil(src: ImageSource):
     from PIL import Image as PILImage
 
     if isinstance(src, Item):
-        path = src.image
-        return PILImage.open(path).convert('RGB')
+        pil = PILImage.open(src.image).convert('RGB')
+        # Region-probe items (datasets/region_probes.py) carry a fractional
+        # crop window; the crop IS the model input for these conditions.
+        window = src.meta.get('crop_window')
+        if window is not None:
+            from lab_utils.data.crop_conditions import apply_crop_window
+            pil = apply_crop_window(pil, window)
+        return pil
     if isinstance(src, (str, Path)):
         return PILImage.open(src).convert('RGB')
     # Assume it is already a PIL image.

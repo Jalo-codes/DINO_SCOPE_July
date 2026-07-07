@@ -172,6 +172,13 @@ def _build_parser() -> argparse.ArgumentParser:
                    help='Per-item paste-back probability for inpaint items == the '
                         '"sp" share; the rest keep the whole-image diffusion '
                         'fingerprint (fr). Default 0.40 → 40%% sp / 60%% fr.')
+    g.add_argument('--fr_bg_negative_prob',    type=float, default=0.0,
+                   help='For UN-pasted inpaint items (fr-style), probability of '
+                        'training on a window fully outside the edit mask served '
+                        'as a clean negative (mask=zeros, label real). Teaches '
+                        'regen-texture-without-edit = clean, isolating the '
+                        'decoder fingerprint away from the semantic heads. '
+                        '0.0 (default) = off.')
     g.add_argument('--oracle_crop',            action='store_true')
 
     # hardware
@@ -376,6 +383,7 @@ def _build_datasets(cfg, res: Resolution):
         crop_ratio=(cfg.train_crop_ratio_min, cfg.train_crop_ratio_max),
         oracle_crop=cfg.oracle_crop,
         paste_frac=cfg.paste_frac,
+        fr_bg_negative_prob=cfg.fr_bg_negative_prob,
         aug_severity=cfg.aug_severity,
     )
     if cfg.aug_severity != 'light':

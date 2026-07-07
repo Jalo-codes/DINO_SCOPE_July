@@ -349,6 +349,11 @@ def main() -> None:
                    help='Rerun this entry even if its done-marker exists (repeatable).')
     p.add_argument('--stop_on_fail', action='store_true',
                    help='Stop the queue at the first nonzero child exit.')
+    p.add_argument('--only', action='append', default=[], metavar='NAME',
+                   help='Run only these entries (repeatable). Lets an external '
+                        'scheduler (e.g. a per-GPU worker claiming cells) drive '
+                        'one entry per invocation while keeping arg conversion '
+                        'and done-markers here.')
     p.add_argument('--cwd', default=None,
                    help='Working directory for child processes (default: current dir).')
     args = p.parse_args()
@@ -366,6 +371,11 @@ def main() -> None:
     unknown_force = [n for n in args.force if n not in names]
     if unknown_force:
         sys.exit(f'[orchestrate] ERROR: --force names not in queue: {unknown_force}')
+    unknown_only = [n for n in args.only if n not in names]
+    if unknown_only:
+        sys.exit(f'[orchestrate] ERROR: --only names not in queue: {unknown_only}')
+    if args.only:
+        runs = [e for e in runs if e['name'] in set(args.only)]
 
     # Decide skip/run per entry up front.
     plan = []  # (entry, argv, skip)

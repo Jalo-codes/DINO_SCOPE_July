@@ -30,7 +30,7 @@ ALLOWED_TAGS = frozenset([
     '[robust]', '[oracle]', '[tgif]', '[zoom]', '[buckets]',
     '[ft]', '[ft-eval]', '[eval-num]', '[bp]', '[bp-eval]',
     '[sb]', '[sb-eval]', '[zh]', '[zh-eval]', '[zb]', '[zb-eval]',
-    '[bench]', '[predict]', '[dd]', '[viz]',
+    '[bench]', '[predict]', '[dd]', '[viz]', '[probe]',
 ])
 
 

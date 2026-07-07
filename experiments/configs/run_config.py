@@ -102,6 +102,7 @@ class RunConfig:
     train_crop_ratio_max:    float = 1.70
     aug_severity:            str   = 'light'  # light|medium|heavy|extreme (prob+strength preset)
     paste_frac:              float = 0.40   # inpaint paste-back prob == sp share (rest = fr)
+    fr_bg_negative_prob:     float = 0.0    # un-pasted inpaint items: prob of an outside-mask crop served as a clean negative
     oracle_crop:             bool  = False
 
     # ── Recipe (which train harness produced this run) ─────────────────────────
@@ -238,6 +239,7 @@ def resolve_config(args, *, hw: Optional[HardwareInfo] = None) -> RunConfig:
         train_crop_ratio_max=getattr(args, 'train_crop_ratio_max', 1.70),
         aug_severity=getattr(args, 'aug_severity', 'light'),
         paste_frac=getattr(args, 'paste_frac', 0.40),
+        fr_bg_negative_prob=getattr(args, 'fr_bg_negative_prob', 0.0),
         oracle_crop=getattr(args, 'oracle_crop', False),
         # recipe / tgif-finetune
         recipe=getattr(args, 'recipe', 'standard'),
