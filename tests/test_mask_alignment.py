@@ -1,12 +1,20 @@
-"""tests.test_mask_alignment — the image/mask alignment hard-check.
+"""tests.test_mask_alignment — the image/mask alignment check.
 
-Alignment rule (shared by verify.py, dataset.py, eval/metric.py via
-``verify.mask_alignment``):
+Alignment rule (``verify.mask_alignment``, shared by verify.py, dataset.py,
+eval/metric.py):
   - identical sizes            → 'aligned'
   - same aspect, different res → 'resizable'  (data property: half-res masks,
                                  generator size snapping, CASIA off-by-one)
-  - aspect mismatch            → 'misaligned' (pairing bug → hard DataError,
-                                 never dropped or resized over silently)
+  - aspect mismatch            → 'misaligned'
+
+Two different responses to 'misaligned' by design:
+  - verify.py (build time):     drop-and-log like any other bad-data item
+                                 (a one-off bad export shouldn't crash a run
+                                 over an item nobody downstream ends up using).
+  - dataset.py / eval/metric.py (use time): hard DataError. A verified item
+                                 reaching use-time misaligned means a real
+                                 pipeline bug (verify skipped, path swapped),
+                                 so it must crash loudly there.
 
 No torch, no GPU; PIL + numpy only.
 """
@@ -15,7 +23,6 @@ import sys
 from pathlib import Path
 
 import numpy as np
-import pytest
 from PIL import Image
 
 REPO_ROOT = Path(__file__).parent.parent
@@ -28,7 +35,6 @@ from lab_utils.data.verify import (                          # noqa: E402
     verify,
     verify_all,
 )
-from lab_utils.errors import DataError                       # noqa: E402
 
 
 # ── mask_alignment classification ─────────────────────────────────────────────
@@ -104,19 +110,20 @@ class TestVerifyAlignment:
         assert kept == [item]          # warned items PASS — data property
         assert rejected == []
 
-    def test_aspect_mismatch_raises_dataerror(self, tmp_path):
+    def test_aspect_mismatch_dropped(self, tmp_path):
         img, mask = tmp_path / 'c.png', tmp_path / 'c_mask.png'
         _noise_image(img, (90, 60))
         _mask_image(mask, (60, 60))    # square mask on a landscape image
-        with pytest.raises(DataError, match='misaligned'):
-            verify(_fake_item(img, mask))
+        assert verify(_fake_item(img, mask)) == 'mask_aspect_misaligned'
 
-    def test_aspect_mismatch_raises_through_verify_all(self, tmp_path):
+    def test_aspect_mismatch_dropped_through_verify_all(self, tmp_path):
         img, mask = tmp_path / 'd.png', tmp_path / 'd_mask.png'
         _noise_image(img, (90, 60))
         _mask_image(mask, (60, 60))
-        with pytest.raises(DataError, match='misaligned'):
-            verify_all([_fake_item(img, mask)], log_tag='[verify]')
+        item = _fake_item(img, mask)
+        kept, rejected = verify_all([item], log_tag='[verify]')
+        assert kept == []
+        assert [r.reason for r in rejected] == ['mask_aspect_misaligned']
 
     def test_sentinel_mask_exempt_from_alignment(self, tmp_path):
         # pico_banana's synthetic full-frame sentinel: a tiny all-white square

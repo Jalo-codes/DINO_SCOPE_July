@@ -2,14 +2,21 @@
 
 TORCH-FREE (GAMEPLAN C3). Uses only PIL and numpy.
 
-Policy: drop-and-log (DESIGN_GUIDE §9.2). Failed items are filtered with a
-logged reason + aggregate counts — that covers junk DATA (corrupt files,
-degenerate images, empty masks). Alignment is different: an image/mask pair
-whose aspect ratios disagree means the PAIRING/WIRING is broken, not the file,
-so it raises DataError immediately rather than being dropped silently. The
-hard failures are: shape mismatch at __getitem__ time, and image/mask aspect
-misalignment at index time (here) or use time (dataset.py, eval/metric.py —
-all three share ``mask_alignment``).
+Policy: drop-and-log (DESIGN_GUIDE §9.2). Failed items — corrupt files,
+degenerate images, empty masks, AND aspect-misaligned mask/image pairs — are
+filtered here with a logged reason + aggregate counts. A one-off bad export
+(wrong mask paired to an image, e.g. a size mismatch from an upstream
+generator run) is bad DATA, not a wiring bug, so it is dropped like any other
+junk item rather than crashing an entire run over a single item nobody
+downstream needs.
+
+The loud, never-drop check lives one layer further down: dataset.py
+(__getitem__/_build_sample) and eval/metric.py (_load_gt_pixels) both re-run
+``mask_alignment`` on every item they actually use and raise DataError
+immediately if it comes back 'misaligned'. Verified items are NOT supposed to
+be misaligned, so if one reaches use-time anyway, that's a real pipeline bug
+(a verify() call skipped, a path swapped after verification, etc.) and must
+crash loudly rather than train on/score a corrupted pair.
 
 A same-aspect resolution difference (half-res masks, generator size snapping,
 CASIA off-by-one) is a legitimate data property: the pair is KEPT, counted in
@@ -28,7 +35,6 @@ from typing import List, Optional, Tuple
 import numpy as np
 
 from lab_utils.data.item import Item
-from lab_utils.errors import DataError
 from lab_utils.logging.text import log_line
 
 SKIP_VERIFY = object()  # sentinel: pass verify_policy=SKIP_VERIFY to skip all checks
@@ -103,13 +109,11 @@ def verify(
 
     Returns:
         None if the item passes.
-        A short reason string describing the first failure.
+        A short reason string describing the first failure (including
+        'mask_aspect_misaligned' — see module docstring for why this is a
+        drop, not a raise, here).
         A 'warn_*' string for items that PASS but carry a counted data
         property (currently only warn_mask_native_resize).
-
-    Raises:
-        DataError: image/mask aspect misalignment — a pairing bug, never a
-        droppable item (see module docstring).
     """
     from PIL import Image, UnidentifiedImageError
 
@@ -148,7 +152,7 @@ def verify(
         if area > float(policy.max_mask_area):
             return "mask_area_too_large"
 
-        # 5. Alignment hard-check: aspect mismatch = broken pairing → raise.
+        # 5. Alignment check: aspect mismatch = bad export/pairing → drop + log.
         #    Same-aspect resolution difference = data property → keep + count.
         #    Sentinel masks (meta['gt_mask_reliable'] = False, e.g.
         #    pico_banana's full-frame placeholder) are geometry-free by
@@ -157,12 +161,7 @@ def verify(
         if item.meta.get('gt_mask_reliable') is not False:
             align = mask_alignment(img.size, mask_pil.size)
             if align == 'misaligned':
-                raise DataError(
-                    f'{item.item_id}: mask native size {mask_pil.size} is aspect-'
-                    f'misaligned with image {img.size} (mask={item.mask}) — wrong '
-                    f'pairing or corrupted export; alignment bugs are never '
-                    f'dropped silently.'
-                )
+                return "mask_aspect_misaligned"
             if align == 'resizable':
                 return "warn_mask_native_resize"
 

@@ -599,12 +599,16 @@ target is a self-contained unit, gated by the invariant tests in §7.
    directory (self-described `contrastive_test_v3`) is renamed to `experiments/`
    during the rebuild; all "v1/v2/v3" docstrings are corrected.
 2. **Verifier policy:** *drop-and-log at index time* — failed triplets are
-   filtered out with a logged reason + aggregate counts. Hard-errors are the
-   shape contract at `__getitem__` (§3.5) and image/mask **aspect
-   misalignment** (a pairing bug, not junk data — raises `DataError`
-   immediately in verify, dataset, and metric via the shared
-   `verify.mask_alignment`; same-aspect resolution differences are a counted
-   data property, NEAREST-normalized to the image frame at use time).
+   filtered out with a logged reason + aggregate counts, including image/mask
+   **aspect misalignment** (a bad export/pairing is junk data like any other —
+   dropping one item shouldn't crash a run over an item nobody downstream
+   uses). The hard-error line is one layer further down: the shape contract
+   at `__getitem__` (§3.5) and `mask_alignment` re-checked at use time in
+   dataset.py and eval/metric.py — a *verified* item reaching use-time
+   misaligned means a real pipeline bug (verify skipped, path swapped after
+   verification), so it raises `DataError` immediately there. Same-aspect
+   resolution differences are a counted data property in all three call
+   sites, NEAREST-normalized to the image frame at use time.
 3. **Bucket thresholds:** reuse the current `area_tiers` cutoffs, documented in
    `eval/buckets.py` (§5). Recalibrate later only with evidence.
 4. **`image_score` source:** canonical is image-BCE `sigmoid(image_logit)`; fall
