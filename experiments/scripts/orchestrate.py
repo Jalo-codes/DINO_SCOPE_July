@@ -188,6 +188,30 @@ def write_marker(run_root: str, name: str, payload: dict) -> None:
     os.replace(tmp, path)
 
 
+def seed_results_from_markers(run_root: str, names: list[str], in_scope: set[str]) -> dict:
+    """results{} entries for names NOT in this invocation's scope, from disk.
+
+    --only restricts a single invocation to one (or a few) cells, but
+    write_summary() always reports the FULL queue — without this, an --only
+    invocation would only know about its own cell and overwrite
+    sweep_summary.csv with 'pending' placeholders for every other cell,
+    clobbering their real recorded status on every write.
+    """
+    results: dict[str, dict] = {}
+    for name in names:
+        if name in in_scope:
+            continue
+        marker = read_marker(run_root, name)
+        if marker is not None:
+            exit_code = marker.get('exit_code')
+            results[name] = {
+                'status': 'done' if exit_code == 0 else 'failed',
+                'exit_code': exit_code,
+                'wall_seconds': marker.get('wall_seconds', ''),
+            }
+    return results
+
+
 # --------------------------------------------------------------------------- #
 # Child execution
 # --------------------------------------------------------------------------- #
@@ -398,7 +422,10 @@ def main() -> None:
         return
 
     os.makedirs(run_root, exist_ok=True)
-    results: dict[str, dict] = {}
+    results: dict[str, dict] = (
+        seed_results_from_markers(run_root, names, set(args.only))
+        if args.only else {}
+    )
     interrupted = False
     overall_rc = 0
 
