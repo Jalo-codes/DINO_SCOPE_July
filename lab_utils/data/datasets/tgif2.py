@@ -265,6 +265,7 @@ def build(
     eval_per_cell: Optional[int] = None,
     include_reals: bool = True,
     types: Optional[Set[str]] = None,
+    build_train_side: bool = True,
 ) -> Tuple[Dataset, Dataset]:
     """Build (train_dataset, val_dataset) from a tgif2_index.json.
 
@@ -286,6 +287,13 @@ def build(
                        their coco_id's side.
         include_reals: Also build one real item per coco_id.
         types:         If set, restrict to these manipulation types ('sp', 'fr').
+        build_train_side: Set False when the caller discards the train dataset
+                       (e.g. train.py's per-epoch TGIF2 val-only probe — "TGIF
+                       is never added to train_items").  Skips collecting AND
+                       verifying the train-side coco_ids entirely, so a bad
+                       mask/image pairing in an item nobody will ever use can't
+                       crash a run.  train_tgif.py (the TGIF-FINETUNE recipe)
+                       actually trains on this split and must leave it True.
     """
     root = Path(root)
     idx_path = Path(index_path) if index_path is not None else root / 'tgif2_index.json'
@@ -339,7 +347,7 @@ def build(
                 )
         return fake_items + real_items
 
-    train_all = _collect(train_coco_ids)
+    train_all = _collect(train_coco_ids) if build_train_side else []
     val_all   = _collect(val_coco_ids)
 
     # Holdout mode: cap the VAL side to eval_per_cell splices per (model, type,
@@ -347,10 +355,13 @@ def build(
     if eval_per_cell is not None:
         val_all = _cap_eval_cells(val_all, eval_per_cell, split_seed)
 
-    train_kept, _ = verify_all(train_all, policy=verify_policy,
-                                log_tag=f'[data] {source} train')
-    val_kept,   _ = verify_all(val_all,   policy=verify_policy,
-                                log_tag=f'[data] {source} val')
+    if build_train_side:
+        train_kept, _ = verify_all(train_all, policy=verify_policy,
+                                    log_tag=f'[data] {source} train')
+    else:
+        train_kept = []
+    val_kept, _ = verify_all(val_all, policy=verify_policy,
+                              log_tag=f'[data] {source} val')
 
     log_line(
         f'[data] tgif2: train={len(train_kept)} val={len(val_kept)} '

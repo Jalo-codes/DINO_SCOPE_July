@@ -350,6 +350,7 @@ def _build_datasets(cfg, res: Resolution):
         _, tg_val = _tgif2_mod.build(
             str(tgif_root), res=res, eval_per_cell=per_cell, include_reals=True,
             types=set(cfg.tgif_types) if cfg.tgif_types else None,
+            build_train_side=False,
         )
         keep_models = set(cfg.tgif_val_models or ())
         tg_items = [

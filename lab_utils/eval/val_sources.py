@@ -92,6 +92,10 @@ def collect_val_items_by_source(
         
         kwargs = {}
         if source == 'tgif2':
+            # This collector only ever reads val_ds (see `_, val_ds =` below), so
+            # skip building/verifying the discarded train-side coco_ids — avoids
+            # a bad mask/image pairing in an unused item crashing eval collection.
+            kwargs['build_train_side'] = False
             if getattr(args, 'tgif_eval_per_cell', None) is not None:
                 kwargs['eval_per_cell'] = args.tgif_eval_per_cell
         if source == 'sagid':
