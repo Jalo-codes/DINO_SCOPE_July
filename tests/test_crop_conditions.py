@@ -176,7 +176,7 @@ def test_interior_bbox_prefilter_matches_full_gate_on_large_frame():
 
 
 def test_probe_window_spec_accepts_what_default_spec_rejects():
-    # PROBE_WINDOW_SPEC's looser floor (144/448 of eval res, vs. the default
+    # PROBE_WINDOW_SPEC's looser floor (256/448 of eval res, vs. the default
     # 1.0x) is eval-probe-only -- exercised here on a mask whose eroded
     # region lands strictly between the two floors: too small for the
     # strict default, large enough for the looser probe spec.

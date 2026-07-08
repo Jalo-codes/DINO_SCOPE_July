@@ -106,9 +106,12 @@ WINDOW_SPEC = WindowSpec()
 # 1.0, true anti-upsample) because it's also the default for the train-time
 # fr-background-negative sampler (Dataset.fr_bg_negative_prob) — crops that
 # land in actual gradient updates should not be pushed further from native
-# resolution than necessary. 144/448 ≈ a 144px floor at the study's current
-# 448 eval resolution ("way smaller, ~144x144" per Jake, 2026-07-08).
-PROBE_WINDOW_SPEC = dataclasses.replace(WINDOW_SPEC, version='v4', min_side_mult=144.0 / 448.0)
+# resolution than necessary. 256/448 ≈ a 256px floor at the study's current
+# 448 eval resolution (raised from an initial 144px once max_probes capping
+# made the resulting probe counts sane — 256 buys back some crop quality
+# while still passing far more candidates than the strict 448px floor;
+# per Jake, 2026-07-08).
+PROBE_WINDOW_SPEC = dataclasses.replace(WINDOW_SPEC, version='v5', min_side_mult=256.0 / 448.0)
 
 
 # ---------------------------------------------------------------------------

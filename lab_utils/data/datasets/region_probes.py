@@ -121,21 +121,27 @@ def build(
                           raw-mask bounding-box pre-filter before paying for
                           erosion + the inscribed-rectangle search.
         windows_per_item: Override PROBE_WINDOW_SPEC.windows_per_item.
-        max_probes:       Hard cap on total emitted probe windows. Since
+        max_probes:       Hard cap on total emitted probe windows — AND on the
+                          parent search itself: pass 1 stops gating further
+                          parents as soon as max_probes have passed (round 0
+                          of the breadth-first flatten below already fills
+                          the cap from the first max_probes accepted groups,
+                          so scanning more would be discarded work). Since
                           PROBE_WINDOW_SPEC's floor is much looser than the
                           strict default (see its docstring), most candidates
                           now pass — combined with max_parents="basically
                           all" and windows_per_item up to 10, an easy group
                           (boundary/outside) over a large parent pool (e.g.
-                          fr_bg's ~8.7k accepted tgif2 parents) can otherwise
-                          emit tens of thousands of probes. The cap is
-                          breadth-first (round-robin over windows_per_item):
-                          every passing parent contributes one window before
-                          any parent contributes a second, so hitting it
-                          thins per-parent depth, never how many distinct
-                          source images are represented. Default sits
-                          comfortably above the study's ~200-crop-per-
-                          condition target.
+                          fr_bg's ~8.7k accepted tgif2 parents) could
+                          otherwise both emit tens of thousands of probes AND
+                          waste time scanning parents whose windows are never
+                          used. The flatten itself is breadth-first
+                          (round-robin over windows_per_item): every passing
+                          parent contributes one window before any parent
+                          contributes a second, so hitting the cap thins
+                          per-parent depth, never how many distinct source
+                          images are represented. Default sits comfortably
+                          above the study's ~200-crop-per-condition target.
         **parent_kwargs:  Forwarded to the parent builder (e.g. val_split).
     """
     if condition not in _CONDITIONS:
@@ -159,12 +165,21 @@ def build(
         fakes, max_parents, seed=f'region_probes|{PROBE_WINDOW_SPEC.version}|{parent}'
     )
 
-    # Pass 1: gate every parent and collect its full window list (cheap now
+    # Pass 1: gate parents and collect each one's full window list (cheap now
     # that sample_interior_windows bbox-pre-filters the too-small case).
+    # Stops as soon as max_probes parents have PASSED the gate: breadth_first_
+    # cap's round 0 alone already fills the cap from the first max_probes
+    # accepted groups, so scanning further parents would be discarded work —
+    # real box logs showed fr_bg scanning all ~8.7k accepted tgif2 parents to
+    # produce a 300-probe output. Deterministic and identical between
+    # real_crop and its paired condition (same fakes order, same per-parent
+    # gate), so pairing survives stopping early.
     per_parent: List[Tuple[Item, Path, List[ProbeWindow]]] = []
     n_gated = 0
     n_unpaired = 0
+    n_scanned = 0
     for parent_item in fakes:
+        n_scanned += 1
         mask = _load_mask_in_image_frame(parent_item)
         if mask is None:
             continue
@@ -190,6 +205,8 @@ def build(
             n_gated += 1
             continue
         per_parent.append((parent_item, image_path, windows))
+        if len(per_parent) >= max_probes:
+            break
 
     # Pass 2: breadth-first flatten, capped at max_probes (see docstring) —
     # every passing parent contributes one window before any parent
@@ -197,6 +214,7 @@ def build(
     # diversity. Same input order for real_crop vs its paired condition (both
     # share the same fakes/per_parent construction), so pairing is preserved.
     total_available = sum(len(w) for _, _, w in per_parent)
+    stopped_early = n_scanned < len(fakes)
     groups = [
         [(parent_item, image_path, win) for win in windows]
         for parent_item, image_path, windows in per_parent
@@ -221,9 +239,9 @@ def build(
 
     log_line(
         f'[data] {condition} ({parent} @ {root}): {len(items)} probes from '
-        f'{len(fakes)} parents (gated={n_gated}'
+        f'{n_scanned}/{len(fakes)} parents scanned (gated={n_gated}'
         + (f', unpaired={n_unpaired}' if image_side == 'original' else '')
-        + f', available={total_available}, capped={total_available > max_probes}, '
+        + f', available_in_scanned={total_available}, stopped_early={stopped_early}, '
         + f'spec={PROBE_WINDOW_SPEC.version})'
     )
 
