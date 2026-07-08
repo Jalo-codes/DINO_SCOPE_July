@@ -38,6 +38,7 @@ from PIL import Image
 from lab_utils.data.crop_conditions import (
     PROBE_WINDOW_SPEC,
     ProbeWindow,
+    breadth_first_cap,
     sample_boundary_windows,
     sample_interior_windows,
     sample_outside_windows,
@@ -98,6 +99,7 @@ def build(
     verify_policy: Optional[VerifyPolicy] = None,
     max_parents: int = 10000,
     windows_per_item: Optional[int] = None,
+    max_probes: int = 300,
     **parent_kwargs,
 ) -> Tuple[Dataset, Dataset]:
     """Build one probe condition over a parent dataset's val split.
@@ -108,20 +110,32 @@ def build(
         parent:           Parent registry source ('sagid', 'coco_inpaint',
                           'casia', ... — must yield fakes with GT masks; for
                           real_crop the parent must carry originals).
-        max_parents:      Deterministic cap on parent fake items (eval-size
-                          control; windows_per_item probes emitted per parent).
-                          Default is comfortably above every current parent's
-                          val-split size (imd2020 val_split=1.0 ~2424,
-                          tgif2 ~9548, sagid=169) so it's effectively "use
-                          everything" — the floor/erosion gate in
-                          crop_conditions.py, not this cap, is what should be
-                          limiting final n. Affordable because
-                          sample_interior_windows now rejects the (very
-                          common) too-small-mask case via a cheap raw-mask
-                          bounding-box pre-filter before paying for erosion +
-                          the inscribed-rectangle search — searching the
-                          full tgif2 pool costs seconds, not minutes.
+        max_parents:      Deterministic cap on parent fake items considered
+                          (search-breadth control, not an output-size control
+                          — see max_probes for that). Default is comfortably
+                          above every current parent's val-split size
+                          (imd2020 val_split=1.0 ~2424, tgif2 ~9548,
+                          sagid=169) so it's effectively "use everything" —
+                          affordable because sample_interior_windows rejects
+                          the (very common) too-small-mask case via a cheap
+                          raw-mask bounding-box pre-filter before paying for
+                          erosion + the inscribed-rectangle search.
         windows_per_item: Override PROBE_WINDOW_SPEC.windows_per_item.
+        max_probes:       Hard cap on total emitted probe windows. Since
+                          PROBE_WINDOW_SPEC's floor is much looser than the
+                          strict default (see its docstring), most candidates
+                          now pass — combined with max_parents="basically
+                          all" and windows_per_item up to 10, an easy group
+                          (boundary/outside) over a large parent pool (e.g.
+                          fr_bg's ~8.7k accepted tgif2 parents) can otherwise
+                          emit tens of thousands of probes. The cap is
+                          breadth-first (round-robin over windows_per_item):
+                          every passing parent contributes one window before
+                          any parent contributes a second, so hitting it
+                          thins per-parent depth, never how many distinct
+                          source images are represented. Default sits
+                          comfortably above the study's ~200-crop-per-
+                          condition target.
         **parent_kwargs:  Forwarded to the parent builder (e.g. val_split).
     """
     if condition not in _CONDITIONS:
@@ -145,7 +159,9 @@ def build(
         fakes, max_parents, seed=f'region_probes|{PROBE_WINDOW_SPEC.version}|{parent}'
     )
 
-    items: List[Item] = []
+    # Pass 1: gate every parent and collect its full window list (cheap now
+    # that sample_interior_windows bbox-pre-filters the too-small case).
+    per_parent: List[Tuple[Item, Path, List[ProbeWindow]]] = []
     n_gated = 0
     n_unpaired = 0
     for parent_item in fakes:
@@ -173,29 +189,42 @@ def build(
         if not windows:
             n_gated += 1
             continue
+        per_parent.append((parent_item, image_path, windows))
 
-        for win in windows:
-            meta = win.meta(spec=PROBE_WINDOW_SPEC)
-            meta.update({
-                'pair_stem':      f'{parent_item.item_id}|{win.index}',
-                'parent_item_id': parent_item.item_id,
-                'parent_source':  parent_item.source,
-                'case_id':        parent_item.meta.get('case_id'),
-            })
-            items.append(Item(
-                image=Path(image_path),
-                authentic=None,
-                mask=(parent_item.mask if emit_mask else None),
-                source=condition,
-                item_id=make_item_id(condition, f'{parent_item.image}|w{win.index}'),
-                meta=meta,
-            ))
+    # Pass 2: breadth-first flatten, capped at max_probes (see docstring) —
+    # every passing parent contributes one window before any parent
+    # contributes a second, so the cap thins per-parent depth, never parent
+    # diversity. Same input order for real_crop vs its paired condition (both
+    # share the same fakes/per_parent construction), so pairing is preserved.
+    total_available = sum(len(w) for _, _, w in per_parent)
+    groups = [
+        [(parent_item, image_path, win) for win in windows]
+        for parent_item, image_path, windows in per_parent
+    ]
+    items: List[Item] = []
+    for parent_item, image_path, win in breadth_first_cap(groups, max_probes):
+        meta = win.meta(spec=PROBE_WINDOW_SPEC)
+        meta.update({
+            'pair_stem':      f'{parent_item.item_id}|{win.index}',
+            'parent_item_id': parent_item.item_id,
+            'parent_source':  parent_item.source,
+            'case_id':        parent_item.meta.get('case_id'),
+        })
+        items.append(Item(
+            image=Path(image_path),
+            authentic=None,
+            mask=(parent_item.mask if emit_mask else None),
+            source=condition,
+            item_id=make_item_id(condition, f'{parent_item.image}|w{win.index}'),
+            meta=meta,
+        ))
 
     log_line(
         f'[data] {condition} ({parent} @ {root}): {len(items)} probes from '
         f'{len(fakes)} parents (gated={n_gated}'
         + (f', unpaired={n_unpaired}' if image_side == 'original' else '')
-        + f', spec={PROBE_WINDOW_SPEC.version})'
+        + f', available={total_available}, capped={total_available > max_probes}, '
+        + f'spec={PROBE_WINDOW_SPEC.version})'
     )
 
     train_ds = Dataset([], res=res, augment=True)

@@ -44,7 +44,7 @@ import dataclasses
 import hashlib
 import math
 import random
-from typing import List, Optional, Tuple
+from typing import List, Optional, Sequence, Tuple, TypeVar
 
 import numpy as np
 from PIL import Image
@@ -495,6 +495,44 @@ def sample_outside_windows(
         rng, match_fn, side_lo, side_hi, (H, W), res, 'outside',
         k if k is not None else spec.windows_per_item, spec,
     )
+
+
+# ---------------------------------------------------------------------------
+# Output-size capping (breadth over depth)
+# ---------------------------------------------------------------------------
+
+_T = TypeVar('_T')
+
+
+def breadth_first_cap(groups: Sequence[Sequence[_T]], max_total: int) -> List[_T]:
+    """Flatten per-parent element lists breadth-first, capped at max_total.
+
+    Round r takes each group's r-th element before any group's (r+1)-th, so
+    when the cap is hit it thins per-group depth, never how many distinct
+    groups (parent images) are represented. Used by
+    datasets/region_probes.py to bound total emitted probes: PROBE_WINDOW_SPEC
+    (see its docstring) passes a much larger fraction of candidates than the
+    strict default, so a large parent pool times windows_per_item can
+    otherwise emit far more probes than an eval run needs.
+
+    Deterministic: iterates ``groups`` and each group's elements in the order
+    given — same input, same output, every run.
+    """
+    out: List[_T] = []
+    round_idx = 0
+    while len(out) < max_total:
+        progressed = False
+        for g in groups:
+            if round_idx >= len(g):
+                continue
+            progressed = True
+            out.append(g[round_idx])
+            if len(out) >= max_total:
+                break
+        if not progressed:
+            break
+        round_idx += 1
+    return out
 
 
 # ---------------------------------------------------------------------------

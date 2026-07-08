@@ -20,6 +20,7 @@ from lab_utils.data.crop_conditions import (
     WindowSpec,
     apply_crop_window,
     best_inscribed_side,
+    breadth_first_cap,
     dilate_mask,
     erode_mask,
     erode_radius_px,
@@ -290,3 +291,39 @@ def test_ratio_band_respected():
             wpx, hpx = w.native_wh
             # clamping at frame/region edges can push ratio slightly out; allow slack
             assert lo * 0.8 <= wpx / hpx <= hi * 1.25
+
+
+# ── output-size capping ──────────────────────────────────────────────────────
+
+class TestBreadthFirstCap:
+    def test_under_cap_returns_everything(self):
+        groups = [['a1', 'a2'], ['b1'], ['c1', 'c2', 'c3']]
+        out = breadth_first_cap(groups, max_total=100)
+        assert sorted(out) == ['a1', 'a2', 'b1', 'c1', 'c2', 'c3']
+
+    def test_cap_prefers_breadth_over_depth(self):
+        # 3 groups, cap=3: round 0 alone satisfies the cap, so every group
+        # contributes exactly its FIRST element — none gets a second.
+        groups = [['a1', 'a2', 'a3'], ['b1', 'b2'], ['c1']]
+        out = breadth_first_cap(groups, max_total=3)
+        assert out == ['a1', 'b1', 'c1']
+
+    def test_cap_spills_into_second_round_when_needed(self):
+        # cap=4 with only 3 groups: round 0 yields 3 (a1,b1,c1), round 1
+        # yields 1 more from the first group that still has an element (a2).
+        groups = [['a1', 'a2'], ['b1'], ['c1']]
+        out = breadth_first_cap(groups, max_total=4)
+        assert out == ['a1', 'b1', 'c1', 'a2']
+
+    def test_exhausts_naturally_below_cap(self):
+        groups = [['a1'], ['b1']]
+        out = breadth_first_cap(groups, max_total=1000)
+        assert out == ['a1', 'b1']
+
+    def test_empty_groups_return_empty(self):
+        assert breadth_first_cap([], max_total=10) == []
+        assert breadth_first_cap([[], []], max_total=10) == []
+
+    def test_deterministic_same_input_same_output(self):
+        groups = [['a1', 'a2', 'a3'], ['b1', 'b2'], ['c1']]
+        assert breadth_first_cap(groups, 4) == breadth_first_cap(groups, 4)
