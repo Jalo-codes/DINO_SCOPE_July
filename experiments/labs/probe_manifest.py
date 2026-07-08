@@ -32,7 +32,7 @@ from PIL import Image
 from lab_utils.data.crop_conditions import WINDOW_SPEC, apply_crop_window
 from lab_utils.data.resolution import Resolution
 from lab_utils.eval.val_sources import add_source_root_args, collect_val_items_by_source
-from lab_utils.logging.text import log_line
+from lab_utils.logging.text import install_log, log_line
 
 PROBE_SOURCES = ('ai_interior', 'ai_boundary', 'sp_interior', 'sp_boundary',
                  'fr_bg', 'real_crop',
@@ -83,15 +83,20 @@ def main():
     args = parse_args()
     res = Resolution(image_size=args.image_size, patch_size=args.patch_size)
 
+    out_csv = Path(args.out_csv)
+    if out_csv.parent != Path(''):
+        out_csv.parent.mkdir(parents=True, exist_ok=True)
+    # Installed before any log_line call (incl. dataset-indexing lines from
+    # collect_val_items_by_source below) so everything durably lands in the
+    # file, not just stdout — _LOG_PATH is process-global.
+    install_log(str(out_csv.with_suffix('.log')))
+
     by_source = collect_val_items_by_source(args, res, log_tag='[probe]')
     by_source = {s: v for s, v in by_source.items() if s in set(args.sources)}
     if not by_source:
         log_line('[probe] no probe sources configured — pass --<condition>_root flags')
         return
 
-    out_csv = Path(args.out_csv)
-    if out_csv.parent != Path(''):
-        out_csv.parent.mkdir(parents=True, exist_ok=True)
     n_rows = 0
     with open(out_csv, 'w', newline='') as f:
         w = csv.writer(f)

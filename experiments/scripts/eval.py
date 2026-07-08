@@ -49,7 +49,7 @@ from lab_utils.eval.metric import metric as eval_metric
 from lab_utils.eval.record import EvalRecord
 from lab_utils.errors import DataError
 from lab_utils.eval.val_sources import add_source_root_args, collect_val_items_by_source
-from lab_utils.logging.text import log_line
+from lab_utils.logging.text import install_log, log_line
 from lab_utils.train.distributed import unwrap_model
 
 from experiments.configs.zoom import DEFAULT_ZOOM
@@ -186,6 +186,15 @@ def _log_image_auc(records: List[EvalRecord], *, log_tag: str = '[eval]') -> Non
 def main() -> None:
     parser = _build_parser()
     args   = parser.parse_args()
+
+    # Everything log_line() emits from here on (this module AND every module
+    # it calls into — _LOG_PATH is process-global) is durably written to
+    # <out_dir>/eval.log, not just stdout. Installed before any log_line call
+    # so dataset-indexing lines ([data]/[probe] from val_sources/registry
+    # builders) land in the file too, not just the eval-loop's own lines.
+    if args.out_dir:
+        install_log(str(Path(args.out_dir) / 'eval.log'))
+
     device = torch.device(args.device if (args.device != 'cuda' or torch.cuda.is_available()) else 'cpu')
     use_amp = (not args.no_amp) and (device.type == 'cuda')
 

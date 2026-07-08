@@ -51,7 +51,8 @@ for cell in bce_inpaint_s0 bce_splice_s0 bce_both_s0 cont_inpaint_s0 cont_splice
     --decoder "${DECODER[$cell]}" \
     --sources $PROBE_SOURCES \
     "${PROBE_ROOTS[@]}" \
-    --out_dir "$RUN_ROOT/$cell/probe_eval"
+    --out_dir "$RUN_ROOT/$cell/probe_eval" \
+    --summary_out "$RUN_ROOT/$cell/probe_eval/summary.json"
 done
 
 # 2. Contrasts report across all 6 cells.

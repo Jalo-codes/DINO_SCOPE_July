@@ -31,6 +31,7 @@ for cell in bce_inpaint_s0 bce_splice_s0 bce_both_s0 cont_inpaint_s0 cont_splice
     --sources full_fakes \
     --full_fakes_root "$FULL_FAKES" \
     --out_dir "$RUN_ROOT/$cell/full_fakes_eval" \
+    --summary_out "$RUN_ROOT/$cell/full_fakes_eval/summary.json" \
     --viz_n 6
 done
 

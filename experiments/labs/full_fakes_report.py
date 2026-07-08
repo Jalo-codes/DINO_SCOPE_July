@@ -35,7 +35,7 @@ from typing import Dict, List
 import numpy as np
 
 from lab_utils.eval.rank_stats import rank_auc, stats
-from lab_utils.logging.text import log_line
+from lab_utils.logging.text import install_log, log_line
 
 
 def _log(msg: str) -> None:
@@ -116,6 +116,15 @@ def main():
     p.add_argument('--out_csv', default=None,
                    help='Long-format output CSV of every reported number.')
     args = p.parse_args()
+
+    # Installed before report_cell() logs anything, so the full per-cell /
+    # per-generator tables (not just the final "wrote N rows" line) land in
+    # the file too — _LOG_PATH is process-global.
+    if args.out_csv:
+        out_path = Path(args.out_csv)
+        if out_path.parent != Path(''):
+            out_path.parent.mkdir(parents=True, exist_ok=True)
+        install_log(str(out_path.with_suffix('.log')))
 
     out_rows: List[dict] = []
     for spec in args.records:
