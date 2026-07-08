@@ -53,16 +53,18 @@ REGISTRY: Dict[str, Callable] = {
     # Region-probe eval conditions (BCE-emergence study) — eval-only builders
     # over a PARENT dataset's val split; the flag root is the PARENT root.
     # ai_* / real_crop wrap sagid (AI-edited content + its paired original);
-    # sp_* wrap imd2020 (more val fakes than casia: ~171 vs ~28, better odds
-    # of clearing the interior floor); fr_bg wraps tgif2 restricted to 'fr'
-    # manipulations specifically (a held-out OOD fr pool, never sagid's own
-    # frs — tgif2 is a pure eval probe with zero train usage anywhere in this
-    # study, so there's no split-hygiene concern using its full val pool).
+    # sp_* wrap imd2020, val_split=1.0 (IMD is NEVER trained on anywhere in
+    # this study — imd_val_only is a hard rule — so there's no split-hygiene
+    # reason to only search its default 10% val slice; use the whole ~1700-
+    # fake dataset for more shots at clearing the interior floor); fr_bg wraps
+    # tgif2 restricted to 'fr' manipulations specifically (a held-out OOD fr
+    # pool, never sagid's own frs — tgif2 also has zero train usage in this
+    # study, so its full val pool is fair game too).
     # Windows/floors/determinism: lab_utils/data/crop_conditions.py.
     'ai_interior':  lambda root, **kw: _region_probes.build(root, condition='ai_interior', parent=kw.pop('parent', 'sagid'), **kw),
     'ai_boundary':  lambda root, **kw: _region_probes.build(root, condition='ai_boundary', parent=kw.pop('parent', 'sagid'), **kw),
-    'sp_interior':  lambda root, **kw: _region_probes.build(root, condition='sp_interior', parent=kw.pop('parent', 'imd2020'), **kw),
-    'sp_boundary':  lambda root, **kw: _region_probes.build(root, condition='sp_boundary', parent=kw.pop('parent', 'imd2020'), **kw),
+    'sp_interior':  lambda root, **kw: _region_probes.build(root, condition='sp_interior', parent=kw.pop('parent', 'imd2020'), val_split=kw.pop('val_split', 1.0), **kw),
+    'sp_boundary':  lambda root, **kw: _region_probes.build(root, condition='sp_boundary', parent=kw.pop('parent', 'imd2020'), val_split=kw.pop('val_split', 1.0), **kw),
     'fr_bg':        lambda root, **kw: _region_probes.build(root, condition='fr_bg',       parent=kw.pop('parent', 'tgif2'), types=kw.pop('types', {'fr'}), **kw),
     'real_crop':    lambda root, **kw: _region_probes.build(root, condition='real_crop',   parent=kw.pop('parent', 'sagid'), **kw),
     # Second, ADDITIONAL parent pool for the same three conditions: tgif2's
