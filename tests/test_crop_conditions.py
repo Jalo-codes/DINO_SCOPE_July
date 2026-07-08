@@ -15,6 +15,7 @@ import pytest
 from PIL import Image
 
 from lab_utils.data.crop_conditions import (
+    PROBE_WINDOW_SPEC,
     WINDOW_SPEC,
     WindowSpec,
     apply_crop_window,
@@ -171,6 +172,21 @@ def test_interior_bbox_prefilter_matches_full_gate_on_large_frame():
     # would, just without paying for it.
     m = _rect_mask(4000, 4000, 1000, 1000, 1030, 1030)   # 30px region
     assert sample_interior_windows(m, RES, item_id='item-tiny-on-huge') == []
+
+
+def test_probe_window_spec_accepts_what_default_spec_rejects():
+    # PROBE_WINDOW_SPEC's looser floor (144/448 of eval res, vs. the default
+    # 1.0x) is eval-probe-only -- exercised here on a mask whose eroded
+    # region lands strictly between the two floors: too small for the
+    # strict default, large enough for the looser probe spec.
+    from lab_utils.data.crop_conditions import PROBE_WINDOW_SPEC
+    assert PROBE_WINDOW_SPEC.min_side_mult < WINDOW_SPEC.min_side_mult
+    assert PROBE_WINDOW_SPEC.version != WINDOW_SPEC.version
+
+    m = _rect_mask(400, 400, 75, 75, 325, 325)   # 250x250 region, eroded to ~50px
+    assert sample_interior_windows(m, RES, item_id='split-spec', spec=WINDOW_SPEC) == []
+    loose = sample_interior_windows(m, RES, item_id='split-spec', spec=PROBE_WINDOW_SPEC)
+    assert loose, 'PROBE_WINDOW_SPEC should accept a region the strict default rejects'
 
 
 def test_interior_never_max_box_deterministically():

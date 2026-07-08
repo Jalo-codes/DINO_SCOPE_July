@@ -22,8 +22,9 @@ the same deterministic RNG, so fake crop and real crop share identical
 geometry; both carry the same ``meta['pair_stem']`` for matched analysis.
 
 Windows / margins / floors / determinism all live in
-lab_utils/data/crop_conditions.py (WINDOW_SPEC) — nothing geometric is decided
-here.
+lab_utils/data/crop_conditions.py (PROBE_WINDOW_SPEC — the eval-probe-only
+spec; looser floor than the shared WINDOW_SPEC default used elsewhere, since
+these conditions are never trained on) — nothing geometric is decided here.
 """
 
 from __future__ import annotations
@@ -35,7 +36,7 @@ import numpy as np
 from PIL import Image
 
 from lab_utils.data.crop_conditions import (
-    WINDOW_SPEC,
+    PROBE_WINDOW_SPEC,
     ProbeWindow,
     sample_boundary_windows,
     sample_interior_windows,
@@ -120,7 +121,7 @@ def build(
                           bounding-box pre-filter before paying for erosion +
                           the inscribed-rectangle search — searching the
                           full tgif2 pool costs seconds, not minutes.
-        windows_per_item: Override WINDOW_SPEC.windows_per_item.
+        windows_per_item: Override PROBE_WINDOW_SPEC.windows_per_item.
         **parent_kwargs:  Forwarded to the parent builder (e.g. val_split).
     """
     if condition not in _CONDITIONS:
@@ -141,7 +142,7 @@ def build(
     )
     fakes = [it for it in parent_val.items if not it.is_real]
     fakes = deterministic_subsample(
-        fakes, max_parents, seed=f'region_probes|{WINDOW_SPEC.version}|{parent}'
+        fakes, max_parents, seed=f'region_probes|{PROBE_WINDOW_SPEC.version}|{parent}'
     )
 
     items: List[Item] = []
@@ -162,15 +163,19 @@ def build(
 
         # Window RNG is keyed on the PARENT item_id + group, so real_crop
         # ('interior' group, original image) reproduces ai_interior's windows.
+        # PROBE_WINDOW_SPEC (not the shared WINDOW_SPEC default) -- eval-only
+        # probes tolerate more upsampling than the train-time fr-background
+        # negative sampler, which stays on the strict default.
         windows: List[ProbeWindow] = sampler(
             mask, res, item_id=parent_item.item_id, k=windows_per_item,
+            spec=PROBE_WINDOW_SPEC,
         )
         if not windows:
             n_gated += 1
             continue
 
         for win in windows:
-            meta = win.meta()
+            meta = win.meta(spec=PROBE_WINDOW_SPEC)
             meta.update({
                 'pair_stem':      f'{parent_item.item_id}|{win.index}',
                 'parent_item_id': parent_item.item_id,
@@ -190,7 +195,7 @@ def build(
         f'[data] {condition} ({parent} @ {root}): {len(items)} probes from '
         f'{len(fakes)} parents (gated={n_gated}'
         + (f', unpaired={n_unpaired}' if image_side == 'original' else '')
-        + f', spec={WINDOW_SPEC.version})'
+        + f', spec={PROBE_WINDOW_SPEC.version})'
     )
 
     train_ds = Dataset([], res=res, augment=True)
