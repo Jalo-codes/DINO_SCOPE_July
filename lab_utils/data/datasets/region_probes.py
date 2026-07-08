@@ -95,7 +95,7 @@ def build(
     condition: str,
     parent: str,
     verify_policy: Optional[VerifyPolicy] = None,
-    max_parents: int = 50,
+    max_parents: int = 500,
     windows_per_item: Optional[int] = None,
     **parent_kwargs,
 ) -> Tuple[Dataset, Dataset]:
@@ -109,6 +109,11 @@ def build(
                           real_crop the parent must carry originals).
         max_parents:      Deterministic cap on parent fake items (eval-size
                           control; windows_per_item probes emitted per parent).
+                          Default is comfortably above every current parent's
+                          val-split size (sagid=169, coco_inpaint=126,
+                          casia=28 fakes) so it's effectively "use everything"
+                          — the floor/erosion gate in crop_conditions.py, not
+                          this cap, is what should be limiting final n.
         windows_per_item: Override WINDOW_SPEC.windows_per_item.
         **parent_kwargs:  Forwarded to the parent builder (e.g. val_split).
     """

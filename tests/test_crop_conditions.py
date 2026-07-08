@@ -18,6 +18,7 @@ from lab_utils.data.crop_conditions import (
     WINDOW_SPEC,
     WindowSpec,
     apply_crop_window,
+    best_inscribed_side,
     dilate_mask,
     erode_mask,
     erode_radius_px,
@@ -70,6 +71,27 @@ def test_erode_dilate_roundtrip_margin():
     assert dl.sum() > m.sum() and dl[15:85, 15:85].all()
 
 
+def test_best_inscribed_side_beats_square_on_elongated_mask():
+    # A wedge, wide at the top (width 300) tapering to width 20 at the bottom.
+    # A square starting at the top is capped by how far down it can go before
+    # the taper narrows past its own side; a narrower-than-square rectangle
+    # (low end of ratio_range: less width needed per row) tolerates more
+    # taper and reaches further down — a real advantage within the actual
+    # production ratio band, unlike a straight strip (which no in-band ratio
+    # can exploit, since the short axis caps the window regardless of shape).
+    H, W = 300, 300
+    m = np.zeros((H, W), dtype=bool)
+    for y in range(H):
+        width_at_y = max(20, W - y)
+        m[y, :width_at_y] = True
+    assert best_inscribed_side(m, (0.6, 1.7)) > largest_square_side(m)
+
+
+def test_best_inscribed_side_matches_square_on_square_mask():
+    m = _rect_mask(200, 300, 50, 60, 150, 220)   # 100 x 160 rect
+    assert best_inscribed_side(m, (1.0, 1.0)) == largest_square_side(m)
+
+
 def test_erode_radius_scales_with_native_size():
     # one patch width at model res, mapped to native pixels: min_dim / n_side
     assert erode_radius_px((448, 448), _Res(448, 16)) == 16
@@ -81,13 +103,46 @@ def test_erode_radius_scales_with_native_size():
 def test_interior_windows_fully_inside_mask():
     m = _rect_mask(600, 600, 100, 100, 500, 500)    # 400px region >> floor 64
     wins = sample_interior_windows(m, RES, item_id='item-a')
-    assert len(wins) == WINDOW_SPEC.windows_per_item
+    # De-dup (max_overlap_frac) means count is demand-driven, not guaranteed to
+    # hit windows_per_item — see test_interior_windows_are_mutually_distinct
+    # for a geometry with enough room to actually deliver windows_per_item.
+    assert 1 <= len(wins) <= WINDOW_SPEC.windows_per_item
     for w in wins:
         y0, x0, y1, x1 = _px_box(w.window, m.shape)
         assert m[y0:y1, x0:x1].all(), 'interior window leaked outside the mask'
         assert w.native_wh[0] >= RES.image_size or w.native_wh[1] >= RES.image_size
         assert min(w.native_wh) >= int(WINDOW_SPEC.min_side_mult * RES.image_size)
         assert w.upsample_factor <= 1.0 + 1e-6
+
+
+def test_interior_windows_are_mutually_distinct():
+    # Generous mask (large relative to the erosion margin) plus a lower
+    # min_side_frac_of_max (more size variety, so a small-and-far-apart
+    # second window is actually findable) — enough room for windows_per_item
+    # genuinely non-overlapping crops, not near-duplicates.
+    m = _rect_mask(3000, 3000, 50, 50, 2950, 2950)
+    spec = WindowSpec(min_side_frac_of_max=0.3)
+    wins = sample_interior_windows(m, RES, item_id='item-roomy', spec=spec)
+    assert len(wins) == spec.windows_per_item
+    boxes = [_px_box(w.window, m.shape) for w in wins]
+
+    def iou(a, b):
+        ay0, ax0, ay1, ax1 = a
+        by0, bx0, by1, bx1 = b
+        iy0, ix0 = max(ay0, by0), max(ax0, bx0)
+        iy1, ix1 = min(ay1, by1), min(ax1, bx1)
+        ih, iw = max(0, iy1 - iy0), max(0, ix1 - ix0)
+        inter = ih * iw
+        if inter == 0:
+            return 0.0
+        area_a = (ay1 - ay0) * (ax1 - ax0)
+        area_b = (by1 - by0) * (bx1 - bx0)
+        return inter / (area_a + area_b - inter)
+
+    for i in range(len(boxes)):
+        for j in range(i + 1, len(boxes)):
+            assert iou(boxes[i], boxes[j]) <= spec.max_overlap_frac + 1e-6, \
+                'sampler returned near-duplicate windows for a roomy mask'
 
 
 def test_interior_respects_erosion_margin():
@@ -169,9 +224,11 @@ def test_rng_group_isolation():
 
 def test_spec_version_changes_windows():
     m = _rect_mask(600, 600, 100, 100, 500, 500)
-    v1 = sample_interior_windows(m, RES, item_id='it')
-    v2 = sample_interior_windows(m, RES, item_id='it', spec=WindowSpec(version='v2'))
-    assert [w.window for w in v1] != [w.window for w in v2]
+    spec_a = WindowSpec(version='test-a')
+    spec_b = WindowSpec(version='test-b')
+    a = sample_interior_windows(m, RES, item_id='it', spec=spec_a)
+    b = sample_interior_windows(m, RES, item_id='it', spec=spec_b)
+    assert [w.window for w in a] != [w.window for w in b]
 
 
 # ── window application ───────────────────────────────────────────────────────

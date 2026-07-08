@@ -22,6 +22,20 @@ item always yields the same windows, on any machine, in any process.  The
 paired real_crop condition re-derives the *interior* group windows of its
 parent item, so fake crop and real crop share identical geometry by
 construction.
+
+Sizing reference: the sampling range for interior/boundary windows is anchored
+to ``best_inscribed_side`` — the best achievable window side across the whole
+aspect-ratio band, NOT a single inscribed square.  A pure square badly
+underestimates the usable area of an elongated or irregular mask (e.g. a
+horizontal strip fits a wide-short rectangle far larger than any square it
+contains), which otherwise collapses every sampled window down to the native
+floor regardless of the object's true extent, and starves the position-search
+grid down to one or two cells (the ``max_overlap_frac`` de-dup below then has
+nothing to pick from and hands back near-identical windows). ``_sample_distinct``
+additionally rejects a candidate window that overlaps (IoU) an already-accepted
+window for the same item beyond ``max_overlap_frac`` — if a mask genuinely
+can't support ``windows_per_item`` sufficiently distinct crops, fewer are
+returned rather than padding with duplicates.
 """
 
 from __future__ import annotations
@@ -48,13 +62,15 @@ class WindowSpec:
     floor is about real information content, not mask fraction (a 5% splice in a
     2 MP frame is croppable; the same 5% at 700 px is not).
     """
-    version: str = 'v1'
+    version: str = 'v2'
     # Window side must be >= this multiple of the eval resolution so model
     # pixels are (approximately) not interpolated. 1.0 => side >= image_size.
     min_side_mult: float = 1.0
-    # Interior windows: side sampled in [min_side_frac_of_max * max_square,
-    # max_square] (subject to the native floor) — moderate minimum area,
+    # Interior windows: side sampled in [min_side_frac_of_max * best_inscribed,
+    # best_inscribed] (subject to the native floor) — moderate minimum area,
     # never deterministically the max box (object-core salience bias).
+    # best_inscribed = best_inscribed_side(), NOT a pure square (see module
+    # docstring) — a square badly underestimates elongated/irregular masks.
     min_side_frac_of_max: float = 0.60
     # Aspect band shared by every condition (mirrors the train crop band).
     ratio_range: Tuple[float, float] = (0.60, 1.70)
@@ -64,8 +80,14 @@ class WindowSpec:
     outside_side_mult_range: Tuple[float, float] = (1.0, 1.6)
     # Windows drawn per parent item per condition group.
     windows_per_item: int = 2
-    # Position-draw attempts per window before giving up on a size draw.
-    size_tries: int = 8
+    # Size draws attempted before giving up on this window slot.
+    size_tries: int = 16
+    # Position re-draws per size draw before concluding this size can't yield
+    # a sufficiently distinct window (see max_overlap_frac).
+    position_tries: int = 8
+    # Max allowed IoU (native pixel boxes) between a candidate window and any
+    # already-accepted window for the same item/group — the de-dup guard.
+    max_overlap_frac: float = 0.30
 
 
 WINDOW_SPEC = WindowSpec()
@@ -145,19 +167,18 @@ def _window_sums(ii: np.ndarray, h: int, w: int) -> np.ndarray:
     return (ii[h:, w:] - ii[:-h, w:] - ii[h:, :-w] + ii[:-h, :-w])
 
 
-def largest_square_side(mask: np.ndarray) -> int:
-    """Side of the largest axis-aligned square fully inside ``mask`` (0 if none)."""
-    H, W = mask.shape
-    if not mask.any():
-        return 0
-    ii = _integral(mask)
-
-    def fits(s: int) -> bool:
-        if s > H or s > W:
+def _largest_rect_side(ii: np.ndarray, H: int, W: int, ratio: float) -> int:
+    """Largest h such that an (h, round(h*ratio)) window fits fully inside the
+    mask described by integral image ``ii`` (0 if none fits)."""
+    def fits(h: int) -> bool:
+        if h <= 0 or h > H:
             return False
-        return bool((_window_sums(ii, s, s) == s * s).any())
+        w = max(1, int(round(h * ratio)))
+        if w > W:
+            return False
+        return bool((_window_sums(ii, h, w) == h * w).any())
 
-    lo, hi = 0, min(H, W)
+    lo, hi = 0, H
     while lo < hi:
         mid = (lo + hi + 1) // 2
         if fits(mid):
@@ -167,6 +188,32 @@ def largest_square_side(mask: np.ndarray) -> int:
     return lo
 
 
+def largest_square_side(mask: np.ndarray) -> int:
+    """Side of the largest axis-aligned square fully inside ``mask`` (0 if none)."""
+    if not mask.any():
+        return 0
+    H, W = mask.shape
+    return _largest_rect_side(_integral(mask), H, W, 1.0)
+
+
+def best_inscribed_side(
+    mask: np.ndarray, ratio_range: Tuple[float, float] = (1.0, 1.0),
+) -> int:
+    """Largest achievable window side across the aspect-ratio band (0 if none).
+
+    A pure inscribed SQUARE badly underestimates the usable area of an
+    elongated or irregular mask — see module docstring. Probes a handful of
+    ratios spanning ``ratio_range`` (plus 1.0) and returns the best.
+    """
+    if not mask.any():
+        return 0
+    H, W = mask.shape
+    ii = _integral(mask)
+    lo, hi = ratio_range
+    ratios = sorted({lo, 1.0, hi} if lo <= 1.0 <= hi else {lo, hi})
+    return max(_largest_rect_side(ii, H, W, r) for r in ratios)
+
+
 def _pick_position(valid: np.ndarray, rng: random.Random) -> Optional[Tuple[int, int]]:
     """Uniform draw over True cells of a (Y, X) validity grid; None if empty."""
     ys, xs = np.nonzero(valid)
@@ -174,6 +221,64 @@ def _pick_position(valid: np.ndarray, rng: random.Random) -> Optional[Tuple[int,
         return None
     i = rng.randrange(len(ys))
     return int(ys[i]), int(xs[i])
+
+
+def _iou_native(a: Tuple[int, int, int, int], b: Tuple[int, int, int, int]) -> float:
+    """IoU of two native-pixel (y0, x0, y1, x1) boxes."""
+    ay0, ax0, ay1, ax1 = a
+    by0, bx0, by1, bx1 = b
+    iy0, ix0 = max(ay0, by0), max(ax0, bx0)
+    iy1, ix1 = min(ay1, by1), min(ax1, bx1)
+    ih, iw = max(0, iy1 - iy0), max(0, ix1 - ix0)
+    inter = ih * iw
+    if inter <= 0:
+        return 0.0
+    area_a = max(0, ay1 - ay0) * max(0, ax1 - ax0)
+    area_b = max(0, by1 - by0) * max(0, bx1 - bx0)
+    denom = area_a + area_b - inter
+    return (inter / denom) if denom > 0 else 0.0
+
+
+def _sample_distinct(
+    rng: random.Random,
+    match_fn,
+    side_lo: int,
+    side_hi: int,
+    shape_hw: Tuple[int, int],
+    res,
+    group: str,
+    k: int,
+    spec: WindowSpec,
+) -> List[ProbeWindow]:
+    """Shared accept loop for the three condition samplers (see module docstring
+    for why de-dup is needed). Returns fewer than ``k`` windows rather than a
+    near-duplicate if the mask can't support that many distinct crops."""
+    H, W = shape_hw
+    accepted: List[Tuple[int, int, int, int]] = []
+    out: List[ProbeWindow] = []
+    for i in range(k):
+        chosen = None
+        for _try in range(spec.size_tries):
+            h, w = _draw_hw(rng, side_lo, side_hi, (H, W), spec)
+            if h > H or w > W:
+                continue
+            valid = match_fn(h, w)
+            for _pos_try in range(spec.position_tries):
+                pos = _pick_position(valid, rng)
+                if pos is None:
+                    break
+                box = (pos[0], pos[1], pos[0] + h, pos[1] + w)
+                if all(_iou_native(box, b) <= spec.max_overlap_frac for b in accepted):
+                    chosen = (pos, h, w)
+                    break
+            if chosen is not None:
+                break
+        if chosen is None:
+            break  # mask can't support another sufficiently distinct window
+        pos, h, w = chosen
+        accepted.append((pos[0], pos[1], pos[0] + h, pos[1] + w))
+        out.append(_to_probe_window(pos[0], pos[1], h, w, (H, W), res, group, i))
+    return out
 
 
 # ---------------------------------------------------------------------------
@@ -259,7 +364,7 @@ def sample_interior_windows(
         return []
 
     floor = int(round(spec.min_side_mult * res.image_size))
-    max_sq = largest_square_side(eroded)
+    max_sq = best_inscribed_side(eroded, spec.ratio_range)
     if max_sq < floor:
         return []
 
@@ -267,18 +372,13 @@ def sample_interior_windows(
     ii = _integral(eroded)
     side_lo = max(floor, int(round(spec.min_side_frac_of_max * max_sq)))
 
-    out: List[ProbeWindow] = []
-    for i in range(k if k is not None else spec.windows_per_item):
-        for _try in range(spec.size_tries):
-            h, w = _draw_hw(rng, side_lo, max_sq, (H, W), spec)
-            if h > H or w > W:
-                continue
-            valid = _window_sums(ii, h, w) == h * w      # full containment
-            pos = _pick_position(valid, rng)
-            if pos is not None:
-                out.append(_to_probe_window(pos[0], pos[1], h, w, (H, W), res, 'interior', i))
-                break
-    return out
+    def match_fn(h: int, w: int) -> np.ndarray:
+        return _window_sums(ii, h, w) == h * w      # full containment
+
+    return _sample_distinct(
+        rng, match_fn, side_lo, max_sq, (H, W), res, 'interior',
+        k if k is not None else spec.windows_per_item, spec,
+    )
 
 
 def sample_boundary_windows(
@@ -298,29 +398,25 @@ def sample_boundary_windows(
     floor = int(round(spec.min_side_mult * res.image_size))
     if floor > min(H, W):
         return []
-    # Scale anchor: the mask's own largest square when it beats the floor,
-    # else the floor — keeps boundary sizes kin to interior sizes on the same
-    # item while still allowing boundary probes on items too small for interior.
-    max_sq = max(largest_square_side(m), floor)
+    # Scale anchor: the mask's own best inscribed side (across the ratio band)
+    # when it beats the floor, else the floor — keeps boundary sizes kin to
+    # interior sizes on the same item while still allowing boundary probes on
+    # items too small for interior.
+    max_sq = max(best_inscribed_side(m, spec.ratio_range), floor)
     side_hi = min(max_sq, min(H, W))
 
     rng = rng_for(item_id, 'boundary', spec)
     ii = _integral(m)
     lo_f, hi_f = spec.boundary_in_range
 
-    out: List[ProbeWindow] = []
-    for i in range(k if k is not None else spec.windows_per_item):
-        for _try in range(spec.size_tries):
-            h, w = _draw_hw(rng, floor, side_hi, (H, W), spec)
-            if h > H or w > W:
-                continue
-            frac = _window_sums(ii, h, w) / float(h * w)
-            valid = (frac >= lo_f) & (frac <= hi_f)
-            pos = _pick_position(valid, rng)
-            if pos is not None:
-                out.append(_to_probe_window(pos[0], pos[1], h, w, (H, W), res, 'boundary', i))
-                break
-    return out
+    def match_fn(h: int, w: int) -> np.ndarray:
+        frac = _window_sums(ii, h, w) / float(h * w)
+        return (frac >= lo_f) & (frac <= hi_f)
+
+    return _sample_distinct(
+        rng, match_fn, floor, side_hi, (H, W), res, 'boundary',
+        k if k is not None else spec.windows_per_item, spec,
+    )
 
 
 def sample_outside_windows(
@@ -351,20 +447,15 @@ def sample_outside_windows(
     ii = _integral(dilated)
     lo_m, hi_m = spec.outside_side_mult_range
     side_lo = floor
-    side_hi = min(int(round(floor * hi_m)), min(H, W))
+    side_hi = max(side_lo, min(int(round(floor * hi_m)), min(H, W)))
 
-    out: List[ProbeWindow] = []
-    for i in range(k if k is not None else spec.windows_per_item):
-        for _try in range(spec.size_tries):
-            h, w = _draw_hw(rng, side_lo, max(side_lo, side_hi), (H, W), spec)
-            if h > H or w > W:
-                continue
-            valid = _window_sums(ii, h, w) == 0            # zero mask contact
-            pos = _pick_position(valid, rng)
-            if pos is not None:
-                out.append(_to_probe_window(pos[0], pos[1], h, w, (H, W), res, 'outside', i))
-                break
-    return out
+    def match_fn(h: int, w: int) -> np.ndarray:
+        return _window_sums(ii, h, w) == 0            # zero mask contact
+
+    return _sample_distinct(
+        rng, match_fn, side_lo, side_hi, (H, W), res, 'outside',
+        k if k is not None else spec.windows_per_item, spec,
+    )
 
 
 # ---------------------------------------------------------------------------
