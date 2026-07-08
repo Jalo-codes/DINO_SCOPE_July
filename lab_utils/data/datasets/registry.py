@@ -31,6 +31,7 @@ import lab_utils.data.datasets.opensdi  as _opensdi
 import lab_utils.data.datasets.pico_banana as _pico_banana
 import lab_utils.data.datasets.pico_pseudo as _pico_pseudo
 import lab_utils.data.datasets.region_probes as _region_probes
+import lab_utils.data.datasets.full_fakes as _full_fakes
 
 
 
@@ -50,6 +51,10 @@ REGISTRY: Dict[str, Callable] = {
     'opensdi':      _opensdi.build,
     'sid_set':      lambda root, **kw: _unpaired.build(root, source='sid_set', **kw),
     'pico_banana':  _pico_banana.build,
+    # Whole-image ("full fake") generation eval set — root/real/ vs
+    # root/<generator>/, no splice boundary, no GT mask (synthetic full-frame
+    # sentinel). See lab_utils/data/datasets/full_fakes.py.
+    'full_fakes':   _full_fakes.build,
     # Region-probe eval conditions (BCE-emergence study) — eval-only builders
     # over a PARENT dataset's val split; the flag root is the PARENT root.
     # ai_* / real_crop wrap sagid (AI-edited content + its paired original);

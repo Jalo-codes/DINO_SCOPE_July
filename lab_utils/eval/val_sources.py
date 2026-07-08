@@ -34,6 +34,11 @@ SOURCE_ROOT_ARGS: Dict[str, str] = {
     'sid_set':      'sid_set_root',
     'pico_banana':  'pico_banana_root',
     'pico_pseudo':  'pico_pseudo_root',
+    # Whole-image ("full fake") generation eval set (lab_utils/data/datasets/
+    # full_fakes.py) — root/real/ vs root/<generator>/, per-generator AUROC +
+    # localization distribution (recall/iou, meaningful despite the sentinel
+    # mask) via experiments/labs/full_fakes_report.py.
+    'full_fakes':   'full_fakes_root',
     # Region-probe eval conditions (BCE-emergence study). Each flag points at
     # the PARENT dataset root: ai_*/real_crop → sagid root; sp_* → imd2020
     # root; fr_bg → tgif2 root (restricted to 'fr' items). The _tgif variants

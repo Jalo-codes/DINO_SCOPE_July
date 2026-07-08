@@ -39,6 +39,7 @@ from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 
+from lab_utils.eval.rank_stats import rank_auc, stats
 from lab_utils.logging.text import log_line
 
 
@@ -82,38 +83,7 @@ def _read_manifest(path: Optional[Path]) -> Dict[str, dict]:
 
 
 # ── stats ────────────────────────────────────────────────────────────────────
-
-def _rank_auc(pos: np.ndarray, neg: np.ndarray) -> float:
-    """Mann-Whitney AUC: P(score_pos > score_neg) + 0.5 * P(equal)."""
-    pos = pos[np.isfinite(pos)]
-    neg = neg[np.isfinite(neg)]
-    if len(pos) == 0 or len(neg) == 0:
-        return float('nan')
-    all_scores = np.concatenate([pos, neg])
-    order = all_scores.argsort(kind='mergesort')
-    ranks = np.empty_like(order, dtype=np.float64)
-    # average ranks for ties
-    sorted_scores = all_scores[order]
-    i = 0
-    while i < len(sorted_scores):
-        j = i
-        while j + 1 < len(sorted_scores) and sorted_scores[j + 1] == sorted_scores[i]:
-            j += 1
-        ranks[order[i:j + 1]] = 0.5 * (i + j) + 1.0
-        i = j + 1
-    r_pos = ranks[:len(pos)].sum()
-    u = r_pos - len(pos) * (len(pos) + 1) / 2.0
-    return float(u / (len(pos) * len(neg)))
-
-
-def _stats(vals: List[float]) -> dict:
-    a = np.asarray([v for v in vals if np.isfinite(v)], dtype=np.float64)
-    if len(a) == 0:
-        return {'n': 0, 'median': float('nan'), 'mean': float('nan'),
-                'p25': float('nan'), 'p75': float('nan')}
-    return {'n': len(a), 'median': float(np.median(a)), 'mean': float(a.mean()),
-            'p25': float(np.percentile(a, 25)), 'p75': float(np.percentile(a, 75))}
-
+# rank_auc / stats live in lab_utils.eval.rank_stats (shared with full_fakes_report.py).
 
 def _pred_pos_frac(row: dict) -> float:
     """Predicted-positive pixel fraction, derived from the CSV columns.
@@ -148,10 +118,10 @@ def report_cell(cell: str, rows: List[dict], manifest: Dict[str, dict],
              f'{"iou med":>7}  {"score med":>9} {"score mean":>10} {"ppos med":>8}')
     for source in sorted(by_source):
         rs = by_source[source]
-        loc = _stats([r['f1'] for r in rs if not r['is_real']])
-        iou = _stats([r['iou'] for r in rs if not r['is_real']])
-        sco = _stats([r['image_score'] for r in rs])
-        ppf = _stats([_pred_pos_frac(r) for r in rs])
+        loc = stats([r['f1'] for r in rs if not r['is_real']])
+        iou = stats([r['iou'] for r in rs if not r['is_real']])
+        sco = stats([r['image_score'] for r in rs])
+        ppf = stats([_pred_pos_frac(r) for r in rs])
         _log(f'{source:<14} {len(rs):>4}  {_fmt(loc["median"]):>7} '
                  f'{_fmt(loc["mean"]):>7} {_fmt(iou["median"]):>7}  '
                  f'{_fmt(sco["median"]):>9} {_fmt(sco["mean"]):>10} '
@@ -166,7 +136,7 @@ def report_cell(cell: str, rows: List[dict], manifest: Dict[str, dict],
     for pos_src, neg_src in contrasts:
         pos = np.asarray([r['image_score'] for r in by_source.get(pos_src, [])])
         neg = np.asarray([r['image_score'] for r in by_source.get(neg_src, [])])
-        auc = _rank_auc(pos, neg)
+        auc = rank_auc(pos, neg)
         _log(f'{pos_src + " vs " + neg_src:<32} {_fmt(auc):>6} '
                  f'{len(pos):>6} {len(neg):>6}')
         out_rows.append({'cell': cell, 'kind': 'contrast',
@@ -185,7 +155,7 @@ def report_cell(cell: str, rows: List[dict], manifest: Dict[str, dict],
                                 if r.get('bucket') == bucket])
                 n = np.asarray([r['image_score'] for r in neg_rows
                                 if r.get('bucket') == bucket or neg_src == 'real_crop'])
-                a = _rank_auc(p, n)
+                a = rank_auc(p, n)
                 _log(f'  [{bucket:<6}] {pos_src} vs {neg_src:<20} {_fmt(a)}')
                 out_rows.append({'cell': cell, 'kind': 'contrast',
                                  'name': f'{pos_src}|{neg_src}', 'metric': 'auc',
