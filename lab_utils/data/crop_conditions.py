@@ -214,13 +214,21 @@ def best_inscribed_side(
     return max(_largest_rect_side(ii, H, W, r) for r in ratios)
 
 
-def _pick_position(valid: np.ndarray, rng: random.Random) -> Optional[Tuple[int, int]]:
-    """Uniform draw over True cells of a (Y, X) validity grid; None if empty."""
+def _pick_positions(
+    valid: np.ndarray, rng: random.Random, n: int,
+) -> List[Tuple[int, int]]:
+    """Up to ``n`` DISTINCT True cells of a (Y, X) validity grid, no replacement.
+
+    ``np.nonzero`` is the expensive O(H*W) part — call it once per size draw
+    and hand every position try a slice of the same result, rather than
+    re-scanning the grid on every retry.
+    """
     ys, xs = np.nonzero(valid)
-    if len(ys) == 0:
-        return None
-    i = rng.randrange(len(ys))
-    return int(ys[i]), int(xs[i])
+    n_pos = len(ys)
+    if n_pos == 0:
+        return []
+    idxs = rng.sample(range(n_pos), min(n, n_pos))
+    return [(int(ys[i]), int(xs[i])) for i in idxs]
 
 
 def _iou_native(a: Tuple[int, int, int, int], b: Tuple[int, int, int, int]) -> float:
@@ -263,10 +271,7 @@ def _sample_distinct(
             if h > H or w > W:
                 continue
             valid = match_fn(h, w)
-            for _pos_try in range(spec.position_tries):
-                pos = _pick_position(valid, rng)
-                if pos is None:
-                    break
+            for pos in _pick_positions(valid, rng, spec.position_tries):
                 box = (pos[0], pos[1], pos[0] + h, pos[1] + w)
                 if all(_iou_native(box, b) <= spec.max_overlap_frac for b in accepted):
                     chosen = (pos, h, w)
