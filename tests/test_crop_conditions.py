@@ -163,6 +163,16 @@ def test_interior_floor_gate_rejects_small_regions():
     assert sample_interior_windows(m, RES, item_id='item-c') == []
 
 
+def test_interior_bbox_prefilter_matches_full_gate_on_large_frame():
+    # A tiny mask on a LARGE frame (the common real-world case: a small local
+    # edit on a multi-megapixel photo) exercises the cheap raw-bbox pre-filter
+    # (bbox - 2*radius < floor) rather than the frame-size-only paths the
+    # other tests use. Must reject exactly like the full erode+search path
+    # would, just without paying for it.
+    m = _rect_mask(4000, 4000, 1000, 1000, 1030, 1030)   # 30px region
+    assert sample_interior_windows(m, RES, item_id='item-tiny-on-huge') == []
+
+
 def test_interior_never_max_box_deterministically():
     # Across several items, windows must vary in size/position (not always the
     # max inscribed square == whole rect here).

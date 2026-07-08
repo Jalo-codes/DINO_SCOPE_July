@@ -369,12 +369,28 @@ def sample_interior_windows(
     (this is the gate that excludes small/tiny splices and low-res sources).
     """
     H, W = mask.shape
+    floor = int(round(spec.min_side_mult * res.image_size))
     radius = erode_radius_px((W, H), res)
+
+    # Cheap pre-filter: erosion can only shrink extent, never grow it, so no
+    # eroded rectangle >= floor can exist unless the RAW mask's own bounding
+    # box (minus ~2*radius, one erosion margin per side) already clears it.
+    # One np.nonzero pass vs. the ~35 array ops the full erode + multi-ratio
+    # inscribed-rectangle search costs below — the overwhelming majority of
+    # real candidates fail the floor outright, so this matters at scale
+    # (searching thousands of parent items across a large source pool).
+    ys, xs = np.nonzero(mask)
+    if len(ys) == 0:
+        return []
+    bbox_h = int(ys.max() - ys.min()) + 1
+    bbox_w = int(xs.max() - xs.min()) + 1
+    if bbox_h - 2 * radius < floor or bbox_w - 2 * radius < floor:
+        return []
+
     eroded = erode_mask(mask.astype(bool), radius)
     if not eroded.any():
         return []
 
-    floor = int(round(spec.min_side_mult * res.image_size))
     max_sq = best_inscribed_side(eroded, spec.ratio_range)
     if max_sq < floor:
         return []

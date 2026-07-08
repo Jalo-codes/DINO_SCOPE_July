@@ -95,7 +95,7 @@ def build(
     condition: str,
     parent: str,
     verify_policy: Optional[VerifyPolicy] = None,
-    max_parents: int = 500,
+    max_parents: int = 10000,
     windows_per_item: Optional[int] = None,
     **parent_kwargs,
 ) -> Tuple[Dataset, Dataset]:
@@ -110,10 +110,16 @@ def build(
         max_parents:      Deterministic cap on parent fake items (eval-size
                           control; windows_per_item probes emitted per parent).
                           Default is comfortably above every current parent's
-                          val-split size (sagid=169, coco_inpaint=126,
-                          casia=28 fakes) so it's effectively "use everything"
-                          — the floor/erosion gate in crop_conditions.py, not
-                          this cap, is what should be limiting final n.
+                          val-split size (imd2020 val_split=1.0 ~2424,
+                          tgif2 ~9548, sagid=169) so it's effectively "use
+                          everything" — the floor/erosion gate in
+                          crop_conditions.py, not this cap, is what should be
+                          limiting final n. Affordable because
+                          sample_interior_windows now rejects the (very
+                          common) too-small-mask case via a cheap raw-mask
+                          bounding-box pre-filter before paying for erosion +
+                          the inscribed-rectangle search — searching the
+                          full tgif2 pool costs seconds, not minutes.
         windows_per_item: Override WINDOW_SPEC.windows_per_item.
         **parent_kwargs:  Forwarded to the parent builder (e.g. val_split).
     """
