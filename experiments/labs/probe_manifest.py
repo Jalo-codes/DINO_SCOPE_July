@@ -35,7 +35,8 @@ from lab_utils.eval.val_sources import add_source_root_args, collect_val_items_b
 from lab_utils.logging.text import log_line
 
 PROBE_SOURCES = ('ai_interior', 'ai_boundary', 'sp_interior', 'sp_boundary',
-                 'fr_bg', 'real_crop')
+                 'fr_bg', 'real_crop',
+                 'ai_interior_tgif', 'ai_boundary_tgif', 'real_crop_tgif')
 
 _CSV_COLS = ['item_id', 'source', 'parent_item_id', 'parent_source', 'pair_stem',
              'case_id', 'win_y0', 'win_x0', 'win_y1', 'win_x1',
@@ -101,7 +102,12 @@ def main():
                 y0, x0, y1, x1 = m['crop_window']
                 nw, nh = m['window_native_wh']
                 w.writerow([
-                    it.item_id, source, m.get('parent_item_id', ''),
+                    # it.source (the condition, e.g. 'ai_interior'), NOT the
+                    # registry key -- a second parent pool for the same
+                    # condition (e.g. 'ai_interior_tgif') must land under the
+                    # same label here so it matches how eval.py's records CSV
+                    # groups scores (by EvalRecord.source == Item.source).
+                    it.item_id, it.source, m.get('parent_item_id', ''),
                     m.get('parent_source', ''), m.get('pair_stem', ''),
                     m.get('case_id') or '',
                     f'{y0:.6f}', f'{x0:.6f}', f'{y1:.6f}', f'{x1:.6f}',
@@ -113,9 +119,13 @@ def main():
                 n_rows += 1
     log_line(f'[probe] wrote {n_rows} rows -> {out_csv} (spec={WINDOW_SPEC.version})')
 
-    # Pairing sanity: every real_crop pair_stem should have an ai_interior twin.
-    ai = {it.meta.get('pair_stem') for it in by_source.get('ai_interior', [])}
-    rc = {it.meta.get('pair_stem') for it in by_source.get('real_crop', [])}
+    # Pairing sanity: every real_crop pair_stem should have an ai_interior
+    # twin. Union across ALL configured sources (item.source, not registry
+    # key) since ai_interior/real_crop may each be fed by more than one
+    # parent pool (e.g. sagid + the tgif-sourced variants).
+    all_items = [it for items in by_source.values() for it in items]
+    ai = {it.meta.get('pair_stem') for it in all_items if it.source == 'ai_interior'}
+    rc = {it.meta.get('pair_stem') for it in all_items if it.source == 'real_crop'}
     if ai or rc:
         log_line(f'[probe] pairing: ai_interior={len(ai)} real_crop={len(rc)} '
                  f'matched={len(ai & rc)} (ai-only={len(ai - rc)}, rc-only={len(rc - ai)})')

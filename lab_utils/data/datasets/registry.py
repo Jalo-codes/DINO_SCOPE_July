@@ -65,6 +65,19 @@ REGISTRY: Dict[str, Callable] = {
     'sp_boundary':  lambda root, **kw: _region_probes.build(root, condition='sp_boundary', parent=kw.pop('parent', 'imd2020'), **kw),
     'fr_bg':        lambda root, **kw: _region_probes.build(root, condition='fr_bg',       parent=kw.pop('parent', 'tgif2'), types=kw.pop('types', {'fr'}), **kw),
     'real_crop':    lambda root, **kw: _region_probes.build(root, condition='real_crop',   parent=kw.pop('parent', 'sagid'), **kw),
+    # Second, ADDITIONAL parent pool for the same three conditions: tgif2's
+    # 'sp' manipulations (paste-back AI edits, NOT real-content splices —
+    # unlike casia/imd2020, this belongs with ai_* not sp_*). sagid alone
+    # (169 val fakes) starves ai_interior's floor gate; tgif2 has 341
+    # coco_ids x up to 3 generator models of sp variants, a much bigger
+    # haystack to find large-enough edits in. Items still carry
+    # Item.source == the base condition name (e.g. 'ai_interior'), so running
+    # both registry keys through eval.py/probe_manifest.py in the same
+    # --sources list merges them into one pool automatically — no changes
+    # needed downstream.
+    'ai_interior_tgif': lambda root, **kw: _region_probes.build(root, condition='ai_interior', parent=kw.pop('parent', 'tgif2'), types=kw.pop('types', {'sp'}), **kw),
+    'ai_boundary_tgif': lambda root, **kw: _region_probes.build(root, condition='ai_boundary', parent=kw.pop('parent', 'tgif2'), types=kw.pop('types', {'sp'}), **kw),
+    'real_crop_tgif':   lambda root, **kw: _region_probes.build(root, condition='real_crop',   parent=kw.pop('parent', 'tgif2'), types=kw.pop('types', {'sp'}), **kw),
 }
 
 

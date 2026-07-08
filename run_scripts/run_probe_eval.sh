@@ -9,15 +9,22 @@ RUN_ROOT="${RUN_ROOT:-/media/ssd/runs/bce_emergence}"
 SAGID="/media/ssd/DINO_SCOPE_DATA/SAGI_D"
 IMD="/media/ssd/DINO_SCOPE_DATA/IMD2020"
 TGIF2="/media/ssd/DINO_SCOPE_DATA/content/flux_originals"
-PROBE_SOURCES="ai_interior ai_boundary sp_interior sp_boundary fr_bg real_crop"
+PROBE_SOURCES="ai_interior ai_boundary sp_interior sp_boundary fr_bg real_crop ai_interior_tgif ai_boundary_tgif real_crop_tgif"
 # ai_*/real_crop -> sagid; sp_* -> imd2020 (~171 val fakes vs casia's ~28 --
 # more shots at clearing the interior floor); fr_bg -> tgif2 restricted to
 # 'fr' manipulations (registry default), a held-out OOD fr pool distinct
-# from sagid's own frs.
+# from sagid's own frs. *_tgif -> a SECOND parent pool for ai_interior/
+# ai_boundary/real_crop: tgif2's 'sp' manipulations (paste-back AI edits --
+# 341 coco_ids x up to 3 models, a much bigger haystack than sagid's 169 val
+# fakes for clearing the interior floor). Items still carry Item.source ==
+# the base condition name, so these merge into the same ai_interior/
+# ai_boundary/real_crop pool automatically in eval.py's records CSV.
 PROBE_ROOTS=(
   --ai_interior_root "$SAGID" --ai_boundary_root "$SAGID"
   --real_crop_root   "$SAGID" --fr_bg_root       "$TGIF2"
   --sp_interior_root "$IMD"   --sp_boundary_root "$IMD"
+  --ai_interior_tgif_root "$TGIF2" --ai_boundary_tgif_root "$TGIF2"
+  --real_crop_tgif_root   "$TGIF2"
 )
 
 # 0. Manifest + render eyeball (data-only, no checkpoint -- run once).

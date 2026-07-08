@@ -35,14 +35,19 @@ SOURCE_ROOT_ARGS: Dict[str, str] = {
     'pico_banana':  'pico_banana_root',
     'pico_pseudo':  'pico_pseudo_root',
     # Region-probe eval conditions (BCE-emergence study). Each flag points at
-    # the PARENT dataset root (ai_*/real_crop → sagid-layout root; fr_bg → an
-    # fr-typed inpaint-layout dir; sp_* → casia root).
+    # the PARENT dataset root: ai_*/real_crop → sagid root; sp_* → imd2020
+    # root; fr_bg → tgif2 root (restricted to 'fr' items). The _tgif variants
+    # are a SECOND parent pool for the same three conditions (tgif2's 'sp'
+    # items — merges into the same condition automatically, see registry.py).
     'ai_interior':  'ai_interior_root',
     'ai_boundary':  'ai_boundary_root',
     'sp_interior':  'sp_interior_root',
     'sp_boundary':  'sp_boundary_root',
     'fr_bg':        'fr_bg_root',
     'real_crop':    'real_crop_root',
+    'ai_interior_tgif': 'ai_interior_tgif_root',
+    'ai_boundary_tgif': 'ai_boundary_tgif_root',
+    'real_crop_tgif':   'real_crop_tgif_root',
 }
 
 
