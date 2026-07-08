@@ -1,0 +1,11 @@
+[skip] cont_splice_s0 (done)
+
+[orchestrate] sweep summary (/media/ssd/runs/bce_emergence/sweep_summary.csv):
+  name             status   exit_code  wall_seconds
+  ---------------  -------  ---------  ------------
+  bce_inpaint_s0   done     0          5103.207    
+  bce_splice_s0    done     0          5839.194    
+  bce_both_s0      done     0          8466.947    
+  cont_inpaint_s0  done     0          8489.998    
+  cont_splice_s0   skipped  0          5281.892    
+  cont_both_s0     done     0          5894.958    

@@ -1,0 +1,186 @@
+
+[run] bce_inpaint_s0: /home/fri-team-4/dino_venv/bin/python -m experiments.scripts.train --device cuda --imd2020_root /media/ssd/DINO_SCOPE_DATA/IMD2020 --casia_root /media/ssd/DINO_SCOPE_DATA/casia --sagid_root /media/ssd/DINO_SCOPE_DATA/SAGI_D --coco_inpaint_root /media/ssd/DINO_SCOPE_DATA/INPAINT_COCO/content/inpaint_coco/images --tgif2_root /media/ssd/DINO_SCOPE_DATA/content/flux_originals --casia_train --imd_val_only --image_size 448 --patch_size 16 --lora_rank 16 --lora_alpha 32 --batch_size 8 --grad_accum 1 --contrastive_dim 64 --pool_hidden 256 --lambda_image_bce 1.0 --paste_frac 0.4 --seed 42 --train_samples 3000 --num_workers 4 --num_epochs 10 --min_epochs 5 --warmup_epochs 1.0 --early_stop_patience 2 --early_stop_reduce mean --val_zoom --tgif_val_models flux1dev --val_per_cell 100 --patch_bce --lambda_contrastive 0.0 --lambda_patch_bce 1.0 --fr_bg_negative_prob 0.12 --splice_mix sagid=0.5 coco_inpaint=0.5 --checkpoint_root /media/ssd/runs/bce_emergence/bce_inpaint_s0
+[cfg] ── dataset roots ──
+[cfg]   imd2020_root=/media/ssd/DINO_SCOPE_DATA/IMD2020
+[cfg]   casia_root=/media/ssd/DINO_SCOPE_DATA/casia
+[cfg]   indoor_root=None
+[cfg]   coco_inpaint_root=/media/ssd/DINO_SCOPE_DATA/INPAINT_COCO/content/inpaint_coco/images
+[cfg]   sagid_root=/media/ssd/DINO_SCOPE_DATA/SAGI_D
+[cfg]   bfree_root=None
+[cfg]   anyedit_root=None
+[cfg]   tgif2_root=/media/ssd/DINO_SCOPE_DATA/content/flux_originals
+[cfg]   pico_pseudo_root=None
+[cfg] ── checkpoint ──
+[cfg]   run_dir=/media/ssd/runs/bce_emergence/bce_inpaint_s0
+[cfg]   resume=None
+[cfg]   init_weights=None
+[cfg]   seed=42
+[cfg]   log_every=20
+[cfg] ── training loop ──
+[cfg]   num_epochs=10
+[cfg]   warmup_epochs=1
+[cfg]   early_stop_patience=2
+[cfg]   early_stop_min_delta=0.002
+[cfg]   min_epochs=5
+[cfg]   max_train_epochs=None
+[cfg]   early_stop_reduce=mean
+[cfg]   batch_size=8
+[cfg]   grad_accum=1
+[cfg]   lr=0.0002
+[cfg]   weight_decay=0.0001
+[cfg]   train_samples=3000
+[cfg]   num_workers=4
+[cfg]   persistent_workers=false
+[cfg]   prefetch_factor=None
+[cfg] ── model ──
+[cfg]   model_name=facebook/dinov3-vith16plus-pretrain-lvd1689m
+[cfg]   base_dtype=fp32
+[cfg]   image_size=448
+[cfg]   patch_size=16
+[cfg]   lora_rank=16
+[cfg]   lora_alpha=32
+[cfg]   lora_dropout=0.1
+[cfg]   lora_block_start=None
+[cfg]   lora_block_end=None
+[cfg]   contrastive_dim=64
+[cfg]   pool_hidden=256
+[cfg]   patch_bce=true
+[cfg]   no_grad_checkpoint=false
+[cfg] ── loss lambdas ──
+[cfg]   lambda_image_bce=1
+[cfg]   lambda_contrastive=0
+[cfg]   lambda_patch_bce=1
+[cfg]   patch_pos_weight=10
+[cfg] ── data / sampling ──
+[cfg]   splice_mix={coco_inpaint:0.5, sagid:0.5}
+[cfg]   casia_train=true
+[cfg]   imd_val_only=true
+[cfg]   imd_val_split=None
+[cfg] ── augmentation ──
+[cfg]   train_crop_min=0.18
+[cfg]   train_crop_max=1
+[cfg]   train_crop_ratio_min=0.6
+[cfg]   train_crop_ratio_max=1.7
+[cfg]   aug_severity=light
+[cfg]   paste_frac=0.4
+[cfg]   fr_bg_negative_prob=0.12
+[cfg]   oracle_crop=false
+[cfg] ── recipe / tgif-finetune ──
+[cfg]   recipe=standard
+[cfg]   init_checkpoint=None
+[cfg]   eval_per_cell=500
+[cfg]   val_per_cell=100
+[cfg]   imd_max_items=None
+[cfg]   val_zoom=true
+[cfg]   val_zoom_pad_frac=None
+[cfg]   val_zoom_min_area=0
+[cfg]   tgif_val_models=('flux1dev',)
+[cfg]   viz_every_epoch=false
+[cfg]   viz_n=15
+[cfg]   viz_per_source=None
+[cfg]   tgif_types=None
+[cfg]   tgif_eval_decoders=('kmeans', 'hdbscan')
+[cfg]   primary_surface=imd
+[cfg] ── hardware ──
+[cfg]   device=cuda:0
+[cfg]   use_amp=true
+[cfg]   amp_dtype=fp16
+[cfg]   world_size=1
+[cfg]   rank=0
+[cfg]   gpu_name=NVIDIA GeForce RTX 2080 Ti
+[cfg]   compute_cap=7.5
+
+Loading weights:   0%|          | 0/615 [00:00<?, ?it/s]
+Loading weights: 100%|██████████| 615/615 [00:00<00:00, 8608.31it/s]
+trainable params: 11,796,480 || all params: 852,389,120 || trainable%: 1.3839
+/home/fri-team-4/fri-team4/DINO_SCOPE_July/experiments/scripts/train.py:489: FutureWarning: `torch.cuda.amp.GradScaler(args...)` is deprecated. Please use `torch.amp.GradScaler('cuda', args...)` instead.
+  scaler    = torch.cuda.amp.GradScaler(enabled=cfg.use_amp)
+[data] Indexing IMD2020: /media/ssd/DINO_SCOPE_DATA/IMD2020
+[data] imd2020 train kept=2189 dropped=21/2210 reasons=mask_area_too_small:21
+[data] imd2020 val kept=212 dropped=2/214 reasons=mask_area_too_small:2
+[data] IMD2020: train=2189 val=212 real_cases=414 splices=2010 skipped_unmasked=0
+[data] Indexing CASIA: /media/ssd/DINO_SCOPE_DATA/casia
+[data] casia train kept=4423 dropped=21/4444 reasons=mask_area_too_small:21
+[data] casia val kept=56 dropped=0/56
+[data] CASIA: train=4423 val=56 triplets=2810 discarded=560 malformed=0
+[data] Indexing inpaint (coco_inpaint): /media/ssd/DINO_SCOPE_DATA/INPAINT_COCO/content/inpaint_coco/images
+[data] coco_inpaint train kept=2265 dropped=3/2268 reasons=mask_area_too_large:3
+[data] coco_inpaint val kept=252 dropped=0/252
+[data] inpaint coco_inpaint: train=2265 val=252 triplets=1260 unmatched_mods=0
+[data] Indexing inpaint (sagid): /media/ssd/DINO_SCOPE_DATA/SAGI_D
+[data] sagid train kept=3046 dropped=0/3046 warns=warn_mask_native_resize:4
+[data] sagid val kept=338 dropped=0/338 warns=warn_mask_native_resize:2
+[data] inpaint sagid: train=3046 val=338 triplets=1692 unmatched_mods=0
+[data] Indexing tgif2 (341 coco_ids): /media/ssd/DINO_SCOPE_DATA/content/flux_originals/tgif2_index.json
+Traceback (most recent call last):
+  File "/usr/lib/python3.10/runpy.py", line 196, in _run_module_as_main
+    return _run_code(code, main_globals, None,
+  File "/usr/lib/python3.10/runpy.py", line 86, in _run_code
+    exec(code, run_globals)
+  File "/home/fri-team-4/fri-team4/DINO_SCOPE_July/experiments/scripts/train.py", line 707, in <module>
+    main()
+  File "/home/fri-team-4/fri-team4/DINO_SCOPE_July/experiments/scripts/train.py", line 492, in main
+    train_ds, val_ds = _build_datasets(cfg, res)
+  File "/home/fri-team-4/fri-team4/DINO_SCOPE_July/experiments/scripts/train.py", line 350, in _build_datasets
+    _, tg_val = _tgif2_mod.build(
+  File "/home/fri-team-4/fri-team4/DINO_SCOPE_July/lab_utils/data/datasets/tgif2.py", line 350, in build
+    train_kept, _ = verify_all(train_all, policy=verify_policy,
+  File "/home/fri-team-4/fri-team4/DINO_SCOPE_July/lab_utils/data/verify.py", line 211, in verify_all
+    reasons = list(ex.map(lambda it: verify(it, policy=policy), items))
+  File "/usr/lib/python3.10/concurrent/futures/_base.py", line 621, in result_iterator
+    yield _result_or_cancel(fs.pop())
+  File "/usr/lib/python3.10/concurrent/futures/_base.py", line 319, in _result_or_cancel
+    return fut.result(timeout)
+  File "/usr/lib/python3.10/concurrent/futures/_base.py", line 458, in result
+    return self.__get_result()
+  File "/usr/lib/python3.10/concurrent/futures/_base.py", line 403, in __get_result
+    raise self._exception
+  File "/usr/lib/python3.10/concurrent/futures/thread.py", line 58, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "/home/fri-team-4/fri-team4/DINO_SCOPE_July/lab_utils/data/verify.py", line 211, in <lambda>
+    reasons = list(ex.map(lambda it: verify(it, policy=policy), items))
+  File "/home/fri-team-4/fri-team4/DINO_SCOPE_July/lab_utils/data/verify.py", line 160, in verify
+    raise DataError(
+lab_utils.errors.DataError: e87d471af8b96b84ff679efa3ecb966a: mask native size (735, 1024) is aspect-misaligned with image (720, 1024) (mask=/media/ssd/DINO_SCOPE_DATA/content/flux_originals/masks-flux/masks-flux_validation/validation/giraffe/563603_mask_bbox.png) — wrong pairing or corrupted export; alignment bugs are never dropped silently.
+[orchestrate] 'bce_inpaint_s0' FAILED (exit 1). Last 30 output lines:
+    | Traceback (most recent call last):
+    |   File "/usr/lib/python3.10/runpy.py", line 196, in _run_module_as_main
+    |     return _run_code(code, main_globals, None,
+    |   File "/usr/lib/python3.10/runpy.py", line 86, in _run_code
+    |     exec(code, run_globals)
+    |   File "/home/fri-team-4/fri-team4/DINO_SCOPE_July/experiments/scripts/train.py", line 707, in <module>
+    |     main()
+    |   File "/home/fri-team-4/fri-team4/DINO_SCOPE_July/experiments/scripts/train.py", line 492, in main
+    |     train_ds, val_ds = _build_datasets(cfg, res)
+    |   File "/home/fri-team-4/fri-team4/DINO_SCOPE_July/experiments/scripts/train.py", line 350, in _build_datasets
+    |     _, tg_val = _tgif2_mod.build(
+    |   File "/home/fri-team-4/fri-team4/DINO_SCOPE_July/lab_utils/data/datasets/tgif2.py", line 350, in build
+    |     train_kept, _ = verify_all(train_all, policy=verify_policy,
+    |   File "/home/fri-team-4/fri-team4/DINO_SCOPE_July/lab_utils/data/verify.py", line 211, in verify_all
+    |     reasons = list(ex.map(lambda it: verify(it, policy=policy), items))
+    |   File "/usr/lib/python3.10/concurrent/futures/_base.py", line 621, in result_iterator
+    |     yield _result_or_cancel(fs.pop())
+    |   File "/usr/lib/python3.10/concurrent/futures/_base.py", line 319, in _result_or_cancel
+    |     return fut.result(timeout)
+    |   File "/usr/lib/python3.10/concurrent/futures/_base.py", line 458, in result
+    |     return self.__get_result()
+    |   File "/usr/lib/python3.10/concurrent/futures/_base.py", line 403, in __get_result
+    |     raise self._exception
+    |   File "/usr/lib/python3.10/concurrent/futures/thread.py", line 58, in run
+    |     result = self.fn(*self.args, **self.kwargs)
+    |   File "/home/fri-team-4/fri-team4/DINO_SCOPE_July/lab_utils/data/verify.py", line 211, in <lambda>
+    |     reasons = list(ex.map(lambda it: verify(it, policy=policy), items))
+    |   File "/home/fri-team-4/fri-team4/DINO_SCOPE_July/lab_utils/data/verify.py", line 160, in verify
+    |     raise DataError(
+    | lab_utils.errors.DataError: e87d471af8b96b84ff679efa3ecb966a: mask native size (735, 1024) is aspect-misaligned with image (720, 1024) (mask=/media/ssd/DINO_SCOPE_DATA/content/flux_originals/masks-flux/masks-flux_validation/validation/giraffe/563603_mask_bbox.png) — wrong pairing or corrupted export; alignment bugs are never dropped silently.
+[failed] bce_inpaint_s0 (exit 1, 85.7s)
+
+[orchestrate] sweep summary (/media/ssd/runs/bce_emergence/sweep_summary.csv):
+  name             status   exit_code  wall_seconds
+  ---------------  -------  ---------  ------------
+  bce_inpaint_s0   failed   1          85.666      
+  bce_splice_s0    pending                         
+  bce_both_s0      pending                         
+  cont_inpaint_s0  pending                         
+  cont_splice_s0   pending                         
+  cont_both_s0     pending                         
