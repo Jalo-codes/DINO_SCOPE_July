@@ -7,12 +7,17 @@ set -eu
 PY="${PY:-$HOME/dino_venv/bin/python}"
 RUN_ROOT="${RUN_ROOT:-/media/ssd/runs/bce_emergence}"
 SAGID="/media/ssd/DINO_SCOPE_DATA/SAGI_D"
-CASIA="/media/ssd/DINO_SCOPE_DATA/casia"
+IMD="/media/ssd/DINO_SCOPE_DATA/IMD2020"
+TGIF2="/media/ssd/DINO_SCOPE_DATA/content/flux_originals"
 PROBE_SOURCES="ai_interior ai_boundary sp_interior sp_boundary fr_bg real_crop"
+# ai_*/real_crop -> sagid; sp_* -> imd2020 (~171 val fakes vs casia's ~28 --
+# more shots at clearing the interior floor); fr_bg -> tgif2 restricted to
+# 'fr' manipulations (registry default), a held-out OOD fr pool distinct
+# from sagid's own frs.
 PROBE_ROOTS=(
   --ai_interior_root "$SAGID" --ai_boundary_root "$SAGID"
-  --real_crop_root   "$SAGID" --fr_bg_root       "$SAGID"
-  --sp_interior_root "$CASIA" --sp_boundary_root "$CASIA"
+  --real_crop_root   "$SAGID" --fr_bg_root       "$TGIF2"
+  --sp_interior_root "$IMD"   --sp_boundary_root "$IMD"
 )
 
 # 0. Manifest + render eyeball (data-only, no checkpoint -- run once).

@@ -117,13 +117,16 @@ def test_interior_windows_fully_inside_mask():
 
 def test_interior_windows_are_mutually_distinct():
     # Generous mask (large relative to the erosion margin) plus a lower
-    # min_side_frac_of_max (more size variety, so a small-and-far-apart
-    # second window is actually findable) — enough room for windows_per_item
-    # genuinely non-overlapping crops, not near-duplicates.
+    # min_side_frac_of_max (more size variety, so small-and-far-apart windows
+    # are findable) — enough room for SEVERAL genuinely non-overlapping
+    # crops. windows_per_item is a ceiling, not a guarantee (see
+    # _sample_distinct): once the mask runs out of sufficiently distinct
+    # room it stops rather than padding with near-duplicates, so a mask this
+    # size finds several but not necessarily all windows_per_item of them.
     m = _rect_mask(3000, 3000, 50, 50, 2950, 2950)
     spec = WindowSpec(min_side_frac_of_max=0.3)
     wins = sample_interior_windows(m, RES, item_id='item-roomy', spec=spec)
-    assert len(wins) == spec.windows_per_item
+    assert 2 <= len(wins) <= spec.windows_per_item
     boxes = [_px_box(w.window, m.shape) for w in wins]
 
     def iou(a, b):

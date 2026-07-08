@@ -52,14 +52,18 @@ REGISTRY: Dict[str, Callable] = {
     'pico_banana':  _pico_banana.build,
     # Region-probe eval conditions (BCE-emergence study) — eval-only builders
     # over a PARENT dataset's val split; the flag root is the PARENT root.
-    # ai_* / real_crop / fr_bg default to inpaint-layout parents (sagid root or
-    # a purpose-built clean dir, e.g. the sagid-fr dir for fr_bg); sp_* wrap
-    # casia. Windows/floors/determinism: lab_utils/data/crop_conditions.py.
+    # ai_* / real_crop wrap sagid (AI-edited content + its paired original);
+    # sp_* wrap imd2020 (more val fakes than casia: ~171 vs ~28, better odds
+    # of clearing the interior floor); fr_bg wraps tgif2 restricted to 'fr'
+    # manipulations specifically (a held-out OOD fr pool, never sagid's own
+    # frs — tgif2 is a pure eval probe with zero train usage anywhere in this
+    # study, so there's no split-hygiene concern using its full val pool).
+    # Windows/floors/determinism: lab_utils/data/crop_conditions.py.
     'ai_interior':  lambda root, **kw: _region_probes.build(root, condition='ai_interior', parent=kw.pop('parent', 'sagid'), **kw),
     'ai_boundary':  lambda root, **kw: _region_probes.build(root, condition='ai_boundary', parent=kw.pop('parent', 'sagid'), **kw),
-    'sp_interior':  lambda root, **kw: _region_probes.build(root, condition='sp_interior', parent=kw.pop('parent', 'casia'), **kw),
-    'sp_boundary':  lambda root, **kw: _region_probes.build(root, condition='sp_boundary', parent=kw.pop('parent', 'casia'), **kw),
-    'fr_bg':        lambda root, **kw: _region_probes.build(root, condition='fr_bg',       parent=kw.pop('parent', 'sagid'), **kw),
+    'sp_interior':  lambda root, **kw: _region_probes.build(root, condition='sp_interior', parent=kw.pop('parent', 'imd2020'), **kw),
+    'sp_boundary':  lambda root, **kw: _region_probes.build(root, condition='sp_boundary', parent=kw.pop('parent', 'imd2020'), **kw),
+    'fr_bg':        lambda root, **kw: _region_probes.build(root, condition='fr_bg',       parent=kw.pop('parent', 'tgif2'), types=kw.pop('types', {'fr'}), **kw),
     'real_crop':    lambda root, **kw: _region_probes.build(root, condition='real_crop',   parent=kw.pop('parent', 'sagid'), **kw),
 }
 

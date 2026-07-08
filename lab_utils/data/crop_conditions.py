@@ -62,7 +62,7 @@ class WindowSpec:
     floor is about real information content, not mask fraction (a 5% splice in a
     2 MP frame is croppable; the same 5% at 700 px is not).
     """
-    version: str = 'v2'
+    version: str = 'v3'
     # Window side must be >= this multiple of the eval resolution so model
     # pixels are (approximately) not interpolated. 1.0 => side >= image_size.
     min_side_mult: float = 1.0
@@ -78,8 +78,14 @@ class WindowSpec:
     boundary_in_range: Tuple[float, float] = (0.35, 0.65)
     # Outside/background windows: side sampled in [floor, floor * this].
     outside_side_mult_range: Tuple[float, float] = (1.0, 1.6)
-    # Windows drawn per parent item per condition group.
-    windows_per_item: int = 2
+    # Windows drawn per parent item per condition group. Deliberately higher
+    # than a "just get 2" default: the interior floor gate only lets a
+    # fraction of any parent pool's items through at all, so hitting a
+    # meaningful total crop count means asking each PASSING item for several
+    # sub-crops. _sample_distinct's overlap dedup makes this safe — an item
+    # whose eroded region can't support this many distinct crops just returns
+    # fewer, never a padded duplicate.
+    windows_per_item: int = 10
     # Size draws attempted before giving up on this window slot.
     size_tries: int = 16
     # Position re-draws per size draw before concluding this size can't yield
