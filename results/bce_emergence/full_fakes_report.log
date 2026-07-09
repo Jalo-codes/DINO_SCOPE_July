@@ -1,0 +1,204 @@
+# ============================================================
+# log opened  pid=3389180  ts=2026-07-08T20:03:37  git=9650182
+# python=3.10.12  torch=2.7.1+cu118  device=NVIDIA GeForce RTX 2080 Ti 10.6GB  n_gpu=1
+# cmd: /home/fri-team-4/fri-team4/DINO_SCOPE_July/experiments/labs/full_fakes_report.py --records bce_inpaint_s0=/media/ssd/runs/bce_emergence/bce_inpaint_s0/full_fakes_eval/threshold_records.csv --records bce_splice_s0=/media/ssd/runs/bce_emergence/bce_splice_s0/full_fakes_eval/threshold_records.csv --records bce_both_s0=/media/ssd/runs/bce_emergence/bce_both_s0/full_fakes_eval/threshold_records.csv --records cont_inpaint_s0=/media/ssd/runs/bce_emergence/cont_inpaint_s0/full_fakes_eval/kmeans_records.csv --records cont_splice_s0=/media/ssd/runs/bce_emergence/cont_splice_s0/full_fakes_eval/kmeans_records.csv --records cont_both_s0=/media/ssd/runs/bce_emergence/cont_both_s0/full_fakes_eval/kmeans_records.csv --out_csv /media/ssd/runs/bce_emergence/full_fakes_report.csv
+# ============================================================
+[full_fakes] ── bce_inpaint_s0 ──────────────────────────────────────────────
+[full_fakes] n_real=5000  n_fake=3932
+[full_fakes] reals                    n= 5000  ppf med= 0.000 mean= 0.008
+[full_fakes] ALL generators           n= 3932  auroc(real vs fake)= 0.944
+[full_fakes] generator                    n   ppf med ppf mean   auroc
+[full_fakes] chroma                      39     0.262    0.393   0.966
+[full_fakes] dalle-3                    185     0.632    0.610   0.991
+[full_fakes] flux-1.1-pro               185     0.000    0.062   0.792
+[full_fakes] flux-amateursnapshotphotos    26     0.000    0.119   0.875
+[full_fakes] flux-mvc5000               147     0.000    0.020   0.664
+[full_fakes] flux-realism                 4     0.262    0.272   0.946
+[full_fakes] flux.1-dev                 185     0.028    0.212   0.907
+[full_fakes] flux.1-schnell             185     0.307    0.346   0.966
+[full_fakes] gpt-image-1                185     0.265    0.325   0.967
+[full_fakes] grok-2-image-1212           96     0.329    0.335   0.975
+[full_fakes] hidream-i1-full            185     0.222    0.340   0.959
+[full_fakes] ideogram-3.0               185     0.000    0.171   0.877
+[full_fakes] imagen-3.0-002              34     0.000    0.086   0.882
+[full_fakes] imagen-4.0                 101     0.074    0.241   0.905
+[full_fakes] midjourney-6               185     0.089    0.238   0.938
+[full_fakes] midjourney-7                20     0.090    0.182   0.915
+[full_fakes] mystic                     142     0.150    0.293   0.942
+[full_fakes] sd-1.5                     176     0.915    0.830   0.995
+[full_fakes] sd-1.5-dreamshaper         176     0.857    0.759   0.994
+[full_fakes] sd-1.5-epicdream           185     0.445    0.461   0.976
+[full_fakes] sd-2.1                     189     1.000    0.887   0.998
+[full_fakes] sd-3.5                     192     0.236    0.339   0.956
+[full_fakes] sdxl                       185     0.955    0.837   0.997
+[full_fakes] sdxl-epic-realism          185     0.470    0.505   0.985
+[full_fakes] sdxl-juggernaut            185     0.670    0.629   0.991
+[full_fakes] sdxl-realvis-v5            185     0.332    0.396   0.966
+[full_fakes] sdxl-touchofrealism        185     0.871    0.760   0.996
+[full_fakes] 
+[full_fakes] ── bce_splice_s0 ──────────────────────────────────────────────
+[full_fakes] n_real=5000  n_fake=3932
+[full_fakes] reals                    n= 5000  ppf med= 0.000 mean= 0.027
+[full_fakes] ALL generators           n= 3932  auroc(real vs fake)= 0.437
+[full_fakes] generator                    n   ppf med ppf mean   auroc
+[full_fakes] chroma                      39     0.000    0.070   0.683
+[full_fakes] dalle-3                    185     0.000    0.006   0.335
+[full_fakes] flux-1.1-pro               185     0.000    0.016   0.335
+[full_fakes] flux-amateursnapshotphotos    26     0.000    0.015   0.383
+[full_fakes] flux-mvc5000               147     0.000    0.015   0.309
+[full_fakes] flux-realism                 4     0.000    0.000   0.335
+[full_fakes] flux.1-dev                 185     0.000    0.018   0.353
+[full_fakes] flux.1-schnell             185     0.000    0.027   0.440
+[full_fakes] gpt-image-1                185     0.000    0.007   0.410
+[full_fakes] grok-2-image-1212           96     0.000    0.004   0.140
+[full_fakes] hidream-i1-full            185     0.000    0.054   0.630
+[full_fakes] ideogram-3.0               185     0.000    0.030   0.345
+[full_fakes] imagen-3.0-002              34     0.000    0.005   0.313
+[full_fakes] imagen-4.0                 101     0.000    0.013   0.374
+[full_fakes] midjourney-6               185     0.000    0.005   0.355
+[full_fakes] midjourney-7                20     0.000    0.000   0.223
+[full_fakes] mystic                     142     0.000    0.017   0.415
+[full_fakes] sd-1.5                     176     0.003    0.035   0.734
+[full_fakes] sd-1.5-dreamshaper         176     0.000    0.007   0.446
+[full_fakes] sd-1.5-epicdream           185     0.000    0.015   0.428
+[full_fakes] sd-2.1                     189     0.020    0.192   0.763
+[full_fakes] sd-3.5                     192     0.000    0.019   0.517
+[full_fakes] sdxl                       185     0.000    0.030   0.517
+[full_fakes] sdxl-epic-realism          185     0.000    0.008   0.339
+[full_fakes] sdxl-juggernaut            185     0.000    0.004   0.332
+[full_fakes] sdxl-realvis-v5            185     0.000    0.033   0.510
+[full_fakes] sdxl-touchofrealism        185     0.000    0.021   0.396
+[full_fakes] 
+[full_fakes] ── bce_both_s0 ──────────────────────────────────────────────
+[full_fakes] n_real=5000  n_fake=3932
+[full_fakes] reals                    n= 5000  ppf med= 0.000 mean= 0.010
+[full_fakes] ALL generators           n= 3932  auroc(real vs fake)= 0.875
+[full_fakes] generator                    n   ppf med ppf mean   auroc
+[full_fakes] chroma                      39     0.024    0.240   0.865
+[full_fakes] dalle-3                    185     0.263    0.311   0.969
+[full_fakes] flux-1.1-pro               185     0.000    0.024   0.572
+[full_fakes] flux-amateursnapshotphotos    26     0.000    0.081   0.743
+[full_fakes] flux-mvc5000               147     0.000    0.004   0.504
+[full_fakes] flux-realism                 4     0.221    0.242   0.840
+[full_fakes] flux.1-dev                 185     0.000    0.072   0.799
+[full_fakes] flux.1-schnell             185     0.032    0.123   0.862
+[full_fakes] gpt-image-1                185     0.054    0.154   0.885
+[full_fakes] grok-2-image-1212           96     0.000    0.078   0.864
+[full_fakes] hidream-i1-full            185     0.044    0.190   0.904
+[full_fakes] ideogram-3.0               185     0.000    0.062   0.746
+[full_fakes] imagen-3.0-002              34     0.000    0.018   0.741
+[full_fakes] imagen-4.0                 101     0.000    0.111   0.790
+[full_fakes] midjourney-6               185     0.006    0.153   0.878
+[full_fakes] midjourney-7                20     0.002    0.037   0.831
+[full_fakes] mystic                     142     0.068    0.179   0.875
+[full_fakes] sd-1.5                     176     0.831    0.724   0.990
+[full_fakes] sd-1.5-dreamshaper         176     0.508    0.524   0.981
+[full_fakes] sd-1.5-epicdream           185     0.143    0.282   0.920
+[full_fakes] sd-2.1                     189     0.999    0.812   0.994
+[full_fakes] sd-3.5                     192     0.029    0.164   0.863
+[full_fakes] sdxl                       185     0.770    0.681   0.988
+[full_fakes] sdxl-epic-realism          185     0.139    0.285   0.940
+[full_fakes] sdxl-juggernaut            185     0.275    0.363   0.961
+[full_fakes] sdxl-realvis-v5            185     0.141    0.292   0.912
+[full_fakes] sdxl-touchofrealism        185     0.619    0.566   0.982
+[full_fakes] 
+[full_fakes] ── cont_inpaint_s0 ──────────────────────────────────────────────
+[full_fakes] n_real=5000  n_fake=3932
+[full_fakes] reals                    n= 5000  ppf med= 0.449 mean= 0.451
+[full_fakes] ALL generators           n= 3932  auroc(real vs fake)= 0.917
+[full_fakes] generator                    n   ppf med ppf mean   auroc
+[full_fakes] chroma                      39     0.404    0.413   0.934
+[full_fakes] dalle-3                    185     0.405    0.407   0.979
+[full_fakes] flux-1.1-pro               185     0.427    0.439   0.719
+[full_fakes] flux-amateursnapshotphotos    26     0.314    0.334   0.856
+[full_fakes] flux-mvc5000               147     0.439    0.441   0.557
+[full_fakes] flux-realism                 4     0.467    0.426   0.928
+[full_fakes] flux.1-dev                 185     0.418    0.414   0.864
+[full_fakes] flux.1-schnell             185     0.385    0.399   0.948
+[full_fakes] gpt-image-1                185     0.409    0.411   0.944
+[full_fakes] grok-2-image-1212           96     0.435    0.434   0.939
+[full_fakes] hidream-i1-full            185     0.455    0.447   0.938
+[full_fakes] ideogram-3.0               185     0.391    0.405   0.842
+[full_fakes] imagen-3.0-002              34     0.364    0.382   0.847
+[full_fakes] imagen-4.0                 101     0.409    0.412   0.852
+[full_fakes] midjourney-6               185     0.370    0.390   0.866
+[full_fakes] midjourney-7                20     0.377    0.398   0.930
+[full_fakes] mystic                     142     0.363    0.389   0.920
+[full_fakes] sd-1.5                     176     0.406    0.439   0.991
+[full_fakes] sd-1.5-dreamshaper         176     0.450    0.448   0.995
+[full_fakes] sd-1.5-epicdream           185     0.418    0.420   0.960
+[full_fakes] sd-2.1                     189     0.498    0.495   0.999
+[full_fakes] sd-3.5                     192     0.370    0.386   0.914
+[full_fakes] sdxl                       185     0.458    0.475   0.998
+[full_fakes] sdxl-epic-realism          185     0.401    0.426   0.966
+[full_fakes] sdxl-juggernaut            185     0.430    0.453   0.979
+[full_fakes] sdxl-realvis-v5            185     0.417    0.402   0.941
+[full_fakes] sdxl-touchofrealism        185     0.452    0.459   0.996
+[full_fakes] 
+[full_fakes] ── cont_splice_s0 ──────────────────────────────────────────────
+[full_fakes] n_real=5000  n_fake=3932
+[full_fakes] reals                    n= 5000  ppf med= 0.389 mean= 0.401
+[full_fakes] ALL generators           n= 3932  auroc(real vs fake)= 0.493
+[full_fakes] generator                    n   ppf med ppf mean   auroc
+[full_fakes] chroma                      39     0.398    0.410   0.592
+[full_fakes] dalle-3                    185     0.405    0.416   0.465
+[full_fakes] flux-1.1-pro               185     0.393    0.401   0.477
+[full_fakes] flux-amateursnapshotphotos    26     0.434    0.413   0.491
+[full_fakes] flux-mvc5000               147     0.404    0.412   0.377
+[full_fakes] flux-realism                 4     0.374    0.390   0.570
+[full_fakes] flux.1-dev                 185     0.437    0.416   0.504
+[full_fakes] flux.1-schnell             185     0.390    0.398   0.538
+[full_fakes] gpt-image-1                185     0.416    0.421   0.526
+[full_fakes] grok-2-image-1212           96     0.453    0.478   0.340
+[full_fakes] hidream-i1-full            185     0.412    0.412   0.542
+[full_fakes] ideogram-3.0               185     0.409    0.409   0.438
+[full_fakes] imagen-3.0-002              34     0.448    0.437   0.380
+[full_fakes] imagen-4.0                 101     0.429    0.409   0.480
+[full_fakes] midjourney-6               185     0.385    0.402   0.448
+[full_fakes] midjourney-7                20     0.484    0.493   0.376
+[full_fakes] mystic                     142     0.414    0.419   0.482
+[full_fakes] sd-1.5                     176     0.372    0.398   0.641
+[full_fakes] sd-1.5-dreamshaper         176     0.408    0.440   0.491
+[full_fakes] sd-1.5-epicdream           185     0.413    0.420   0.458
+[full_fakes] sd-2.1                     189     0.379    0.385   0.689
+[full_fakes] sd-3.5                     192     0.396    0.404   0.491
+[full_fakes] sdxl                       185     0.430    0.434   0.538
+[full_fakes] sdxl-epic-realism          185     0.437    0.443   0.400
+[full_fakes] sdxl-juggernaut            185     0.440    0.454   0.468
+[full_fakes] sdxl-realvis-v5            185     0.377    0.380   0.497
+[full_fakes] sdxl-touchofrealism        185     0.419    0.435   0.465
+[full_fakes] 
+[full_fakes] ── cont_both_s0 ──────────────────────────────────────────────
+[full_fakes] n_real=5000  n_fake=3932
+[full_fakes] reals                    n= 5000  ppf med= 0.436 mean= 0.449
+[full_fakes] ALL generators           n= 3932  auroc(real vs fake)= 0.855
+[full_fakes] generator                    n   ppf med ppf mean   auroc
+[full_fakes] chroma                      39     0.421    0.392   0.860
+[full_fakes] dalle-3                    185     0.367    0.372   0.927
+[full_fakes] flux-1.1-pro               185     0.402    0.435   0.657
+[full_fakes] flux-amateursnapshotphotos    26     0.444    0.420   0.810
+[full_fakes] flux-mvc5000               147     0.455    0.457   0.512
+[full_fakes] flux-realism                 4     0.462    0.433   0.866
+[full_fakes] flux.1-dev                 185     0.436    0.432   0.821
+[full_fakes] flux.1-schnell             185     0.414    0.424   0.864
+[full_fakes] gpt-image-1                185     0.409    0.411   0.858
+[full_fakes] grok-2-image-1212           96     0.441    0.440   0.833
+[full_fakes] hidream-i1-full            185     0.439    0.430   0.874
+[full_fakes] ideogram-3.0               185     0.443    0.447   0.741
+[full_fakes] imagen-3.0-002              34     0.443    0.445   0.768
+[full_fakes] imagen-4.0                 101     0.428    0.426   0.789
+[full_fakes] midjourney-6               185     0.407    0.406   0.843
+[full_fakes] midjourney-7                20     0.487    0.483   0.796
+[full_fakes] mystic                     142     0.378    0.406   0.852
+[full_fakes] sd-1.5                     176     0.363    0.369   0.978
+[full_fakes] sd-1.5-dreamshaper         176     0.392    0.386   0.956
+[full_fakes] sd-1.5-epicdream           185     0.394    0.400   0.889
+[full_fakes] sd-2.1                     189     0.435    0.431   0.987
+[full_fakes] sd-3.5                     192     0.417    0.418   0.783
+[full_fakes] sdxl                       185     0.388    0.414   0.970
+[full_fakes] sdxl-epic-realism          185     0.399    0.412   0.893
+[full_fakes] sdxl-juggernaut            185     0.374    0.389   0.911
+[full_fakes] sdxl-realvis-v5            185     0.412    0.395   0.846
+[full_fakes] sdxl-touchofrealism        185     0.375    0.385   0.954
+[full_fakes] 
+[full_fakes] wrote 336 rows -> /media/ssd/runs/bce_emergence/full_fakes_report.csv

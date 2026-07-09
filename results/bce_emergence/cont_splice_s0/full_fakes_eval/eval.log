@@ -1,0 +1,169 @@
+# ============================================================
+# log opened  pid=3387934  ts=2026-07-08T19:30:20  git=9650182
+# python=3.10.12  torch=2.7.1+cu118  device=NVIDIA GeForce RTX 2080 Ti 10.6GB  n_gpu=1
+# cmd: /home/fri-team-4/fri-team4/DINO_SCOPE_July/experiments/scripts/eval.py --checkpoint /media/ssd/runs/bce_emergence/cont_splice_s0/epoch_0005.pt --decoder kmeans --sources full_fakes --full_fakes_root /media/ssd/DINO_SCOPE_DATA/full_fakes --out_dir /media/ssd/runs/bce_emergence/cont_splice_s0/full_fakes_eval --summary_out /media/ssd/runs/bce_emergence/cont_splice_s0/full_fakes_eval/summary.json --viz_n 6
+# ============================================================
+[eval] loading checkpoint: /media/ssd/runs/bce_emergence/cont_splice_s0/epoch_0005.pt
+[ckpt] loaded epoch=5 ← /media/ssd/runs/bce_emergence/cont_splice_s0/epoch_0005.pt
+[data] Indexing full_fakes (28 subfolders): /media/ssd/DINO_SCOPE_DATA/full_fakes
+[data] full_fakes kept=8932 dropped=18/8950 reasons=image_degenerate:18
+[data] full_fakes: loaded 8932 items (real=5000 fake=3932 across 27 generators) | NO GT masks (synthetic full-frame sentinel) — precision/f1 not meaningful; use image_score/AUC and recall/iou (== predicted-positive pixel fraction)
+[eval] full_fakes: 8932 val items
+[eval] decoder=kmeans
+[eval] kmeans ─── summary: n_splice=3932 n_real=5000 ───
+[eval] kmeans image_auc: 0.4930
+[eval] kmeans splices (all):
+[eval] kmeans all         f1: n=3932  med=0.5814  mean=0.5700±0.1652  [p25=0.4714, p75=0.6811]
+[eval] kmeans all        iou: n=3932  med=0.4099  mean=0.4167±0.1589  [p25=0.3084, p75=0.5164]
+[eval] kmeans all  precision: n=3932  med=1.0000  mean=1.0000±0.0000  [p25=1.0000, p75=1.0000]
+[eval] kmeans all     recall: n=3932  med=0.4099  mean=0.4167±0.1589  [p25=0.3084, p75=0.5164]
+[eval] kmeans splices bucket=tiny (n=0):
+[eval] kmeans bucket=tiny: n=0 (no splice records)
+[eval] kmeans splices bucket=small (n=0):
+[eval] kmeans bucket=small: n=0 (no splice records)
+[eval] kmeans splices bucket=medium (n=0):
+[eval] kmeans bucket=medium: n=0 (no splice records)
+[eval] kmeans splices bucket=large (n=3932):
+[eval] kmeans bucket=large         f1: n=3932  med=0.5814  mean=0.5700±0.1652  [p25=0.4714, p75=0.6811]
+[eval] kmeans bucket=large        iou: n=3932  med=0.4099  mean=0.4167±0.1589  [p25=0.3084, p75=0.5164]
+[eval] kmeans bucket=large  precision: n=3932  med=1.0000  mean=1.0000±0.0000  [p25=1.0000, p75=1.0000]
+[eval] kmeans bucket=large     recall: n=3932  med=0.4099  mean=0.4167±0.1589  [p25=0.3084, p75=0.5164]
+[eval] kmeans reals accuracy: n=5000  med=0.6110  mean=0.5989±0.1632  [p25=0.5000, p75=0.7066]
+[eval] wrote 8932 records -> /media/ssd/runs/bce_emergence/cont_splice_s0/full_fakes_eval/kmeans_records.csv
+[eval] kmeans ─── by subgroup (27 cells) ───
+[eval] kmeans subgroup=chroma (n_splice=39 n_real=0):
+[eval] kmeans subgroup=chroma         f1: n=  39  med=0.5695  mean=0.5580±0.1838  [p25=0.4195, p75=0.7163]
+[eval] kmeans subgroup=chroma        iou: n=  39  med=0.3981  mean=0.4097±0.1797  [p25=0.2655, p75=0.5580]
+[eval] kmeans subgroup=chroma  precision: n=  39  med=1.0000  mean=1.0000±0.0000  [p25=1.0000, p75=1.0000]
+[eval] kmeans subgroup=chroma     recall: n=  39  med=0.3981  mean=0.4097±0.1797  [p25=0.2655, p75=0.5580]
+[eval] kmeans subgroup=dalle-3 (n_splice=185 n_real=0):
+[eval] kmeans subgroup=dalle-3         f1: n= 185  med=0.5763  mean=0.5692±0.1633  [p25=0.4645, p75=0.6667]
+[eval] kmeans subgroup=dalle-3        iou: n= 185  med=0.4047  mean=0.4158±0.1594  [p25=0.3025, p75=0.5000]
+[eval] kmeans subgroup=dalle-3  precision: n= 185  med=1.0000  mean=1.0000±0.0000  [p25=1.0000, p75=1.0000]
+[eval] kmeans subgroup=dalle-3     recall: n= 185  med=0.4047  mean=0.4158±0.1594  [p25=0.3025, p75=0.5000]
+[eval] kmeans subgroup=flux-1.1-pro (n_splice=185 n_real=0):
+[eval] kmeans subgroup=flux-1.1-pro         f1: n= 185  med=0.5640  mean=0.5579±0.1448  [p25=0.4490, p75=0.6700]
+[eval] kmeans subgroup=flux-1.1-pro        iou: n= 185  med=0.3927  mean=0.4009±0.1405  [p25=0.2895, p75=0.5038]
+[eval] kmeans subgroup=flux-1.1-pro  precision: n= 185  med=1.0000  mean=1.0000±0.0000  [p25=1.0000, p75=1.0000]
+[eval] kmeans subgroup=flux-1.1-pro     recall: n= 185  med=0.3927  mean=0.4009±0.1405  [p25=0.2895, p75=0.5038]
+[eval] kmeans subgroup=flux-amateursnapshotphotos (n_splice=26 n_real=0):
+[eval] kmeans subgroup=flux-amateursnapshotphotos         f1: n=  26  med=0.6051  mean=0.5706±0.1451  [p25=0.4543, p75=0.6645]
+[eval] kmeans subgroup=flux-amateursnapshotphotos        iou: n=  26  med=0.4341  mean=0.4132±0.1389  [p25=0.2949, p75=0.4975]
+[eval] kmeans subgroup=flux-amateursnapshotphotos  precision: n=  26  med=1.0000  mean=1.0000±0.0000  [p25=1.0000, p75=1.0000]
+[eval] kmeans subgroup=flux-amateursnapshotphotos     recall: n=  26  med=0.4341  mean=0.4132±0.1389  [p25=0.2949, p75=0.4975]
+[eval] kmeans subgroup=flux-mvc5000 (n_splice=147 n_real=0):
+[eval] kmeans subgroup=flux-mvc5000         f1: n= 147  med=0.5759  mean=0.5689±0.1483  [p25=0.4806, p75=0.6710]
+[eval] kmeans subgroup=flux-mvc5000        iou: n= 147  med=0.4044  mean=0.4122±0.1431  [p25=0.3163, p75=0.5049]
+[eval] kmeans subgroup=flux-mvc5000  precision: n= 147  med=1.0000  mean=1.0000±0.0000  [p25=1.0000, p75=1.0000]
+[eval] kmeans subgroup=flux-mvc5000     recall: n= 147  med=0.4044  mean=0.4122±0.1431  [p25=0.3163, p75=0.5049]
+[eval] kmeans subgroup=flux-realism (n_splice=4 n_real=0):
+[eval] kmeans subgroup=flux-realism         f1: n=   4  med=0.5426  mean=0.5564±0.0840  [p25=0.4880, p75=0.6110]
+[eval] kmeans subgroup=flux-realism        iou: n=   4  med=0.3737  mean=0.3903±0.0827  [p25=0.3229, p75=0.4411]
+[eval] kmeans subgroup=flux-realism  precision: n=   4  med=1.0000  mean=1.0000±0.0000  [p25=1.0000, p75=1.0000]
+[eval] kmeans subgroup=flux-realism     recall: n=   4  med=0.3737  mean=0.3903±0.0827  [p25=0.3229, p75=0.4411]
+[eval] kmeans subgroup=flux.1-dev (n_splice=185 n_real=0):
+[eval] kmeans subgroup=flux.1-dev         f1: n= 185  med=0.6084  mean=0.5692±0.1696  [p25=0.4593, p75=0.6897]
+[eval] kmeans subgroup=flux.1-dev        iou: n= 185  med=0.4372  mean=0.4164±0.1589  [p25=0.2981, p75=0.5264]
+[eval] kmeans subgroup=flux.1-dev  precision: n= 185  med=1.0000  mean=1.0000±0.0000  [p25=1.0000, p75=1.0000]
+[eval] kmeans subgroup=flux.1-dev     recall: n= 185  med=0.4372  mean=0.4164±0.1589  [p25=0.2981, p75=0.5264]
+[eval] kmeans subgroup=flux.1-schnell (n_splice=185 n_real=0):
+[eval] kmeans subgroup=flux.1-schnell         f1: n= 185  med=0.5616  mean=0.5489±0.1762  [p25=0.4479, p75=0.6684]
+[eval] kmeans subgroup=flux.1-schnell        iou: n= 185  med=0.3904  mean=0.3981±0.1658  [p25=0.2886, p75=0.5019]
+[eval] kmeans subgroup=flux.1-schnell  precision: n= 185  med=1.0000  mean=1.0000±0.0000  [p25=1.0000, p75=1.0000]
+[eval] kmeans subgroup=flux.1-schnell     recall: n= 185  med=0.3904  mean=0.3981±0.1658  [p25=0.2886, p75=0.5019]
+[eval] kmeans subgroup=gpt-image-1 (n_splice=185 n_real=0):
+[eval] kmeans subgroup=gpt-image-1         f1: n= 185  med=0.5873  mean=0.5702±0.1833  [p25=0.4763, p75=0.6885]
+[eval] kmeans subgroup=gpt-image-1        iou: n= 185  med=0.4157  mean=0.4207±0.1727  [p25=0.3126, p75=0.5250]
+[eval] kmeans subgroup=gpt-image-1  precision: n= 185  med=1.0000  mean=1.0000±0.0000  [p25=1.0000, p75=1.0000]
+[eval] kmeans subgroup=gpt-image-1     recall: n= 185  med=0.4157  mean=0.4207±0.1727  [p25=0.3126, p75=0.5250]
+[eval] kmeans subgroup=grok-2-image-1212 (n_splice=96 n_real=0):
+[eval] kmeans subgroup=grok-2-image-1212         f1: n=  96  med=0.6233  mean=0.6341±0.1321  [p25=0.5535, p75=0.7700]
+[eval] kmeans subgroup=grok-2-image-1212        iou: n=  96  med=0.4527  mean=0.4779±0.1428  [p25=0.3827, p75=0.6260]
+[eval] kmeans subgroup=grok-2-image-1212  precision: n=  96  med=1.0000  mean=1.0000±0.0000  [p25=1.0000, p75=1.0000]
+[eval] kmeans subgroup=grok-2-image-1212     recall: n=  96  med=0.4527  mean=0.4779±0.1428  [p25=0.3827, p75=0.6260]
+[eval] kmeans subgroup=hidream-i1-full (n_splice=185 n_real=0):
+[eval] kmeans subgroup=hidream-i1-full         f1: n= 185  med=0.5834  mean=0.5682±0.1493  [p25=0.4680, p75=0.6732]
+[eval] kmeans subgroup=hidream-i1-full        iou: n= 185  med=0.4119  mean=0.4117±0.1443  [p25=0.3055, p75=0.5074]
+[eval] kmeans subgroup=hidream-i1-full  precision: n= 185  med=1.0000  mean=1.0000±0.0000  [p25=1.0000, p75=1.0000]
+[eval] kmeans subgroup=hidream-i1-full     recall: n= 185  med=0.4119  mean=0.4117±0.1443  [p25=0.3055, p75=0.5074]
+[eval] kmeans subgroup=ideogram-3.0 (n_splice=185 n_real=0):
+[eval] kmeans subgroup=ideogram-3.0         f1: n= 185  med=0.5810  mean=0.5619±0.1686  [p25=0.4723, p75=0.6622]
+[eval] kmeans subgroup=ideogram-3.0        iou: n= 185  med=0.4094  mean=0.4093±0.1606  [p25=0.3092, p75=0.4950]
+[eval] kmeans subgroup=ideogram-3.0  precision: n= 185  med=1.0000  mean=1.0000±0.0000  [p25=1.0000, p75=1.0000]
+[eval] kmeans subgroup=ideogram-3.0     recall: n= 185  med=0.4094  mean=0.4093±0.1606  [p25=0.3092, p75=0.4950]
+[eval] kmeans subgroup=imagen-3.0-002 (n_splice=34 n_real=0):
+[eval] kmeans subgroup=imagen-3.0-002         f1: n=  34  med=0.6191  mean=0.5989±0.1117  [p25=0.4940, p75=0.6727]
+[eval] kmeans subgroup=imagen-3.0-002        iou: n=  34  med=0.4484  mean=0.4365±0.1148  [p25=0.3280, p75=0.5068]
+[eval] kmeans subgroup=imagen-3.0-002  precision: n=  34  med=1.0000  mean=1.0000±0.0000  [p25=1.0000, p75=1.0000]
+[eval] kmeans subgroup=imagen-3.0-002     recall: n=  34  med=0.4484  mean=0.4365±0.1148  [p25=0.3280, p75=0.5068]
+[eval] kmeans subgroup=imagen-4.0 (n_splice=101 n_real=0):
+[eval] kmeans subgroup=imagen-4.0         f1: n= 101  med=0.6003  mean=0.5639±0.1631  [p25=0.4718, p75=0.6768]
+[eval] kmeans subgroup=imagen-4.0        iou: n= 101  med=0.4289  mean=0.4094±0.1489  [p25=0.3088, p75=0.5115]
+[eval] kmeans subgroup=imagen-4.0  precision: n= 101  med=1.0000  mean=1.0000±0.0000  [p25=1.0000, p75=1.0000]
+[eval] kmeans subgroup=imagen-4.0     recall: n= 101  med=0.4289  mean=0.4094±0.1489  [p25=0.3088, p75=0.5115]
+[eval] kmeans subgroup=midjourney-6 (n_splice=185 n_real=0):
+[eval] kmeans subgroup=midjourney-6         f1: n= 185  med=0.5561  mean=0.5619±0.1244  [p25=0.4762, p75=0.6162]
+[eval] kmeans subgroup=midjourney-6        iou: n= 185  med=0.3851  mean=0.4015±0.1254  [p25=0.3125, p75=0.4453]
+[eval] kmeans subgroup=midjourney-6  precision: n= 185  med=1.0000  mean=1.0000±0.0000  [p25=1.0000, p75=1.0000]
+[eval] kmeans subgroup=midjourney-6     recall: n= 185  med=0.3851  mean=0.4015±0.1254  [p25=0.3125, p75=0.4453]
+[eval] kmeans subgroup=midjourney-7 (n_splice=20 n_real=0):
+[eval] kmeans subgroup=midjourney-7         f1: n=  20  med=0.6517  mean=0.6480±0.1295  [p25=0.5682, p75=0.7852]
+[eval] kmeans subgroup=midjourney-7        iou: n=  20  med=0.4835  mean=0.4929±0.1421  [p25=0.3969, p75=0.6464]
+[eval] kmeans subgroup=midjourney-7  precision: n=  20  med=1.0000  mean=1.0000±0.0000  [p25=1.0000, p75=1.0000]
+[eval] kmeans subgroup=midjourney-7     recall: n=  20  med=0.4835  mean=0.4929±0.1421  [p25=0.3969, p75=0.6464]
+[eval] kmeans subgroup=mystic (n_splice=142 n_real=0):
+[eval] kmeans subgroup=mystic         f1: n= 142  med=0.5852  mean=0.5698±0.1757  [p25=0.4716, p75=0.6996]
+[eval] kmeans subgroup=mystic        iou: n= 142  med=0.4136  mean=0.4186±0.1661  [p25=0.3086, p75=0.5380]
+[eval] kmeans subgroup=mystic  precision: n= 142  med=1.0000  mean=1.0000±0.0000  [p25=1.0000, p75=1.0000]
+[eval] kmeans subgroup=mystic     recall: n= 142  med=0.4136  mean=0.4186±0.1661  [p25=0.3086, p75=0.5380]
+[eval] kmeans subgroup=sd-1.5 (n_splice=176 n_real=0):
+[eval] kmeans subgroup=sd-1.5         f1: n= 176  med=0.5419  mean=0.5420±0.2011  [p25=0.4400, p75=0.6932]
+[eval] kmeans subgroup=sd-1.5        iou: n= 176  med=0.3717  mean=0.3975±0.1893  [p25=0.2820, p75=0.5304]
+[eval] kmeans subgroup=sd-1.5  precision: n= 176  med=1.0000  mean=1.0000±0.0000  [p25=1.0000, p75=1.0000]
+[eval] kmeans subgroup=sd-1.5     recall: n= 176  med=0.3717  mean=0.3975±0.1893  [p25=0.2820, p75=0.5304]
+[eval] kmeans subgroup=sd-1.5-dreamshaper (n_splice=176 n_real=0):
+[eval] kmeans subgroup=sd-1.5-dreamshaper         f1: n= 176  med=0.5799  mean=0.5924±0.1663  [p25=0.4978, p75=0.7368]
+[eval] kmeans subgroup=sd-1.5-dreamshaper        iou: n= 176  med=0.4083  mean=0.4402±0.1661  [p25=0.3314, p75=0.5832]
+[eval] kmeans subgroup=sd-1.5-dreamshaper  precision: n= 176  med=1.0000  mean=1.0000±0.0000  [p25=1.0000, p75=1.0000]
+[eval] kmeans subgroup=sd-1.5-dreamshaper     recall: n= 176  med=0.4083  mean=0.4402±0.1661  [p25=0.3314, p75=0.5832]
+[eval] kmeans subgroup=sd-1.5-epicdream (n_splice=185 n_real=0):
+[eval] kmeans subgroup=sd-1.5-epicdream         f1: n= 185  med=0.5843  mean=0.5765±0.1481  [p25=0.4804, p75=0.6791]
+[eval] kmeans subgroup=sd-1.5-epicdream        iou: n= 185  med=0.4128  mean=0.4199±0.1450  [p25=0.3161, p75=0.5141]
+[eval] kmeans subgroup=sd-1.5-epicdream  precision: n= 185  med=1.0000  mean=1.0000±0.0000  [p25=1.0000, p75=1.0000]
+[eval] kmeans subgroup=sd-1.5-epicdream     recall: n= 185  med=0.4128  mean=0.4199±0.1450  [p25=0.3161, p75=0.5141]
+[eval] kmeans subgroup=sd-2.1 (n_splice=189 n_real=0):
+[eval] kmeans subgroup=sd-2.1         f1: n= 189  med=0.5496  mean=0.5291±0.2030  [p25=0.4048, p75=0.6934]
+[eval] kmeans subgroup=sd-2.1        iou: n= 189  med=0.3789  mean=0.3851±0.1853  [p25=0.2538, p75=0.5306]
+[eval] kmeans subgroup=sd-2.1  precision: n= 189  med=1.0000  mean=1.0000±0.0000  [p25=1.0000, p75=1.0000]
+[eval] kmeans subgroup=sd-2.1     recall: n= 189  med=0.3789  mean=0.3851±0.1853  [p25=0.2538, p75=0.5306]
+[eval] kmeans subgroup=sd-3.5 (n_splice=192 n_real=0):
+[eval] kmeans subgroup=sd-3.5         f1: n= 192  med=0.5669  mean=0.5549±0.1754  [p25=0.4543, p75=0.6681]
+[eval] kmeans subgroup=sd-3.5        iou: n= 192  med=0.3955  mean=0.4038±0.1651  [p25=0.2939, p75=0.5016]
+[eval] kmeans subgroup=sd-3.5  precision: n= 192  med=1.0000  mean=1.0000±0.0000  [p25=1.0000, p75=1.0000]
+[eval] kmeans subgroup=sd-3.5     recall: n= 192  med=0.3955  mean=0.4038±0.1651  [p25=0.2939, p75=0.5016]
+[eval] kmeans subgroup=sdxl (n_splice=185 n_real=0):
+[eval] kmeans subgroup=sdxl         f1: n= 185  med=0.6011  mean=0.5886±0.1567  [p25=0.5036, p75=0.6944]
+[eval] kmeans subgroup=sdxl        iou: n= 185  med=0.4297  mean=0.4338±0.1527  [p25=0.3365, p75=0.5319]
+[eval] kmeans subgroup=sdxl  precision: n= 185  med=1.0000  mean=1.0000±0.0000  [p25=1.0000, p75=1.0000]
+[eval] kmeans subgroup=sdxl     recall: n= 185  med=0.4297  mean=0.4338±0.1527  [p25=0.3365, p75=0.5319]
+[eval] kmeans subgroup=sdxl-epic-realism (n_splice=185 n_real=0):
+[eval] kmeans subgroup=sdxl-epic-realism         f1: n= 185  med=0.6084  mean=0.5969±0.1581  [p25=0.4886, p75=0.7312]
+[eval] kmeans subgroup=sdxl-epic-realism        iou: n= 185  med=0.4372  mean=0.4430±0.1581  [p25=0.3233, p75=0.5762]
+[eval] kmeans subgroup=sdxl-epic-realism  precision: n= 185  med=1.0000  mean=1.0000±0.0000  [p25=1.0000, p75=1.0000]
+[eval] kmeans subgroup=sdxl-epic-realism     recall: n= 185  med=0.4372  mean=0.4430±0.1581  [p25=0.3233, p75=0.5762]
+[eval] kmeans subgroup=sdxl-juggernaut (n_splice=185 n_real=0):
+[eval] kmeans subgroup=sdxl-juggernaut         f1: n= 185  med=0.6113  mean=0.6104±0.1450  [p25=0.5080, p75=0.7179]
+[eval] kmeans subgroup=sdxl-juggernaut        iou: n= 185  med=0.4402  mean=0.4545±0.1480  [p25=0.3405, p75=0.5599]
+[eval] kmeans subgroup=sdxl-juggernaut  precision: n= 185  med=1.0000  mean=1.0000±0.0000  [p25=1.0000, p75=1.0000]
+[eval] kmeans subgroup=sdxl-juggernaut     recall: n= 185  med=0.4402  mean=0.4545±0.1480  [p25=0.3405, p75=0.5599]
+[eval] kmeans subgroup=sdxl-realvis-v5 (n_splice=185 n_real=0):
+[eval] kmeans subgroup=sdxl-realvis-v5         f1: n= 185  med=0.5473  mean=0.5318±0.1696  [p25=0.4365, p75=0.6376]
+[eval] kmeans subgroup=sdxl-realvis-v5        iou: n= 185  med=0.3767  mean=0.3802±0.1574  [p25=0.2792, p75=0.4680]
+[eval] kmeans subgroup=sdxl-realvis-v5  precision: n= 185  med=1.0000  mean=1.0000±0.0000  [p25=1.0000, p75=1.0000]
+[eval] kmeans subgroup=sdxl-realvis-v5     recall: n= 185  med=0.3767  mean=0.3802±0.1574  [p25=0.2792, p75=0.4680]
+[eval] kmeans subgroup=sdxl-touchofrealism (n_splice=185 n_real=0):
+[eval] kmeans subgroup=sdxl-touchofrealism         f1: n= 185  med=0.5910  mean=0.5909±0.1488  [p25=0.5010, p75=0.6987]
+[eval] kmeans subgroup=sdxl-touchofrealism        iou: n= 185  med=0.4195  mean=0.4350±0.1501  [p25=0.3342, p75=0.5370]
+[eval] kmeans subgroup=sdxl-touchofrealism  precision: n= 185  med=1.0000  mean=1.0000±0.0000  [p25=1.0000, p75=1.0000]
+[eval] kmeans subgroup=sdxl-touchofrealism     recall: n= 185  med=0.4195  mean=0.4350±0.1501  [p25=0.3342, p75=0.5370]
+[eval] saving flat summary to /media/ssd/runs/bce_emergence/cont_splice_s0/full_fakes_eval/summary.json

@@ -1,0 +1,169 @@
+# ============================================================
+# log opened  pid=3387024  ts=2026-07-08T18:56:39  git=9650182
+# python=3.10.12  torch=2.7.1+cu118  device=NVIDIA GeForce RTX 2080 Ti 10.6GB  n_gpu=1
+# cmd: /home/fri-team-4/fri-team4/DINO_SCOPE_July/experiments/scripts/eval.py --checkpoint /media/ssd/runs/bce_emergence/bce_both_s0/epoch_0005.pt --decoder threshold --sources full_fakes --full_fakes_root /media/ssd/DINO_SCOPE_DATA/full_fakes --out_dir /media/ssd/runs/bce_emergence/bce_both_s0/full_fakes_eval --summary_out /media/ssd/runs/bce_emergence/bce_both_s0/full_fakes_eval/summary.json --viz_n 6
+# ============================================================
+[eval] loading checkpoint: /media/ssd/runs/bce_emergence/bce_both_s0/epoch_0005.pt
+[ckpt] loaded epoch=5 ← /media/ssd/runs/bce_emergence/bce_both_s0/epoch_0005.pt
+[data] Indexing full_fakes (28 subfolders): /media/ssd/DINO_SCOPE_DATA/full_fakes
+[data] full_fakes kept=8932 dropped=18/8950 reasons=image_degenerate:18
+[data] full_fakes: loaded 8932 items (real=5000 fake=3932 across 27 generators) | NO GT masks (synthetic full-frame sentinel) — precision/f1 not meaningful; use image_score/AUC and recall/iou (== predicted-positive pixel fraction)
+[eval] full_fakes: 8932 val items
+[eval] decoder=threshold
+[eval] threshold ─── summary: n_splice=3932 n_real=5000 ───
+[eval] threshold image_auc: 0.8745
+[eval] threshold splices (all):
+[eval] threshold all         f1: n=3932  med=0.1810  mean=0.3439±0.3726  [p25=0.0000, p75=0.6948]
+[eval] threshold all        iou: n=3932  med=0.0995  mean=0.2852±0.3497  [p25=0.0000, p75=0.5323]
+[eval] threshold all  precision: n=3932  med=1.0000  mean=0.6956±0.4602  [p25=0.0000, p75=1.0000]
+[eval] threshold all     recall: n=3932  med=0.0995  mean=0.2852±0.3497  [p25=0.0000, p75=0.5323]
+[eval] threshold splices bucket=tiny (n=0):
+[eval] threshold bucket=tiny: n=0 (no splice records)
+[eval] threshold splices bucket=small (n=0):
+[eval] threshold bucket=small: n=0 (no splice records)
+[eval] threshold splices bucket=medium (n=0):
+[eval] threshold bucket=medium: n=0 (no splice records)
+[eval] threshold splices bucket=large (n=3932):
+[eval] threshold bucket=large         f1: n=3932  med=0.1810  mean=0.3439±0.3726  [p25=0.0000, p75=0.6948]
+[eval] threshold bucket=large        iou: n=3932  med=0.0995  mean=0.2852±0.3497  [p25=0.0000, p75=0.5323]
+[eval] threshold bucket=large  precision: n=3932  med=1.0000  mean=0.6956±0.4602  [p25=0.0000, p75=1.0000]
+[eval] threshold bucket=large     recall: n=3932  med=0.0995  mean=0.2852±0.3497  [p25=0.0000, p75=0.5323]
+[eval] threshold reals accuracy: n=5000  med=1.0000  mean=0.9898±0.0521  [p25=1.0000, p75=1.0000]
+[eval] wrote 8932 records -> /media/ssd/runs/bce_emergence/bce_both_s0/full_fakes_eval/threshold_records.csv
+[eval] threshold ─── by subgroup (27 cells) ───
+[eval] threshold subgroup=chroma (n_splice=39 n_real=0):
+[eval] threshold subgroup=chroma         f1: n=  39  med=0.0475  mean=0.2898±0.3665  [p25=0.0000, p75=0.6539]
+[eval] threshold subgroup=chroma        iou: n=  39  med=0.0243  mean=0.2400±0.3318  [p25=0.0000, p75=0.4924]
+[eval] threshold subgroup=chroma  precision: n=  39  med=1.0000  mean=0.7179±0.4500  [p25=0.0000, p75=1.0000]
+[eval] threshold subgroup=chroma     recall: n=  39  med=0.0243  mean=0.2400±0.3318  [p25=0.0000, p75=0.4924]
+[eval] threshold subgroup=dalle-3 (n_splice=185 n_real=0):
+[eval] threshold subgroup=dalle-3         f1: n= 185  med=0.4163  mean=0.4239±0.2742  [p25=0.2144, p75=0.6485]
+[eval] threshold subgroup=dalle-3        iou: n= 185  med=0.2628  mean=0.3114±0.2479  [p25=0.1201, p75=0.4798]
+[eval] threshold subgroup=dalle-3  precision: n= 185  med=1.0000  mean=0.9568±0.2034  [p25=1.0000, p75=1.0000]
+[eval] threshold subgroup=dalle-3     recall: n= 185  med=0.2628  mean=0.3114±0.2479  [p25=0.1201, p75=0.4798]
+[eval] threshold subgroup=flux-1.1-pro (n_splice=185 n_real=0):
+[eval] threshold subgroup=flux-1.1-pro         f1: n= 185  med=0.0000  mean=0.0374±0.1221  [p25=0.0000, p75=0.0000]
+[eval] threshold subgroup=flux-1.1-pro        iou: n= 185  med=0.0000  mean=0.0244±0.0862  [p25=0.0000, p75=0.0000]
+[eval] threshold subgroup=flux-1.1-pro  precision: n= 185  med=0.0000  mean=0.1838±0.3873  [p25=0.0000, p75=0.0000]
+[eval] threshold subgroup=flux-1.1-pro     recall: n= 185  med=0.0000  mean=0.0244±0.0862  [p25=0.0000, p75=0.0000]
+[eval] threshold subgroup=flux-amateursnapshotphotos (n_splice=26 n_real=0):
+[eval] threshold subgroup=flux-amateursnapshotphotos         f1: n=  26  med=0.0000  mean=0.1167±0.2132  [p25=0.0000, p75=0.1644]
+[eval] threshold subgroup=flux-amateursnapshotphotos        iou: n=  26  med=0.0000  mean=0.0806±0.1659  [p25=0.0000, p75=0.0897]
+[eval] threshold subgroup=flux-amateursnapshotphotos  precision: n=  26  med=0.0000  mean=0.4231±0.4940  [p25=0.0000, p75=1.0000]
+[eval] threshold subgroup=flux-amateursnapshotphotos     recall: n=  26  med=0.0000  mean=0.0806±0.1659  [p25=0.0000, p75=0.0897]
+[eval] threshold subgroup=flux-mvc5000 (n_splice=147 n_real=0):
+[eval] threshold subgroup=flux-mvc5000         f1: n= 147  med=0.0000  mean=0.0076±0.0344  [p25=0.0000, p75=0.0000]
+[eval] threshold subgroup=flux-mvc5000        iou: n= 147  med=0.0000  mean=0.0042±0.0193  [p25=0.0000, p75=0.0000]
+[eval] threshold subgroup=flux-mvc5000  precision: n= 147  med=0.0000  mean=0.0952±0.2935  [p25=0.0000, p75=0.0000]
+[eval] threshold subgroup=flux-mvc5000     recall: n= 147  med=0.0000  mean=0.0042±0.0193  [p25=0.0000, p75=0.0000]
+[eval] threshold subgroup=flux-realism (n_splice=4 n_real=0):
+[eval] threshold subgroup=flux-realism         f1: n=   4  med=0.3063  mean=0.3257±0.3268  [p25=0.0000, p75=0.6320]
+[eval] threshold subgroup=flux-realism        iou: n=   4  med=0.2208  mean=0.2421±0.2440  [p25=0.0000, p75=0.4628]
+[eval] threshold subgroup=flux-realism  precision: n=   4  med=0.5000  mean=0.5000±0.5000  [p25=0.0000, p75=1.0000]
+[eval] threshold subgroup=flux-realism     recall: n=   4  med=0.2208  mean=0.2421±0.2440  [p25=0.0000, p75=0.4628]
+[eval] threshold subgroup=flux.1-dev (n_splice=185 n_real=0):
+[eval] threshold subgroup=flux.1-dev         f1: n= 185  med=0.0000  mean=0.1033±0.2037  [p25=0.0000, p75=0.0964]
+[eval] threshold subgroup=flux.1-dev        iou: n= 185  med=0.0000  mean=0.0717±0.1629  [p25=0.0000, p75=0.0507]
+[eval] threshold subgroup=flux.1-dev  precision: n= 185  med=0.0000  mean=0.4216±0.4938  [p25=0.0000, p75=1.0000]
+[eval] threshold subgroup=flux.1-dev     recall: n= 185  med=0.0000  mean=0.0717±0.1629  [p25=0.0000, p75=0.0507]
+[eval] threshold subgroup=flux.1-schnell (n_splice=185 n_real=0):
+[eval] threshold subgroup=flux.1-schnell         f1: n= 185  med=0.0614  mean=0.1785±0.2435  [p25=0.0000, p75=0.2581]
+[eval] threshold subgroup=flux.1-schnell        iou: n= 185  med=0.0317  mean=0.1235±0.1935  [p25=0.0000, p75=0.1482]
+[eval] threshold subgroup=flux.1-schnell  precision: n= 185  med=1.0000  mean=0.6486±0.4774  [p25=0.0000, p75=1.0000]
+[eval] threshold subgroup=flux.1-schnell     recall: n= 185  med=0.0317  mean=0.1235±0.1935  [p25=0.0000, p75=0.1482]
+[eval] threshold subgroup=gpt-image-1 (n_splice=185 n_real=0):
+[eval] threshold subgroup=gpt-image-1         f1: n= 185  med=0.1018  mean=0.2148±0.2702  [p25=0.0000, p75=0.3461]
+[eval] threshold subgroup=gpt-image-1        iou: n= 185  med=0.0536  mean=0.1535±0.2231  [p25=0.0000, p75=0.2093]
+[eval] threshold subgroup=gpt-image-1  precision: n= 185  med=1.0000  mean=0.6811±0.4661  [p25=0.0000, p75=1.0000]
+[eval] threshold subgroup=gpt-image-1     recall: n= 185  med=0.0536  mean=0.1535±0.2231  [p25=0.0000, p75=0.2093]
+[eval] threshold subgroup=grok-2-image-1212 (n_splice=96 n_real=0):
+[eval] threshold subgroup=grok-2-image-1212         f1: n=  96  med=0.0000  mean=0.1161±0.2051  [p25=0.0000, p75=0.1355]
+[eval] threshold subgroup=grok-2-image-1212        iou: n=  96  med=0.0000  mean=0.0781±0.1530  [p25=0.0000, p75=0.0727]
+[eval] threshold subgroup=grok-2-image-1212  precision: n=  96  med=0.0000  mean=0.4896±0.4999  [p25=0.0000, p75=1.0000]
+[eval] threshold subgroup=grok-2-image-1212     recall: n=  96  med=0.0000  mean=0.0781±0.1530  [p25=0.0000, p75=0.0727]
+[eval] threshold subgroup=hidream-i1-full (n_splice=185 n_real=0):
+[eval] threshold subgroup=hidream-i1-full         f1: n= 185  med=0.0834  mean=0.2494±0.3114  [p25=0.0000, p75=0.4687]
+[eval] threshold subgroup=hidream-i1-full        iou: n= 185  med=0.0435  mean=0.1900±0.2710  [p25=0.0000, p75=0.3061]
+[eval] threshold subgroup=hidream-i1-full  precision: n= 185  med=1.0000  mean=0.7135±0.4521  [p25=0.0000, p75=1.0000]
+[eval] threshold subgroup=hidream-i1-full     recall: n= 185  med=0.0435  mean=0.1900±0.2710  [p25=0.0000, p75=0.3061]
+[eval] threshold subgroup=ideogram-3.0 (n_splice=185 n_real=0):
+[eval] threshold subgroup=ideogram-3.0         f1: n= 185  med=0.0000  mean=0.0907±0.1889  [p25=0.0000, p75=0.0546]
+[eval] threshold subgroup=ideogram-3.0        iou: n= 185  med=0.0000  mean=0.0616±0.1440  [p25=0.0000, p75=0.0281]
+[eval] threshold subgroup=ideogram-3.0  precision: n= 185  med=0.0000  mean=0.4000±0.4899  [p25=0.0000, p75=1.0000]
+[eval] threshold subgroup=ideogram-3.0     recall: n= 185  med=0.0000  mean=0.0616±0.1440  [p25=0.0000, p75=0.0281]
+[eval] threshold subgroup=imagen-3.0-002 (n_splice=34 n_real=0):
+[eval] threshold subgroup=imagen-3.0-002         f1: n=  34  med=0.0000  mean=0.0308±0.0836  [p25=0.0000, p75=0.0115]
+[eval] threshold subgroup=imagen-3.0-002        iou: n=  34  med=0.0000  mean=0.0178±0.0510  [p25=0.0000, p75=0.0058]
+[eval] threshold subgroup=imagen-3.0-002  precision: n=  34  med=0.0000  mean=0.3235±0.4678  [p25=0.0000, p75=1.0000]
+[eval] threshold subgroup=imagen-3.0-002     recall: n=  34  med=0.0000  mean=0.0178±0.0510  [p25=0.0000, p75=0.0058]
+[eval] threshold subgroup=imagen-4.0 (n_splice=101 n_real=0):
+[eval] threshold subgroup=imagen-4.0         f1: n= 101  med=0.0000  mean=0.1576±0.2470  [p25=0.0000, p75=0.2576]
+[eval] threshold subgroup=imagen-4.0        iou: n= 101  med=0.0000  mean=0.1110±0.1917  [p25=0.0000, p75=0.1479]
+[eval] threshold subgroup=imagen-4.0  precision: n= 101  med=0.0000  mean=0.4653±0.4988  [p25=0.0000, p75=1.0000]
+[eval] threshold subgroup=imagen-4.0     recall: n= 101  med=0.0000  mean=0.1110±0.1917  [p25=0.0000, p75=0.1479]
+[eval] threshold subgroup=midjourney-6 (n_splice=185 n_real=0):
+[eval] threshold subgroup=midjourney-6         f1: n= 185  med=0.0128  mean=0.1970±0.3019  [p25=0.0000, p75=0.2563]
+[eval] threshold subgroup=midjourney-6        iou: n= 185  med=0.0065  mean=0.1530±0.2647  [p25=0.0000, p75=0.1470]
+[eval] threshold subgroup=midjourney-6  precision: n= 185  med=1.0000  mean=0.5946±0.4910  [p25=0.0000, p75=1.0000]
+[eval] threshold subgroup=midjourney-6     recall: n= 185  med=0.0065  mean=0.1530±0.2647  [p25=0.0000, p75=0.1470]
+[eval] threshold subgroup=midjourney-7 (n_splice=20 n_real=0):
+[eval] threshold subgroup=midjourney-7         f1: n=  20  med=0.0038  mean=0.0641±0.1083  [p25=0.0000, p75=0.1000]
+[eval] threshold subgroup=midjourney-7        iou: n=  20  med=0.0019  mean=0.0369±0.0673  [p25=0.0000, p75=0.0526]
+[eval] threshold subgroup=midjourney-7  precision: n=  20  med=0.5000  mean=0.5000±0.5000  [p25=0.0000, p75=1.0000]
+[eval] threshold subgroup=midjourney-7     recall: n=  20  med=0.0019  mean=0.0369±0.0673  [p25=0.0000, p75=0.0526]
+[eval] threshold subgroup=mystic (n_splice=142 n_real=0):
+[eval] threshold subgroup=mystic         f1: n= 142  med=0.1277  mean=0.2456±0.2883  [p25=0.0000, p75=0.4506]
+[eval] threshold subgroup=mystic        iou: n= 142  med=0.0682  mean=0.1794±0.2444  [p25=0.0000, p75=0.2908]
+[eval] threshold subgroup=mystic  precision: n= 142  med=1.0000  mean=0.6761±0.4680  [p25=0.0000, p75=1.0000]
+[eval] threshold subgroup=mystic     recall: n= 142  med=0.0682  mean=0.1794±0.2444  [p25=0.0000, p75=0.2908]
+[eval] threshold subgroup=sd-1.5 (n_splice=176 n_real=0):
+[eval] threshold subgroup=sd-1.5         f1: n= 176  med=0.9079  mean=0.7922±0.2744  [p25=0.6973, p75=1.0000]
+[eval] threshold subgroup=sd-1.5        iou: n= 176  med=0.8315  mean=0.7243±0.3069  [p25=0.5353, p75=1.0000]
+[eval] threshold subgroup=sd-1.5  precision: n= 176  med=1.0000  mean=0.9886±0.1060  [p25=1.0000, p75=1.0000]
+[eval] threshold subgroup=sd-1.5     recall: n= 176  med=0.8315  mean=0.7243±0.3069  [p25=0.5353, p75=1.0000]
+[eval] threshold subgroup=sd-1.5-dreamshaper (n_splice=176 n_real=0):
+[eval] threshold subgroup=sd-1.5-dreamshaper         f1: n= 176  med=0.6732  mean=0.6129±0.3335  [p25=0.3347, p75=0.9210]
+[eval] threshold subgroup=sd-1.5-dreamshaper        iou: n= 176  med=0.5078  mean=0.5237±0.3456  [p25=0.2010, p75=0.8535]
+[eval] threshold subgroup=sd-1.5-dreamshaper  precision: n= 176  med=1.0000  mean=0.9773±0.1490  [p25=1.0000, p75=1.0000]
+[eval] threshold subgroup=sd-1.5-dreamshaper     recall: n= 176  med=0.5078  mean=0.5237±0.3456  [p25=0.2010, p75=0.8535]
+[eval] threshold subgroup=sd-1.5-epicdream (n_splice=185 n_real=0):
+[eval] threshold subgroup=sd-1.5-epicdream         f1: n= 185  med=0.2501  mean=0.3527±0.3498  [p25=0.0102, p75=0.6376]
+[eval] threshold subgroup=sd-1.5-epicdream        iou: n= 185  med=0.1429  mean=0.2822±0.3261  [p25=0.0051, p75=0.4680]
+[eval] threshold subgroup=sd-1.5-epicdream  precision: n= 185  med=1.0000  mean=0.7838±0.4117  [p25=1.0000, p75=1.0000]
+[eval] threshold subgroup=sd-1.5-epicdream     recall: n= 185  med=0.1429  mean=0.2822±0.3261  [p25=0.0051, p75=0.4680]
+[eval] threshold subgroup=sd-2.1 (n_splice=189 n_real=0):
+[eval] threshold subgroup=sd-2.1         f1: n= 189  med=0.9994  mean=0.8575±0.2460  [p25=0.8422, p75=1.0000]
+[eval] threshold subgroup=sd-2.1        iou: n= 189  med=0.9987  mean=0.8120±0.2888  [p25=0.7274, p75=1.0000]
+[eval] threshold subgroup=sd-2.1  precision: n= 189  med=1.0000  mean=0.9947±0.0725  [p25=1.0000, p75=1.0000]
+[eval] threshold subgroup=sd-2.1     recall: n= 189  med=0.9987  mean=0.8120±0.2888  [p25=0.7274, p75=1.0000]
+[eval] threshold subgroup=sd-3.5 (n_splice=192 n_real=0):
+[eval] threshold subgroup=sd-3.5         f1: n= 192  med=0.0571  mean=0.2156±0.2985  [p25=0.0000, p75=0.3380]
+[eval] threshold subgroup=sd-3.5        iou: n= 192  med=0.0294  mean=0.1642±0.2632  [p25=0.0000, p75=0.2034]
+[eval] threshold subgroup=sd-3.5  precision: n= 192  med=1.0000  mean=0.6562±0.4750  [p25=0.0000, p75=1.0000]
+[eval] threshold subgroup=sd-3.5     recall: n= 192  med=0.0294  mean=0.1642±0.2632  [p25=0.0000, p75=0.2034]
+[eval] threshold subgroup=sdxl (n_splice=185 n_real=0):
+[eval] threshold subgroup=sdxl         f1: n= 185  med=0.8702  mean=0.7557±0.2885  [p25=0.6158, p75=0.9994]
+[eval] threshold subgroup=sdxl        iou: n= 185  med=0.7702  mean=0.6811±0.3233  [p25=0.4448, p75=0.9987]
+[eval] threshold subgroup=sdxl  precision: n= 185  med=1.0000  mean=0.9838±0.1263  [p25=1.0000, p75=1.0000]
+[eval] threshold subgroup=sdxl     recall: n= 185  med=0.7702  mean=0.6811±0.3233  [p25=0.4448, p75=0.9987]
+[eval] threshold subgroup=sdxl-epic-realism (n_splice=185 n_real=0):
+[eval] threshold subgroup=sdxl-epic-realism         f1: n= 185  med=0.2443  mean=0.3546±0.3538  [p25=0.0178, p75=0.6909]
+[eval] threshold subgroup=sdxl-epic-realism        iou: n= 185  med=0.1391  mean=0.2854±0.3302  [p25=0.0090, p75=0.5278]
+[eval] threshold subgroup=sdxl-epic-realism  precision: n= 185  med=1.0000  mean=0.8054±0.3959  [p25=1.0000, p75=1.0000]
+[eval] threshold subgroup=sdxl-epic-realism     recall: n= 185  med=0.1391  mean=0.2854±0.3302  [p25=0.0090, p75=0.5278]
+[eval] threshold subgroup=sdxl-juggernaut (n_splice=185 n_real=0):
+[eval] threshold subgroup=sdxl-juggernaut         f1: n= 185  med=0.4318  mean=0.4553±0.3355  [p25=0.1178, p75=0.7645]
+[eval] threshold subgroup=sdxl-juggernaut        iou: n= 185  med=0.2754  mean=0.3632±0.3206  [p25=0.0626, p75=0.6188]
+[eval] threshold subgroup=sdxl-juggernaut  precision: n= 185  med=1.0000  mean=0.9081±0.2889  [p25=1.0000, p75=1.0000]
+[eval] threshold subgroup=sdxl-juggernaut     recall: n= 185  med=0.2754  mean=0.3632±0.3206  [p25=0.0626, p75=0.6188]
+[eval] threshold subgroup=sdxl-realvis-v5 (n_splice=185 n_real=0):
+[eval] threshold subgroup=sdxl-realvis-v5         f1: n= 185  med=0.2479  mean=0.3655±0.3545  [p25=0.0000, p75=0.7031]
+[eval] threshold subgroup=sdxl-realvis-v5        iou: n= 185  med=0.1415  mean=0.2922±0.3208  [p25=0.0000, p75=0.5421]
+[eval] threshold subgroup=sdxl-realvis-v5  precision: n= 185  med=1.0000  mean=0.7351±0.4413  [p25=0.0000, p75=1.0000]
+[eval] threshold subgroup=sdxl-realvis-v5     recall: n= 185  med=0.1415  mean=0.2922±0.3208  [p25=0.0000, p75=0.5421]
+[eval] threshold subgroup=sdxl-touchofrealism (n_splice=185 n_real=0):
+[eval] threshold subgroup=sdxl-touchofrealism         f1: n= 185  med=0.7643  mean=0.6564±0.3182  [p25=0.4113, p75=0.9371]
+[eval] threshold subgroup=sdxl-touchofrealism        iou: n= 185  med=0.6185  mean=0.5657±0.3319  [p25=0.2589, p75=0.8816]
+[eval] threshold subgroup=sdxl-touchofrealism  precision: n= 185  med=1.0000  mean=0.9622±0.1908  [p25=1.0000, p75=1.0000]
+[eval] threshold subgroup=sdxl-touchofrealism     recall: n= 185  med=0.6185  mean=0.5657±0.3319  [p25=0.2589, p75=0.8816]
+[eval] saving flat summary to /media/ssd/runs/bce_emergence/bce_both_s0/full_fakes_eval/summary.json

@@ -1,0 +1,138 @@
+# ============================================================
+# log opened  pid=3388144  ts=2026-07-08T19:44:56  git=9650182
+# python=3.10.12  torch=2.7.1+cu118  device=NVIDIA GeForce RTX 2080 Ti 10.6GB  n_gpu=2
+# cmd: /home/fri-team-4/fri-team4/DINO_SCOPE_July/experiments/labs/probe_contrasts.py --manifest /media/ssd/runs/bce_emergence/probe_manifest.csv --records bce_inpaint_s0=/media/ssd/runs/bce_emergence/bce_inpaint_s0/probe_eval/threshold_records.csv --records bce_splice_s0=/media/ssd/runs/bce_emergence/bce_splice_s0/probe_eval/threshold_records.csv --records bce_both_s0=/media/ssd/runs/bce_emergence/bce_both_s0/probe_eval/threshold_records.csv --records cont_inpaint_s0=/media/ssd/runs/bce_emergence/cont_inpaint_s0/probe_eval/kmeans_records.csv --records cont_splice_s0=/media/ssd/runs/bce_emergence/cont_splice_s0/probe_eval/kmeans_records.csv --records cont_both_s0=/media/ssd/runs/bce_emergence/cont_both_s0/probe_eval/kmeans_records.csv --out_csv /media/ssd/runs/bce_emergence/probe_contrasts.csv
+# ============================================================
+[probe] ── bce_inpaint_s0 ──────────────────────────────────────────────
+[probe] source            n   f1 med f1 mean iou med  score med score mean ppos med
+[probe] ai_boundary     600    0.917   0.779   0.847      0.999      0.888      nan
+[probe] ai_interior     350    0.338   0.431   0.203      0.934      0.569    0.203
+[probe] fr_bg           300      nan     nan     nan      0.001      0.044    0.000
+[probe] real_crop       350      nan     nan     nan      0.001      0.001    0.000
+[probe] sp_boundary     300    0.030   0.306   0.015      0.153      0.440      nan
+[probe] sp_interior     120    0.000   0.089   0.000      0.003      0.166    0.000
+[probe] contrast                            AUC  n_pos  n_neg
+[probe] ai_interior vs real_crop          0.945    350    350
+[probe]   [medium] ai_interior vs real_crop             0.935
+[probe]   [large ] ai_interior vs real_crop             0.975
+[probe] ai_interior vs sp_interior        0.745    350    120
+[probe]   [medium] ai_interior vs sp_interior           0.725
+[probe]   [large ] ai_interior vs sp_interior           0.850
+[probe] sp_interior vs real_crop          0.875    120    350
+[probe] ai_interior vs fr_bg              0.899    350    300
+[probe] ai_boundary vs sp_boundary        0.852    600    300
+[probe] ai_boundary vs ai_interior        0.801    600    350
+[probe] sp_boundary vs sp_interior        0.731    300    120
+[probe] matched pairs (n=350): ai_interior mean= 0.569 real_crop mean= 0.001 pair diff mean= 0.568 win rate= 0.960
+[probe] 
+[probe] ── bce_splice_s0 ──────────────────────────────────────────────
+[probe] source            n   f1 med f1 mean iou med  score med score mean ppos med
+[probe] ai_boundary     600    0.781   0.625   0.641      0.992      0.802      nan
+[probe] ai_interior     350    0.000   0.126   0.000      0.036      0.254    0.000
+[probe] fr_bg           300      nan     nan     nan      0.014      0.071    0.000
+[probe] real_crop       350      nan     nan     nan      0.008      0.018    0.000
+[probe] sp_boundary     300    0.902   0.754   0.821      0.999      0.955      nan
+[probe] sp_interior     120    0.000   0.196   0.000      0.055      0.343    0.000
+[probe] contrast                            AUC  n_pos  n_neg
+[probe] ai_interior vs real_crop          0.769    350    350
+[probe]   [medium] ai_interior vs real_crop             0.754
+[probe]   [large ] ai_interior vs real_crop             0.851
+[probe] ai_interior vs sp_interior        0.435    350    120
+[probe]   [medium] ai_interior vs sp_interior           0.414
+[probe]   [large ] ai_interior vs sp_interior           0.511
+[probe] sp_interior vs real_crop          0.847    120    350
+[probe] ai_interior vs fr_bg              0.637    350    300
+[probe] ai_boundary vs sp_boundary        0.265    600    300
+[probe] ai_boundary vs ai_interior        0.848    600    350
+[probe] sp_boundary vs sp_interior        0.925    300    120
+[probe] matched pairs (n=350): ai_interior mean= 0.254 real_crop mean= 0.018 pair diff mean= 0.235 win rate= 0.791
+[probe] 
+[probe] ── bce_both_s0 ──────────────────────────────────────────────
+[probe] source            n   f1 med f1 mean iou med  score med score mean ppos med
+[probe] ai_boundary     600    0.909   0.802   0.833      0.999      0.934      nan
+[probe] ai_interior     350    0.337   0.427   0.203      0.826      0.561    0.203
+[probe] fr_bg           300      nan     nan     nan      0.014      0.041    0.000
+[probe] real_crop       350      nan     nan     nan      0.012      0.025    0.000
+[probe] sp_boundary     300    0.855   0.687   0.747      0.991      0.870      nan
+[probe] sp_interior     120    0.000   0.155   0.000      0.022      0.253    0.000
+[probe] contrast                            AUC  n_pos  n_neg
+[probe] ai_interior vs real_crop          0.860    350    350
+[probe]   [medium] ai_interior vs real_crop             0.848
+[probe]   [large ] ai_interior vs real_crop             0.925
+[probe] ai_interior vs sp_interior        0.688    350    120
+[probe]   [medium] ai_interior vs sp_interior           0.653
+[probe]   [large ] ai_interior vs sp_interior           0.790
+[probe] sp_interior vs real_crop          0.790    120    350
+[probe] ai_interior vs fr_bg              0.831    350    300
+[probe] ai_boundary vs sp_boundary        0.745    600    300
+[probe] ai_boundary vs ai_interior        0.858    600    350
+[probe] sp_boundary vs sp_interior        0.888    300    120
+[probe] matched pairs (n=350): ai_interior mean= 0.561 real_crop mean= 0.025 pair diff mean= 0.536 win rate= 0.894
+[probe] 
+[probe] ── cont_inpaint_s0 ──────────────────────────────────────────────
+[probe] source            n   f1 med f1 mean iou med  score med score mean ppos med
+[probe] ai_boundary     600    0.963   0.884   0.928      0.998      0.915      nan
+[probe] ai_interior     350    0.551   0.553   0.381      0.925      0.599    0.381
+[probe] fr_bg           300      nan     nan     nan      0.003      0.100    0.385
+[probe] real_crop       350      nan     nan     nan      0.001      0.030    0.432
+[probe] sp_boundary     300    0.910   0.712   0.835      0.755      0.557      nan
+[probe] sp_interior     120    0.556   0.547   0.385      0.006      0.226    0.385
+[probe] contrast                            AUC  n_pos  n_neg
+[probe] ai_interior vs real_crop          0.913    350    350
+[probe]   [medium] ai_interior vs real_crop             0.906
+[probe]   [large ] ai_interior vs real_crop             0.937
+[probe] ai_interior vs sp_interior        0.743    350    120
+[probe]   [medium] ai_interior vs sp_interior           0.711
+[probe]   [large ] ai_interior vs sp_interior           0.846
+[probe] sp_interior vs real_crop          0.813    120    350
+[probe] ai_interior vs fr_bg              0.795    350    300
+[probe] ai_boundary vs sp_boundary        0.851    600    300
+[probe] ai_boundary vs ai_interior        0.824    600    350
+[probe] sp_boundary vs sp_interior        0.758    300    120
+[probe] matched pairs (n=350): ai_interior mean= 0.599 real_crop mean= 0.030 pair diff mean= 0.570 win rate= 0.923
+[probe] 
+[probe] ── cont_splice_s0 ──────────────────────────────────────────────
+[probe] source            n   f1 med f1 mean iou med  score med score mean ppos med
+[probe] ai_boundary     600    0.781   0.623   0.641      0.828      0.626      nan
+[probe] ai_interior     350    0.560   0.554   0.389      0.020      0.100    0.389
+[probe] fr_bg           300      nan     nan     nan      0.010      0.039    0.367
+[probe] real_crop       350      nan     nan     nan      0.010      0.018    0.424
+[probe] sp_boundary     300    0.954   0.790   0.913      0.995      0.916      nan
+[probe] sp_interior     120    0.514   0.515   0.346      0.039      0.273    0.346
+[probe] contrast                            AUC  n_pos  n_neg
+[probe] ai_interior vs real_crop          0.739    350    350
+[probe]   [medium] ai_interior vs real_crop             0.704
+[probe]   [large ] ai_interior vs real_crop             0.851
+[probe] ai_interior vs sp_interior        0.314    350    120
+[probe]   [medium] ai_interior vs sp_interior           0.271
+[probe]   [large ] ai_interior vs sp_interior           0.417
+[probe] sp_interior vs real_crop          0.878    120    350
+[probe] ai_interior vs fr_bg              0.688    350    300
+[probe] ai_boundary vs sp_boundary        0.222    600    300
+[probe] ai_boundary vs ai_interior        0.862    600    350
+[probe] sp_boundary vs sp_interior        0.898    300    120
+[probe] matched pairs (n=350): ai_interior mean= 0.100 real_crop mean= 0.018 pair diff mean= 0.082 win rate= 0.774
+[probe] 
+[probe] ── cont_both_s0 ──────────────────────────────────────────────
+[probe] source            n   f1 med f1 mean iou med  score med score mean ppos med
+[probe] ai_boundary     600    0.961   0.871   0.925      0.997      0.932      nan
+[probe] ai_interior     350    0.569   0.555   0.398      0.518      0.488    0.398
+[probe] fr_bg           300      nan     nan     nan      0.014      0.114    0.392
+[probe] real_crop       350      nan     nan     nan      0.008      0.034    0.442
+[probe] sp_boundary     300    0.951   0.813   0.907      0.995      0.921      nan
+[probe] sp_interior     120    0.578   0.553   0.406      0.037      0.299    0.406
+[probe] contrast                            AUC  n_pos  n_neg
+[probe] ai_interior vs real_crop          0.873    350    350
+[probe]   [medium] ai_interior vs real_crop             0.851
+[probe]   [large ] ai_interior vs real_crop             0.948
+[probe] ai_interior vs sp_interior        0.613    350    120
+[probe]   [medium] ai_interior vs sp_interior           0.556
+[probe]   [large ] ai_interior vs sp_interior           0.718
+[probe] sp_interior vs real_crop          0.831    120    350
+[probe] ai_interior vs fr_bg              0.751    350    300
+[probe] ai_boundary vs sp_boundary        0.664    600    300
+[probe] ai_boundary vs ai_interior        0.872    600    350
+[probe] sp_boundary vs sp_interior        0.892    300    120
+[probe] matched pairs (n=350): ai_interior mean= 0.488 real_crop mean= 0.034 pair diff mean= 0.454 win rate= 0.877
+[probe] 
+[probe] wrote 216 rows -> /media/ssd/runs/bce_emergence/probe_contrasts.csv

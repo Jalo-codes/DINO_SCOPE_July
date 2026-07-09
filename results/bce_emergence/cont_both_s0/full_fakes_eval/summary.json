@@ -1,0 +1,13 @@
+{
+  "image_auc": 0.8549950661241098,
+  "f1_median": 0.5819512472742254,
+  "f1_mean": 0.5648566184546266,
+  "iou_median": 0.41038874457864205,
+  "iou_mean": 0.4123886017589525,
+  "precision_median": 1.0,
+  "precision_mean": 1.0,
+  "recall_median": 0.41038874457864205,
+  "recall_mean": 0.4123886017589525,
+  "reals_acc": 0.5512181122448979,
+  "bucket_large_f1_median": 0.5819512472742254
+}
