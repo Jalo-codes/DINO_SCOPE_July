@@ -3,7 +3,7 @@
 TORCH-FREE (GAMEPLAN C3). PIL + numpy + stdlib only.
 
 Shared geometry core for the BCE-emergence probe conditions (ai_interior,
-sp_interior, ai_boundary, sp_boundary, fr_bg, real_crop — see
+sp_interior, ai_boundary, sp_boundary, fr_bg_matched, real_crop — see
 datasets/region_probes.py) and for the train-time fr-background negative
 sampler (Dataset.fr_bg_negative_prob).
 
@@ -278,17 +278,25 @@ def _sample_distinct(
     group: str,
     k: int,
     spec: WindowSpec,
+    draw_hw=None,
 ) -> List[ProbeWindow]:
-    """Shared accept loop for the three condition samplers (see module docstring
+    """Shared accept loop for the condition samplers (see module docstring
     for why de-dup is needed). Returns fewer than ``k`` windows rather than a
-    near-duplicate if the mask can't support that many distinct crops."""
+    near-duplicate if the mask can't support that many distinct crops.
+
+    ``draw_hw``: optional ``(rng) -> (h, w)`` override of the default
+    range-uniform size draw — used by the size-pool sampler, which draws from
+    an empirical (h, w) distribution instead of [side_lo, side_hi]."""
     H, W = shape_hw
     accepted: List[Tuple[int, int, int, int]] = []
     out: List[ProbeWindow] = []
     for i in range(k):
         chosen = None
         for _try in range(spec.size_tries):
-            h, w = _draw_hw(rng, side_lo, side_hi, (H, W), spec)
+            if draw_hw is not None:
+                h, w = draw_hw(rng)
+            else:
+                h, w = _draw_hw(rng, side_lo, side_hi, (H, W), spec)
             if h > H or w > W:
                 continue
             valid = match_fn(h, w)
@@ -317,7 +325,7 @@ class ProbeWindow:
     window: Tuple[float, float, float, float]   # fractional (y0, x0, y1, x1)
     native_wh: Tuple[int, int]                  # (w, h) native pixels
     upsample_factor: float                      # image_size / min(w, h)
-    group: str                                  # 'interior' | 'boundary' | 'outside'
+    group: str                                  # 'interior' | 'boundary' | 'outside' | 'outside_matched'
     index: int                                  # draw index within the item
 
     def meta(self, spec: WindowSpec = WINDOW_SPEC) -> dict:
@@ -497,6 +505,54 @@ def sample_outside_windows(
     return _sample_distinct(
         rng, match_fn, side_lo, side_hi, (H, W), res, 'outside',
         k if k is not None else spec.windows_per_item, spec,
+    )
+
+
+def sample_outside_windows_sized(
+    mask: np.ndarray,
+    res,
+    *,
+    item_id: str,
+    size_pool: Sequence[Tuple[int, int]],
+    spec: WindowSpec = WINDOW_SPEC,
+    k: Optional[int] = None,
+    rng: Optional[random.Random] = None,
+) -> List[ProbeWindow]:
+    """Outside-mask windows whose (h, w) are drawn from an empirical size pool.
+
+    Same zero-mask-contact placement as sample_outside_windows, but sizes come
+    from ``size_pool`` — native-pixel (h, w) pairs of an already-built interior
+    condition — instead of [floor, floor * outside_side_mult_range]. This makes
+    the background-null window-size distribution match the interior fakes' BY
+    CONSTRUCTION (fr_bg's raw distribution ran ~1.3x larger, and image score
+    falls with window size, so the mismatch inflated interior-vs-fr_bg AUROC;
+    see results/bce_emergence notes §5.1/§6).
+
+    Draws are iid from the pool (with replacement, deterministic per item), so
+    the emitted distribution equals the pool's in law; a pool entry that does
+    not fit this image or cannot be placed outside the mask costs one of
+    spec.size_tries redraws, exactly like a failed range draw in the base
+    sampler.
+    """
+    if not size_pool:
+        return []
+    H, W = mask.shape
+    radius = erode_radius_px((W, H), res)
+    dilated = dilate_mask(mask.astype(bool), radius) if mask.any() else mask.astype(bool)
+
+    rng = rng if rng is not None else rng_for(item_id, 'outside_matched', spec)
+    ii = _integral(dilated)
+
+    def draw_hw(r: random.Random) -> Tuple[int, int]:
+        return size_pool[r.randrange(len(size_pool))]
+
+    def match_fn(h: int, w: int) -> np.ndarray:
+        return _window_sums(ii, h, w) == 0            # zero mask contact
+
+    return _sample_distinct(
+        rng, match_fn, 0, 0, (H, W), res, 'outside_matched',
+        k if k is not None else spec.windows_per_item, spec,
+        draw_hw=draw_hw,
     )
 
 

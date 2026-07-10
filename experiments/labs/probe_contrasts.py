@@ -47,14 +47,14 @@ def _log(msg: str) -> None:
     log_line(f'[probe] {msg}')
 
 PROBE_CONDITIONS = ('ai_interior', 'ai_boundary', 'sp_interior', 'sp_boundary',
-                    'fr_bg', 'real_crop')
+                    'fr_bg_matched', 'real_crop')
 
 # (positive source, negative source) — AUC of image_score separating pos from neg.
 DEFAULT_CONTRASTS: Tuple[Tuple[str, str], ...] = (
     ('ai_interior', 'real_crop'),    # 1  the "thing", matched null
     ('ai_interior', 'sp_interior'),  # 2  AI vs splice content, boundary-free
     ('sp_interior', 'real_crop'),    # 3  provenance-shortcut meter (expect ~0.5)
-    ('ai_interior', 'fr_bg'),        # 4  semantic AI-ness beyond fingerprint
+    ('ai_interior', 'fr_bg_matched'),  # 4  semantic AI-ness beyond fingerprint (size-matched null)
     ('ai_boundary', 'sp_boundary'),  # 5  boundary evidence by content type
     ('ai_boundary', 'ai_interior'),  # 6a how much the boundary adds (AI)
     ('sp_boundary', 'sp_interior'),  # 6b how much the boundary adds (splice)
@@ -89,7 +89,7 @@ def _pred_pos_frac(row: dict) -> float:
     """Predicted-positive pixel fraction, derived from the CSV columns.
 
     Fake probes (interior: all-white GT) → recall.  Mask-less probes
-    (real_crop / fr_bg: all-zero GT) → 1 - accuracy.  Boundary crops have
+    (real_crop / fr_bg_matched: all-zero GT) → 1 - accuracy.  Boundary crops have
     genuine partial GT, so no exact derivation exists — NaN there.
     """
     if row['is_real']:

@@ -29,6 +29,7 @@ from lab_utils.data.crop_conditions import (
     sample_boundary_windows,
     sample_interior_windows,
     sample_outside_windows,
+    sample_outside_windows_sized,
 )
 
 
@@ -235,6 +236,38 @@ def test_outside_windows_avoid_dilated_mask():
 def test_outside_on_empty_mask_uses_whole_frame():
     wins = sample_outside_windows(np.zeros((300, 300), bool), RES, item_id='item-f')
     assert wins
+
+
+def test_outside_sized_draws_only_pool_sizes_and_avoids_mask():
+    m = _rect_mask(600, 600, 200, 200, 320, 320)
+    radius = erode_radius_px((600, 600), RES)
+    dl = dilate_mask(m, radius)
+    pool = [(90, 110), (130, 100), (70, 70)]
+    wins = sample_outside_windows_sized(m, RES, item_id='item-s', size_pool=pool)
+    assert wins
+    for w in wins:
+        assert w.group == 'outside_matched'
+        w_px, h_px = w.native_wh
+        assert (h_px, w_px) in pool, 'emitted size not drawn from the pool'
+        y0, x0, y1, x1 = _px_box(w.window, m.shape)
+        assert not dl[y0:y1, x0:x1].any(), 'sized window touched the dilated mask'
+
+
+def test_outside_sized_deterministic_and_item_keyed():
+    m = _rect_mask(600, 600, 200, 200, 320, 320)
+    pool = [(90, 110), (130, 100), (70, 70)]
+    a = sample_outside_windows_sized(m, RES, item_id='same', size_pool=pool)
+    b = sample_outside_windows_sized(m, RES, item_id='same', size_pool=pool)
+    c = sample_outside_windows_sized(m, RES, item_id='other', size_pool=pool)
+    assert [w.window for w in a] == [w.window for w in b]
+    assert [w.window for w in a] != [w.window for w in c]
+
+
+def test_outside_sized_degenerate_pools():
+    m = _rect_mask(600, 600, 200, 200, 320, 320)
+    assert sample_outside_windows_sized(m, RES, item_id='x', size_pool=[]) == []
+    # entries that cannot fit the frame burn draws but never crash
+    assert sample_outside_windows_sized(m, RES, item_id='x', size_pool=[(5000, 5000)]) == []
 
 
 # ── determinism / pairing ────────────────────────────────────────────────────

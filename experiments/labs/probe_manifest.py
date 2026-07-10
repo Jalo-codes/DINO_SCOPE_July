@@ -15,7 +15,7 @@ Usage (box)::
     $PY -m experiments.labs.probe_manifest \
         --ai_interior_root $SAGID --ai_boundary_root $SAGID --real_crop_root $SAGID \
         --sp_interior_root $CASIA --sp_boundary_root $CASIA \
-        --fr_bg_root $SAGID_FR_CLEAN \
+        --fr_bg_matched_root $TGIF2 \
         --image_size 448 --patch_size 16 \
         --out_csv runs/probe_manifest.csv --render_dir runs/probe_render --render_n 12
 """
@@ -35,7 +35,7 @@ from lab_utils.eval.val_sources import add_source_root_args, collect_val_items_b
 from lab_utils.logging.text import install_log, log_line
 
 PROBE_SOURCES = ('ai_interior', 'ai_boundary', 'sp_interior', 'sp_boundary',
-                 'fr_bg', 'real_crop',
+                 'fr_bg_matched', 'real_crop',
                  'ai_interior_tgif', 'ai_boundary_tgif', 'real_crop_tgif')
 
 _CSV_COLS = ['item_id', 'source', 'parent_item_id', 'parent_source', 'pair_stem',

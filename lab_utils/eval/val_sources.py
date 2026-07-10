@@ -41,14 +41,17 @@ SOURCE_ROOT_ARGS: Dict[str, str] = {
     'full_fakes':   'full_fakes_root',
     # Region-probe eval conditions (BCE-emergence study). Each flag points at
     # the PARENT dataset root: ai_*/real_crop → sagid root; sp_* → imd2020
-    # root; fr_bg → tgif2 root (restricted to 'fr' items). The _tgif variants
-    # are a SECOND parent pool for the same three conditions (tgif2's 'sp'
-    # items — merges into the same condition automatically, see registry.py).
+    # root; fr_bg_matched → tgif2 root (restricted to 'fr' items; window sizes
+    # drawn from the tgif2-'sp' ai_interior pool — replaces the retired fr_bg,
+    # whose size distribution ran ~1.3x large and inflated interior AUROC).
+    # The _tgif variants are a SECOND parent pool for the same three
+    # conditions (tgif2's 'sp' items — merges into the same condition
+    # automatically, see registry.py).
     'ai_interior':  'ai_interior_root',
     'ai_boundary':  'ai_boundary_root',
     'sp_interior':  'sp_interior_root',
     'sp_boundary':  'sp_boundary_root',
-    'fr_bg':        'fr_bg_root',
+    'fr_bg_matched': 'fr_bg_matched_root',
     'real_crop':    'real_crop_root',
     'ai_interior_tgif': 'ai_interior_tgif_root',
     'ai_boundary_tgif': 'ai_boundary_tgif_root',

@@ -61,16 +61,20 @@ REGISTRY: Dict[str, Callable] = {
     # sp_* wrap imd2020, val_split=1.0 (IMD is NEVER trained on anywhere in
     # this study — imd_val_only is a hard rule — so there's no split-hygiene
     # reason to only search its default 10% val slice; use the whole ~1700-
-    # fake dataset for more shots at clearing the interior floor); fr_bg wraps
-    # tgif2 restricted to 'fr' manipulations specifically (a held-out OOD fr
-    # pool, never sagid's own frs — tgif2 also has zero train usage in this
-    # study, so its full val pool is fair game too).
+    # fake dataset for more shots at clearing the interior floor);
+    # fr_bg_matched wraps tgif2 restricted to 'fr' manipulations specifically
+    # (a held-out OOD fr pool, never sagid's own frs — tgif2 also has zero
+    # train usage in this study, so its full val pool is fair game too), with
+    # window sizes drawn from the re-derived tgif2-'sp' ai_interior pool so
+    # the null's size distribution matches the interior fakes' by construction
+    # (replaces the retired fr_bg, whose [floor, 1.6*floor] sizes ran ~1.3x
+    # large and inflated interior AUROC — see region_probes.py docstring).
     # Windows/floors/determinism: lab_utils/data/crop_conditions.py.
     'ai_interior':  lambda root, **kw: _region_probes.build(root, condition='ai_interior', parent=kw.pop('parent', 'sagid'), **kw),
     'ai_boundary':  lambda root, **kw: _region_probes.build(root, condition='ai_boundary', parent=kw.pop('parent', 'sagid'), **kw),
     'sp_interior':  lambda root, **kw: _region_probes.build(root, condition='sp_interior', parent=kw.pop('parent', 'imd2020'), val_split=kw.pop('val_split', 1.0), **kw),
     'sp_boundary':  lambda root, **kw: _region_probes.build(root, condition='sp_boundary', parent=kw.pop('parent', 'imd2020'), val_split=kw.pop('val_split', 1.0), **kw),
-    'fr_bg':        lambda root, **kw: _region_probes.build(root, condition='fr_bg',       parent=kw.pop('parent', 'tgif2'), types=kw.pop('types', {'fr'}), **kw),
+    'fr_bg_matched': lambda root, **kw: _region_probes.build(root, condition='fr_bg_matched', parent=kw.pop('parent', 'tgif2'), types=kw.pop('types', {'fr'}), **kw),
     'real_crop':    lambda root, **kw: _region_probes.build(root, condition='real_crop',   parent=kw.pop('parent', 'sagid'), **kw),
     # Second, ADDITIONAL parent pool for the same three conditions: tgif2's
     # 'sp' manipulations (paste-back AI edits, NOT real-content splices —

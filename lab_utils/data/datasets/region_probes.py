@@ -9,17 +9,30 @@ the window via crop_conditions.apply_crop_window).
 
 Conditions (registry key = Item.source = condition name):
 
-    ai_interior   parent fake, window INSIDE the eroded mask   → AI content, no boundary
-    ai_boundary   parent fake, window straddling the boundary  → AI + real, boundary present
-    sp_interior   same, over a real-content splice parent (casia)
-    sp_boundary   same
-    fr_bg         fr parent, window fully OUTSIDE the mask     → regen-faithful, no edit (emitted as real)
-    real_crop     the SAME interior windows applied to the paired pristine
-                  original                                     → matched-pairs null
+    ai_interior    parent fake, window INSIDE the eroded mask   → AI content, no boundary
+    ai_boundary    parent fake, window straddling the boundary  → AI + real, boundary present
+    sp_interior    same, over a real-content splice parent (casia)
+    sp_boundary    same
+    fr_bg_matched  fr parent, window fully OUTSIDE the mask, (h, w) drawn from
+                   the re-derived ai_interior window-size pool  → regen-faithful,
+                   no edit, size-matched null (emitted as real)
+    real_crop      the SAME interior windows applied to the paired pristine
+                   original                                     → matched-pairs null
 
 Pairing: real_crop re-derives the parent item's 'interior' window group with
 the same deterministic RNG, so fake crop and real crop share identical
 geometry; both carry the same ``meta['pair_stem']`` for matched analysis.
+
+fr_bg_matched replaces the retired 'fr_bg' condition. fr_bg drew window sides
+from [floor, 1.6*floor] while interior sides scale with the mask's inscribed
+rectangle — two different generating processes, so fr_bg ran ~1.3x larger, and
+because image score falls with window size the mismatch inflated interior-vs-
+fr_bg detection AUROC (the §5.1 size-artifact finding; post-hoc reweighting
+cost effective N). fr_bg_matched instead draws (h, w) iid from the size pool
+of an internally re-built ai_interior condition (``size_ref``, default: tgif2
+'sp' parents — the n≈300 subset every corrected comparison restricts to), so
+the null matches the interior size distribution in law, by construction, at
+full N.
 
 Windows / margins / floors / determinism all live in
 lab_utils/data/crop_conditions.py (PROBE_WINDOW_SPEC — the eval-probe-only
@@ -29,8 +42,9 @@ these conditions are never trained on) — nothing geometric is decided here.
 
 from __future__ import annotations
 
+import functools
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 from PIL import Image
@@ -42,6 +56,7 @@ from lab_utils.data.crop_conditions import (
     sample_boundary_windows,
     sample_interior_windows,
     sample_outside_windows,
+    sample_outside_windows_sized,
 )
 from lab_utils.data.dataset import Dataset
 from lab_utils.data.item import Item, make_item_id
@@ -59,13 +74,54 @@ _SAMPLERS = {
 
 # condition → (window group, emit mask?, image side: 'modified' | 'original')
 _CONDITIONS = {
-    'ai_interior': ('interior', True,  'modified'),
-    'ai_boundary': ('boundary', True,  'modified'),
-    'sp_interior': ('interior', True,  'modified'),
-    'sp_boundary': ('boundary', True,  'modified'),
-    'fr_bg':       ('outside',  False, 'modified'),
-    'real_crop':   ('interior', False, 'original'),
+    'ai_interior':   ('interior',        True,  'modified'),
+    'ai_boundary':   ('boundary',        True,  'modified'),
+    'sp_interior':   ('interior',        True,  'modified'),
+    'sp_boundary':   ('boundary',        True,  'modified'),
+    'fr_bg_matched': ('outside_matched', False, 'modified'),
+    'real_crop':     ('interior',        False, 'original'),
 }
+
+# Default reference build for fr_bg_matched's window-size pool: the tgif2-'sp'
+# ai_interior pool — the same parents/windows the eval's ai_interior_tgif
+# registry entry emits, and the tgif↔tgif n≈300 subset all corrected interior
+# comparisons restrict to (fr_bg_matched parents are tgif2 'fr', same root).
+_DEFAULT_SIZE_REF: Dict = {'parent': 'tgif2', 'types': {'sp'}}
+
+
+def _interior_size_pool(
+    root: Path,
+    *,
+    res: Resolution,
+    verify_policy: Optional[VerifyPolicy],
+    max_parents: int,
+    windows_per_item: Optional[int],
+    max_probes: int,
+    parent: str,
+    **parent_kwargs,
+) -> List[Tuple[int, int]]:
+    """Native-pixel (h, w) pairs of the reference ai_interior condition.
+
+    Re-runs the ai_interior build (deterministic — same RNG keying, same gate,
+    same breadth-first cap) and harvests the emitted windows' sizes, so the
+    pool IS the realized interior size distribution, not an approximation."""
+    _, ref_val = build(
+        root, res=res, condition='ai_interior', parent=parent,
+        verify_policy=verify_policy, max_parents=max_parents,
+        windows_per_item=windows_per_item, max_probes=max_probes,
+        **parent_kwargs,
+    )
+    pool: List[Tuple[int, int]] = []
+    for it in ref_val.items:
+        w, h = it.meta['window_native_wh']            # meta stores (w, h)
+        pool.append((int(h), int(w)))
+    if not pool:
+        raise ConfigError(
+            'region_probes._interior_size_pool: reference ai_interior build '
+            f'(parent={parent!r}, root={root}) emitted 0 windows — cannot '
+            'size-match fr_bg_matched against an empty pool'
+        )
+    return pool
 
 
 def _load_mask_in_image_frame(item: Item) -> Optional[np.ndarray]:
@@ -100,6 +156,7 @@ def build(
     max_parents: int = 10000,
     windows_per_item: Optional[int] = None,
     max_probes: int = 300,
+    size_ref: Optional[Dict] = None,
     **parent_kwargs,
 ) -> Tuple[Dataset, Dataset]:
     """Build one probe condition over a parent dataset's val split.
@@ -142,6 +199,12 @@ def build(
                           per-parent depth, never how many distinct source
                           images are represented. Default sits comfortably
                           above the study's ~200-crop-per-condition target.
+        size_ref:         fr_bg_matched only — kwargs for the reference
+                          ai_interior build whose realized window sizes form
+                          the (h, w) draw pool (must include 'parent'; the
+                          rest forwards to that parent's builder). Default
+                          _DEFAULT_SIZE_REF = tgif2 'sp'. Ignored (with a
+                          ConfigError) for other conditions.
         **parent_kwargs:  Forwarded to the parent builder (e.g. val_split).
     """
     if condition not in _CONDITIONS:
@@ -150,7 +213,26 @@ def build(
             f'known: {sorted(_CONDITIONS)}'
         )
     group, emit_mask, image_side = _CONDITIONS[condition]
-    sampler = _SAMPLERS[group]
+    if group == 'outside_matched':
+        ref = dict(_DEFAULT_SIZE_REF if size_ref is None else size_ref)
+        size_pool = _interior_size_pool(
+            root, res=res, verify_policy=verify_policy,
+            max_parents=max_parents, windows_per_item=windows_per_item,
+            max_probes=max_probes, parent=ref.pop('parent'), **ref,
+        )
+        log_line(
+            f'[data] {condition}: size pool from ai_interior ref '
+            f'(n={len(size_pool)}, median side='
+            f'{int(np.median([min(hw) for hw in size_pool]))}px)'
+        )
+        sampler = functools.partial(sample_outside_windows_sized, size_pool=size_pool)
+    elif size_ref is not None:
+        raise ConfigError(
+            f'region_probes.build: size_ref only applies to fr_bg_matched, '
+            f'got condition {condition!r}'
+        )
+    else:
+        sampler = _SAMPLERS[group]
 
     # Lazy import avoids a registry ↔ region_probes import cycle.
     from lab_utils.data.datasets.registry import REGISTRY

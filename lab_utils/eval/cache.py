@@ -115,8 +115,6 @@ def build_cache(
     Returns:
         List of item_ids written (in order).
     """
-    from PIL import Image as PILImage
-
     from lab_utils.eval.fetch import model_info
     from lab_utils.eval.preprocess import load_image_tensor
 
@@ -134,8 +132,11 @@ def build_cache(
             skipped += 1
             continue
 
-        img_pil = PILImage.open(item.image).convert('RGB')
-        img_t = load_image_tensor(img_pil, model.res, device=device)
+        # Pass the Item itself (NOT a pre-opened PIL): _resolve_pil applies
+        # region-probe crop windows (meta['crop_window']) for Item inputs —
+        # opening the image here would silently cache the FULL frame for
+        # probe items, diverging from eval.py's live path.
+        img_t = load_image_tensor(item, model.res, device=device)
 
         info = model_info(model, img_t, device=device, amp=amp, amp_dtype=amp_dtype)
         np.savez_compressed(str(out_path), **_info_to_arrays(info))
