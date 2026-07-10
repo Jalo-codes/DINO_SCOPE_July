@@ -11,6 +11,7 @@ Allowed tags (enforced):
     [ft]      [ft-eval]  [bp]      [bp-eval]
     [sb]      [sb-eval]  [zh]      [zh-eval]  [zb]      [zb-eval]
     [bench]   [predict]  [dd]       [viz]      [probe]   [full_fakes]
+    [sweep]
 """
 
 import datetime
@@ -31,6 +32,7 @@ ALLOWED_TAGS = frozenset([
     '[ft]', '[ft-eval]', '[eval-num]', '[bp]', '[bp-eval]',
     '[sb]', '[sb-eval]', '[zh]', '[zh-eval]', '[zb]', '[zb-eval]',
     '[bench]', '[predict]', '[dd]', '[viz]', '[probe]', '[full_fakes]',
+    '[sweep]',
 ])
 
 
