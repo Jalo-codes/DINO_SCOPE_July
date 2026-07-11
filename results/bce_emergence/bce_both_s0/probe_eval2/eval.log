@@ -1,0 +1,208 @@
+# ============================================================
+# log opened  pid=3429506  ts=2026-07-10T00:24:32  git=0255174
+# python=3.10.12  torch=2.7.1+cu118  device=NVIDIA GeForce RTX 2080 Ti 10.6GB  n_gpu=2
+# cmd: /home/fri-team-4/fri-team4/DINO_SCOPE_July/experiments/scripts/eval.py --checkpoint /media/ssd/runs/bce_emergence/bce_both_s0/best.pt --decoder threshold --amp_dtype float16 --cache_dir /media/ssd/runs/bce_emergence/bce_both_s0/probe_cache --ai_interior_root /media/ssd/DINO_SCOPE_DATA/SAGI_D --ai_boundary_root /media/ssd/DINO_SCOPE_DATA/SAGI_D --real_crop_root /media/ssd/DINO_SCOPE_DATA/SAGI_D --sp_interior_root /media/ssd/DINO_SCOPE_DATA/IMD2020 --sp_boundary_root /media/ssd/DINO_SCOPE_DATA/IMD2020 --fr_bg_matched_root /media/ssd/DINO_SCOPE_DATA/content/flux_originals --ai_interior_tgif_root /media/ssd/DINO_SCOPE_DATA/content/flux_originals --ai_boundary_tgif_root /media/ssd/DINO_SCOPE_DATA/content/flux_originals --real_crop_tgif_root /media/ssd/DINO_SCOPE_DATA/content/flux_originals --out_dir results/bce_emergence/bce_both_s0/probe_eval2
+# ============================================================
+[eval] loading checkpoint: /media/ssd/runs/bce_emergence/bce_both_s0/best.pt
+[ckpt] loaded epoch=9 ← /media/ssd/runs/bce_emergence/bce_both_s0/best.pt
+[data] Indexing inpaint (sagid): /media/ssd/DINO_SCOPE_DATA/SAGI_D
+[data] sagid train kept=3046 dropped=0/3046 warns=warn_mask_native_resize:4
+[data] sagid val kept=338 dropped=0/338 warns=warn_mask_native_resize:2
+[data] inpaint sagid: train=3046 val=338 triplets=1692 unmatched_mods=0
+[data] ai_interior (sagid @ /media/ssd/DINO_SCOPE_DATA/SAGI_D): 50 probes from 169/169 parents scanned (gated=140, available_in_scanned=50, stopped_early=False, spec=v5)
+[eval] ai_interior: 50 val items
+[data] Indexing inpaint (sagid): /media/ssd/DINO_SCOPE_DATA/SAGI_D
+[data] sagid train kept=3046 dropped=0/3046 warns=warn_mask_native_resize:4
+[data] sagid val kept=338 dropped=0/338 warns=warn_mask_native_resize:2
+[data] inpaint sagid: train=3046 val=338 triplets=1692 unmatched_mods=0
+[data] ai_boundary (sagid @ /media/ssd/DINO_SCOPE_DATA/SAGI_D): 300 probes from 169/169 parents scanned (gated=29, available_in_scanned=590, stopped_early=False, spec=v5)
+[eval] ai_boundary: 300 val items
+[data] Indexing IMD2020: /media/ssd/DINO_SCOPE_DATA/IMD2020
+[data] imd2020 train kept=0 dropped=0/0
+[data] imd2020 val kept=2401 dropped=23/2424 reasons=mask_area_too_small:23
+[data] IMD2020: train=0 val=2401 real_cases=414 splices=2010 skipped_unmasked=0
+[data] sp_interior (imd2020 @ /media/ssd/DINO_SCOPE_DATA/IMD2020): 120 probes from 1987/1987 parents scanned (gated=1892, available_in_scanned=120, stopped_early=False, spec=v5)
+[eval] sp_interior: 120 val items
+[data] Indexing IMD2020: /media/ssd/DINO_SCOPE_DATA/IMD2020
+[data] imd2020 train kept=0 dropped=0/0
+[data] imd2020 val kept=2401 dropped=23/2424 reasons=mask_area_too_small:23
+[data] IMD2020: train=0 val=2401 real_cases=414 splices=2010 skipped_unmasked=0
+[data] sp_boundary (imd2020 @ /media/ssd/DINO_SCOPE_DATA/IMD2020): 300 probes from 551/1987 parents scanned (gated=251, available_in_scanned=1254, stopped_early=True, spec=v5)
+[eval] sp_boundary: 300 val items
+[data] Indexing tgif2 (341 coco_ids): /media/ssd/DINO_SCOPE_DATA/content/flux_originals/tgif2_index.json
+[data] tgif2 train kept=0 dropped=0/0
+[data] tgif2 val kept=9547 dropped=1/9548 reasons=image_corrupt:1
+[data] tgif2: train=0 val=9547 coco_ids=341 train_frac=0.0 max_per_cell=None eval_per_cell=None types=['sp']
+[data] ai_interior (tgif2 @ /media/ssd/DINO_SCOPE_DATA/content/flux_originals): 300 probes from 2818/9206 parents scanned (gated=2518, available_in_scanned=358, stopped_early=True, spec=v5)
+[data] fr_bg_matched: size pool from ai_interior ref (n=300, median side=262px)
+[data] Indexing tgif2 (341 coco_ids): /media/ssd/DINO_SCOPE_DATA/content/flux_originals/tgif2_index.json
+[data] tgif2 train kept=0 dropped=0/0
+[data] tgif2 val kept=9059 dropped=489/9548 reasons=image_corrupt:1,image_degenerate:272,mask_aspect_misaligned:216 warns=warn_mask_native_resize:6147
+[data] tgif2: train=0 val=9059 coco_ids=341 train_frac=0.0 max_per_cell=None eval_per_cell=None types=['fr']
+[data] fr_bg_matched (tgif2 @ /media/ssd/DINO_SCOPE_DATA/content/flux_originals): 300 probes from 300/8718 parents scanned (gated=0, available_in_scanned=2112, stopped_early=True, spec=v5)
+[eval] fr_bg_matched: 300 val items
+[data] Indexing inpaint (sagid): /media/ssd/DINO_SCOPE_DATA/SAGI_D
+[data] sagid train kept=3046 dropped=0/3046 warns=warn_mask_native_resize:4
+[data] sagid val kept=338 dropped=0/338 warns=warn_mask_native_resize:2
+[data] inpaint sagid: train=3046 val=338 triplets=1692 unmatched_mods=0
+[data] real_crop (sagid @ /media/ssd/DINO_SCOPE_DATA/SAGI_D): 50 probes from 169/169 parents scanned (gated=140, unpaired=0, available_in_scanned=50, stopped_early=False, spec=v5)
+[eval] real_crop: 50 val items
+[data] Indexing tgif2 (341 coco_ids): /media/ssd/DINO_SCOPE_DATA/content/flux_originals/tgif2_index.json
+[data] tgif2 train kept=0 dropped=0/0
+[data] tgif2 val kept=9547 dropped=1/9548 reasons=image_corrupt:1
+[data] tgif2: train=0 val=9547 coco_ids=341 train_frac=0.0 max_per_cell=None eval_per_cell=None types=['sp']
+[data] ai_interior (tgif2 @ /media/ssd/DINO_SCOPE_DATA/content/flux_originals): 300 probes from 2818/9206 parents scanned (gated=2518, available_in_scanned=358, stopped_early=True, spec=v5)
+[eval] ai_interior_tgif: 300 val items
+[data] Indexing tgif2 (341 coco_ids): /media/ssd/DINO_SCOPE_DATA/content/flux_originals/tgif2_index.json
+[data] tgif2 train kept=0 dropped=0/0
+[data] tgif2 val kept=9547 dropped=1/9548 reasons=image_corrupt:1
+[data] tgif2: train=0 val=9547 coco_ids=341 train_frac=0.0 max_per_cell=None eval_per_cell=None types=['sp']
+[data] ai_boundary (tgif2 @ /media/ssd/DINO_SCOPE_DATA/content/flux_originals): 300 probes from 426/9206 parents scanned (gated=126, available_in_scanned=1129, stopped_early=True, spec=v5)
+[eval] ai_boundary_tgif: 300 val items
+[data] Indexing tgif2 (341 coco_ids): /media/ssd/DINO_SCOPE_DATA/content/flux_originals/tgif2_index.json
+[data] tgif2 train kept=0 dropped=0/0
+[data] tgif2 val kept=9547 dropped=1/9548 reasons=image_corrupt:1
+[data] tgif2: train=0 val=9547 coco_ids=341 train_frac=0.0 max_per_cell=None eval_per_cell=None types=['sp']
+[data] real_crop (tgif2 @ /media/ssd/DINO_SCOPE_DATA/content/flux_originals): 300 probes from 2818/9206 parents scanned (gated=2518, unpaired=0, available_in_scanned=358, stopped_early=True, spec=v5)
+[eval] real_crop_tgif: 300 val items
+[eval] building/loading cache: /media/ssd/runs/bce_emergence/bce_both_s0/probe_cache
+[eval] cache built: wrote=2020 skipped=0 total=2020 dir=/media/ssd/runs/bce_emergence/bce_both_s0/probe_cache
+[eval] decoder=threshold
+[eval] mask-resize: (1024, 682) → (2048, 1364) (same aspect, NEAREST) /media/ssd/DINO_SCOPE_DATA/SAGI_D/mask/triplet_00961.png
+[eval] mask-resize: (612, 612) → (2048, 2048) (same aspect, NEAREST) /media/ssd/DINO_SCOPE_DATA/SAGI_D/mask/triplet_01670.png
+[eval] mask-resize: (1024, 682) → (2048, 1364) (same aspect, NEAREST) /media/ssd/DINO_SCOPE_DATA/SAGI_D/mask/triplet_00961.png
+[eval] mask-resize: (612, 612) → (2048, 2048) (same aspect, NEAREST) /media/ssd/DINO_SCOPE_DATA/SAGI_D/mask/triplet_01670.png
+[eval] mask-resize: (1024, 682) → (2048, 1364) (same aspect, NEAREST) /media/ssd/DINO_SCOPE_DATA/SAGI_D/mask/triplet_00961.png
+[eval] threshold ─── summary: n_splice=1370 n_real=650 ───
+[eval] threshold image_auc: 0.9232
+[eval] threshold splices (all):
+[eval] threshold all         f1: n=1370  med=0.8679  mean=0.6767±0.3675  [p25=0.4614, p75=0.9597]
+[eval] threshold all        iou: n=1370  med=0.7667  mean=0.6112±0.3638  [p25=0.2999, p75=0.9225]
+[eval] threshold all  precision: n=1370  med=0.8951  mean=0.7256±0.3483  [p25=0.6025, p75=0.9795]
+[eval] threshold all     recall: n=1370  med=0.9828  mean=0.7117±0.4027  [p25=0.3425, p75=0.9989]
+[eval] threshold splices bucket=tiny (n=110):
+[eval] threshold bucket=tiny         f1: n= 110  med=0.9123  mean=0.8021±0.2441  [p25=0.7576, p75=0.9516]
+[eval] threshold bucket=tiny        iou: n= 110  med=0.8387  mean=0.7224±0.2645  [p25=0.6098, p75=0.9077]
+[eval] threshold bucket=tiny  precision: n= 110  med=0.8690  mean=0.7664±0.2374  [p25=0.6606, p75=0.9343]
+[eval] threshold bucket=tiny     recall: n= 110  med=0.9896  mean=0.8922±0.2489  [p25=0.9523, p75=0.9971]
+[eval] threshold splices bucket=small (n=423):
+[eval] threshold bucket=small         f1: n= 423  med=0.8866  mean=0.7313±0.3215  [p25=0.6745, p75=0.9558]
+[eval] threshold bucket=small        iou: n= 423  med=0.7963  mean=0.6568±0.3219  [p25=0.5089, p75=0.9154]
+[eval] threshold bucket=small  precision: n= 423  med=0.8603  mean=0.7183±0.3024  [p25=0.5797, p75=0.9369]
+[eval] threshold bucket=small     recall: n= 423  med=0.9902  mean=0.7997±0.3544  [p25=0.8648, p75=0.9989]
+[eval] threshold splices bucket=medium (n=609):
+[eval] threshold bucket=medium         f1: n= 609  med=0.7683  mean=0.5897±0.4042  [p25=0.0616, p75=0.9577]
+[eval] threshold bucket=medium        iou: n= 609  med=0.6238  mean=0.5301±0.3950  [p25=0.0318, p75=0.9188]
+[eval] threshold bucket=medium  precision: n= 609  med=0.9299  mean=0.7062±0.3979  [p25=0.5110, p75=1.0000]
+[eval] threshold bucket=medium     recall: n= 609  med=0.8475  mean=0.5909±0.4329  [p25=0.0357, p75=0.9967]
+[eval] threshold splices bucket=large (n=228):
+[eval] threshold bucket=large         f1: n= 228  med=0.9134  mean=0.7474±0.3409  [p25=0.7223, p75=0.9803]
+[eval] threshold bucket=large        iou: n= 228  med=0.8407  mean=0.6893±0.3451  [p25=0.5653, p75=0.9613]
+[eval] threshold bucket=large  precision: n= 228  med=0.9282  mean=0.7713±0.3240  [p25=0.6747, p75=1.0000]
+[eval] threshold bucket=large     recall: n= 228  med=0.9939  mean=0.7838±0.3695  [p25=0.8018, p75=1.0000]
+[eval] threshold reals accuracy: n= 650  med=1.0000  mean=0.9833±0.0730  [p25=1.0000, p75=1.0000]
+[eval] wrote 2020 records -> results/bce_emergence/bce_both_s0/probe_eval2/threshold_records.csv
+# ============================================================
+# log opened  pid=3429953  ts=2026-07-10T01:05:27  git=f7cf733
+# python=3.10.12  torch=2.7.1+cu118  device=NVIDIA GeForce RTX 2080 Ti 10.6GB  n_gpu=2
+# cmd: /home/fri-team-4/fri-team4/DINO_SCOPE_July/experiments/scripts/eval.py --checkpoint /media/ssd/runs/bce_emergence/bce_both_s0/best.pt --decoder threshold --amp_dtype float16 --cache_dir /media/ssd/runs/bce_emergence/bce_both_s0/probe_cache --ai_interior_root /media/ssd/DINO_SCOPE_DATA/SAGI_D --ai_boundary_root /media/ssd/DINO_SCOPE_DATA/SAGI_D --real_crop_root /media/ssd/DINO_SCOPE_DATA/SAGI_D --sp_interior_root /media/ssd/DINO_SCOPE_DATA/IMD2020 --sp_boundary_root /media/ssd/DINO_SCOPE_DATA/IMD2020 --fr_bg_matched_root /media/ssd/DINO_SCOPE_DATA/content/flux_originals --ai_interior_tgif_root /media/ssd/DINO_SCOPE_DATA/content/flux_originals --ai_boundary_tgif_root /media/ssd/DINO_SCOPE_DATA/content/flux_originals --real_crop_tgif_root /media/ssd/DINO_SCOPE_DATA/content/flux_originals --out_dir results/bce_emergence/bce_both_s0/probe_eval2
+# ============================================================
+[eval] loading checkpoint: /media/ssd/runs/bce_emergence/bce_both_s0/best.pt
+[ckpt] loaded epoch=9 ← /media/ssd/runs/bce_emergence/bce_both_s0/best.pt
+[data] Indexing inpaint (sagid): /media/ssd/DINO_SCOPE_DATA/SAGI_D
+[data] sagid train kept=3046 dropped=0/3046 warns=warn_mask_native_resize:4
+[data] sagid val kept=338 dropped=0/338 warns=warn_mask_native_resize:2
+[data] inpaint sagid: train=3046 val=338 triplets=1692 unmatched_mods=0
+[data] ai_interior (sagid @ /media/ssd/DINO_SCOPE_DATA/SAGI_D): 50 probes from 169/169 parents scanned (gated=140, available_in_scanned=50, stopped_early=False, spec=v5)
+[eval] ai_interior: 50 val items
+[data] Indexing inpaint (sagid): /media/ssd/DINO_SCOPE_DATA/SAGI_D
+[data] sagid train kept=3046 dropped=0/3046 warns=warn_mask_native_resize:4
+[data] sagid val kept=338 dropped=0/338 warns=warn_mask_native_resize:2
+[data] inpaint sagid: train=3046 val=338 triplets=1692 unmatched_mods=0
+[data] ai_boundary (sagid @ /media/ssd/DINO_SCOPE_DATA/SAGI_D): 300 probes from 169/169 parents scanned (gated=29, available_in_scanned=590, stopped_early=False, spec=v5)
+[eval] ai_boundary: 300 val items
+[data] Indexing IMD2020: /media/ssd/DINO_SCOPE_DATA/IMD2020
+[data] imd2020 train kept=0 dropped=0/0
+[data] imd2020 val kept=2401 dropped=23/2424 reasons=mask_area_too_small:23
+[data] IMD2020: train=0 val=2401 real_cases=414 splices=2010 skipped_unmasked=0
+[data] sp_interior (imd2020 @ /media/ssd/DINO_SCOPE_DATA/IMD2020): 120 probes from 1987/1987 parents scanned (gated=1892, available_in_scanned=120, stopped_early=False, spec=v5)
+[eval] sp_interior: 120 val items
+[data] Indexing IMD2020: /media/ssd/DINO_SCOPE_DATA/IMD2020
+[data] imd2020 train kept=0 dropped=0/0
+[data] imd2020 val kept=2401 dropped=23/2424 reasons=mask_area_too_small:23
+[data] IMD2020: train=0 val=2401 real_cases=414 splices=2010 skipped_unmasked=0
+[data] sp_boundary (imd2020 @ /media/ssd/DINO_SCOPE_DATA/IMD2020): 300 probes from 551/1987 parents scanned (gated=251, available_in_scanned=1254, stopped_early=True, spec=v5)
+[eval] sp_boundary: 300 val items
+[data] Indexing tgif2 (341 coco_ids): /media/ssd/DINO_SCOPE_DATA/content/flux_originals/tgif2_index.json
+[data] tgif2 train kept=0 dropped=0/0
+[data] tgif2 val kept=9547 dropped=1/9548 reasons=image_corrupt:1
+[data] tgif2: train=0 val=9547 coco_ids=341 train_frac=0.0 max_per_cell=None eval_per_cell=None types=['sp']
+[data] ai_interior (tgif2 @ /media/ssd/DINO_SCOPE_DATA/content/flux_originals): 300 probes from 2818/9206 parents scanned (gated=2518, available_in_scanned=358, stopped_early=True, spec=v5)
+[data] fr_bg_matched: size pool from ai_interior ref (n=300, median side=262px)
+[data] Indexing tgif2 (341 coco_ids): /media/ssd/DINO_SCOPE_DATA/content/flux_originals/tgif2_index.json
+[data] tgif2 train kept=0 dropped=0/0
+[data] tgif2 val kept=9059 dropped=489/9548 reasons=image_corrupt:1,image_degenerate:272,mask_aspect_misaligned:216 warns=warn_mask_native_resize:6147
+[data] tgif2: train=0 val=9059 coco_ids=341 train_frac=0.0 max_per_cell=None eval_per_cell=None types=['fr']
+[data] fr_bg_matched (tgif2 @ /media/ssd/DINO_SCOPE_DATA/content/flux_originals): 300 probes from 300/8718 parents scanned (gated=0, available_in_scanned=2112, stopped_early=True, spec=v5)
+[eval] fr_bg_matched: 300 val items
+[data] Indexing inpaint (sagid): /media/ssd/DINO_SCOPE_DATA/SAGI_D
+[data] sagid train kept=3046 dropped=0/3046 warns=warn_mask_native_resize:4
+[data] sagid val kept=338 dropped=0/338 warns=warn_mask_native_resize:2
+[data] inpaint sagid: train=3046 val=338 triplets=1692 unmatched_mods=0
+[data] real_crop (sagid @ /media/ssd/DINO_SCOPE_DATA/SAGI_D): 50 probes from 169/169 parents scanned (gated=140, unpaired=0, available_in_scanned=50, stopped_early=False, spec=v5)
+[eval] real_crop: 50 val items
+[data] Indexing tgif2 (341 coco_ids): /media/ssd/DINO_SCOPE_DATA/content/flux_originals/tgif2_index.json
+[data] tgif2 train kept=0 dropped=0/0
+[data] tgif2 val kept=9547 dropped=1/9548 reasons=image_corrupt:1
+[data] tgif2: train=0 val=9547 coco_ids=341 train_frac=0.0 max_per_cell=None eval_per_cell=None types=['sp']
+[data] ai_interior (tgif2 @ /media/ssd/DINO_SCOPE_DATA/content/flux_originals): 300 probes from 2818/9206 parents scanned (gated=2518, available_in_scanned=358, stopped_early=True, spec=v5)
+[eval] ai_interior_tgif: 300 val items
+[data] Indexing tgif2 (341 coco_ids): /media/ssd/DINO_SCOPE_DATA/content/flux_originals/tgif2_index.json
+[data] tgif2 train kept=0 dropped=0/0
+[data] tgif2 val kept=9547 dropped=1/9548 reasons=image_corrupt:1
+[data] tgif2: train=0 val=9547 coco_ids=341 train_frac=0.0 max_per_cell=None eval_per_cell=None types=['sp']
+[data] ai_boundary (tgif2 @ /media/ssd/DINO_SCOPE_DATA/content/flux_originals): 300 probes from 426/9206 parents scanned (gated=126, available_in_scanned=1129, stopped_early=True, spec=v5)
+[eval] ai_boundary_tgif: 300 val items
+[data] Indexing tgif2 (341 coco_ids): /media/ssd/DINO_SCOPE_DATA/content/flux_originals/tgif2_index.json
+[data] tgif2 train kept=0 dropped=0/0
+[data] tgif2 val kept=9547 dropped=1/9548 reasons=image_corrupt:1
+[data] tgif2: train=0 val=9547 coco_ids=341 train_frac=0.0 max_per_cell=None eval_per_cell=None types=['sp']
+[data] real_crop (tgif2 @ /media/ssd/DINO_SCOPE_DATA/content/flux_originals): 300 probes from 2818/9206 parents scanned (gated=2518, unpaired=0, available_in_scanned=358, stopped_early=True, spec=v5)
+[eval] real_crop_tgif: 300 val items
+[eval] building/loading cache: /media/ssd/runs/bce_emergence/bce_both_s0/probe_cache
+[eval] cache built: wrote=0 skipped=2020 total=2020 dir=/media/ssd/runs/bce_emergence/bce_both_s0/probe_cache
+[eval] decoder=threshold
+[eval] mask-resize: (1024, 682) → (2048, 1364) (same aspect, NEAREST) /media/ssd/DINO_SCOPE_DATA/SAGI_D/mask/triplet_00961.png
+[eval] mask-resize: (612, 612) → (2048, 2048) (same aspect, NEAREST) /media/ssd/DINO_SCOPE_DATA/SAGI_D/mask/triplet_01670.png
+[eval] mask-resize: (1024, 682) → (2048, 1364) (same aspect, NEAREST) /media/ssd/DINO_SCOPE_DATA/SAGI_D/mask/triplet_00961.png
+[eval] mask-resize: (612, 612) → (2048, 2048) (same aspect, NEAREST) /media/ssd/DINO_SCOPE_DATA/SAGI_D/mask/triplet_01670.png
+[eval] mask-resize: (1024, 682) → (2048, 1364) (same aspect, NEAREST) /media/ssd/DINO_SCOPE_DATA/SAGI_D/mask/triplet_00961.png
+[eval] threshold ─── summary: n_splice=1370 n_real=650 ───
+[eval] threshold image_auc: 0.9232
+[eval] threshold splices (all):
+[eval] threshold all         f1: n=1370  med=0.8679  mean=0.6767±0.3675  [p25=0.4614, p75=0.9597]
+[eval] threshold all        iou: n=1370  med=0.7667  mean=0.6112±0.3638  [p25=0.2999, p75=0.9225]
+[eval] threshold all  precision: n=1370  med=0.8951  mean=0.7256±0.3483  [p25=0.6025, p75=0.9795]
+[eval] threshold all     recall: n=1370  med=0.9828  mean=0.7117±0.4027  [p25=0.3425, p75=0.9989]
+[eval] threshold splices bucket=tiny (n=110):
+[eval] threshold bucket=tiny         f1: n= 110  med=0.9123  mean=0.8021±0.2441  [p25=0.7576, p75=0.9516]
+[eval] threshold bucket=tiny        iou: n= 110  med=0.8387  mean=0.7224±0.2645  [p25=0.6098, p75=0.9077]
+[eval] threshold bucket=tiny  precision: n= 110  med=0.8690  mean=0.7664±0.2374  [p25=0.6606, p75=0.9343]
+[eval] threshold bucket=tiny     recall: n= 110  med=0.9896  mean=0.8922±0.2489  [p25=0.9523, p75=0.9971]
+[eval] threshold splices bucket=small (n=423):
+[eval] threshold bucket=small         f1: n= 423  med=0.8866  mean=0.7313±0.3215  [p25=0.6745, p75=0.9558]
+[eval] threshold bucket=small        iou: n= 423  med=0.7963  mean=0.6568±0.3219  [p25=0.5089, p75=0.9154]
+[eval] threshold bucket=small  precision: n= 423  med=0.8603  mean=0.7183±0.3024  [p25=0.5797, p75=0.9369]
+[eval] threshold bucket=small     recall: n= 423  med=0.9902  mean=0.7997±0.3544  [p25=0.8648, p75=0.9989]
+[eval] threshold splices bucket=medium (n=609):
+[eval] threshold bucket=medium         f1: n= 609  med=0.7683  mean=0.5897±0.4042  [p25=0.0616, p75=0.9577]
+[eval] threshold bucket=medium        iou: n= 609  med=0.6238  mean=0.5301±0.3950  [p25=0.0318, p75=0.9188]
+[eval] threshold bucket=medium  precision: n= 609  med=0.9299  mean=0.7062±0.3979  [p25=0.5110, p75=1.0000]
+[eval] threshold bucket=medium     recall: n= 609  med=0.8475  mean=0.5909±0.4329  [p25=0.0357, p75=0.9967]
+[eval] threshold splices bucket=large (n=228):
+[eval] threshold bucket=large         f1: n= 228  med=0.9134  mean=0.7474±0.3409  [p25=0.7223, p75=0.9803]
+[eval] threshold bucket=large        iou: n= 228  med=0.8407  mean=0.6893±0.3451  [p25=0.5653, p75=0.9613]
+[eval] threshold bucket=large  precision: n= 228  med=0.9282  mean=0.7713±0.3240  [p25=0.6747, p75=1.0000]
+[eval] threshold bucket=large     recall: n= 228  med=0.9939  mean=0.7838±0.3695  [p25=0.8018, p75=1.0000]
+[eval] threshold reals accuracy: n= 650  med=1.0000  mean=0.9833±0.0730  [p25=1.0000, p75=1.0000]
+[eval] wrote 2020 records -> results/bce_emergence/bce_both_s0/probe_eval2/threshold_records.csv
