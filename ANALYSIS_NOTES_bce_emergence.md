@@ -232,6 +232,94 @@ check). eval_robustness fixes that made this possible: probe crop windows now
 respected (was full-frame), per-item CSVs + durable eval.log added, pixel-res
 masks stripped from accumulated records (the old host-OOM cause).
 
+## Epoch-5 rerun, first valid results [2026-07-11, partial — 4/6 conditions]
+
+Data: probe_eval2 @ epoch_0005 for cont_both/cont_inpaint/cont_splice; bce_both's
+epoch-5 clean numbers come from the noise ladder's `clean` level (same items, same
+geometry, no corruption — a probe_eval2 equivalent). bce_inpaint/bce_splice
+probe_eval2 CSVs are STILL the stale best.pt run — excluded here. Analysis script:
+scratchpad analyze_epoch5.py (this box).
+
+**Validity PASS.** Old probe_eval (epoch 5) vs new epoch-5 data on 1720 shared
+items: mean |Δ image_score| ≤ 2e-5 per condition, ~90% bit-identical (residual =
+fp16 nondeterminism). The rerun provably evaluates the study checkpoints.
+
+**Interior detection, matched null (ai_interior vs real_crop, tgif2, n=300/300),
+mean AUROC [95% bootstrap CI, 4000×]:**
+
+| condition    | int vs real_crop     | int vs fr_bg_matched | fr_bg_matched vs real_crop |
+|--------------|----------------------|----------------------|----------------------------|
+| BCE·both     | 0.839 [0.801,0.873]  | 0.773 [0.732,0.811]  | 0.635 [0.589,0.680]        |
+| Cont·both    | 0.862 [0.829,0.892]  | 0.680 [0.636,0.723]  | 0.808 [0.772,0.843]        |
+| Cont·inpaint | 0.901 [0.875,0.925]  | 0.724 [0.679,0.765]  | 0.852 [0.819,0.882]        |
+| Cont·splice  | 0.719 [0.678,0.759]  | 0.602 [0.556,0.647]  | 0.606 [0.561,0.651]        |
+
+Paired ΔAUROC (joint 4000× resample, same index draws): BCE·both − Cont·both =
+−0.024 [−0.059, +0.010] (ns); Cont·inpaint − BCE·both = +0.063 [+0.029, +0.097]
+(sig); BCE·both − Cont·inpaint on int-vs-fr_bg_matched = +0.049 [+0.013, +0.087]
+(sig).
+
+**Signal decomposition (the fr_bg_matched column is the new instrument):**
+fr_bg_matched windows sit on regenerated-but-unedited background, so
+fr_bg_matched-vs-real_crop AUROC reads out pure "regen texture anywhere"
+sensitivity with the size artifact gone. Cont·inpaint's interior lead (0.901) is
+mostly THAT signal (its fr_bg-vs-real = 0.852, nearly as high); BCE·both's
+interior detection is the most edit-specific (highest int-vs-fr_bg 0.773, lowest
+fr_bg-vs-real 0.635). Note all three inpaint-trained cells had
+fr_bg_negative_prob=0.12 — the "call regen background clean" training took for
+BCE's image head but NOT the contrastive cells'. Refines the synthesis: the
+contrastive image head detects "this passed through a generator"; the BCE image
+head detects "this window is edited."
+
+**Boundary/sp detection (vs pooled reals):** all ≥0.93 on in-domain strata;
+generalization gaps where expected (Cont·inpaint sp_boundary 0.874; Cont·splice
+ai_boundary 0.932). Cont·splice leads sp_interior (0.837 vs ~0.73).
+
+**Oracle sweep verdict on the boundary-localization gap (clean, BCE·both):**
+ai_boundary ORACLE best-t F1 = 0.8023 at t=0.55 vs 0.8018 at t=0.50 — the
+threshold was already optimal. Cont·both ai_boundary = 0.871 with fixed k=2
+k-means. The boundary gap is NOT calibration; it's features (upper-envelope vs
+production decoding, and BCE still loses). sp_boundary oracle 0.720 vs Cont·both
+0.813 — same conclusion. Interior oracle "rescues" (t=0.01 → 0.82) are mechanical
+(all-fake crops reward predict-everything) — rule 3, ignore.
+
+**BCE·both JPEG ladder (epoch 5, complete; AUROC per level, null corrupted
+identically within level):**
+
+| level   | int vs rc (tgif2) | ai_bnd vs pool | sp_bnd vs pool | fr_bg_m vs rc |
+|---------|-------------------|----------------|----------------|---------------|
+| clean   | 0.839             | 0.984          | 0.978          | 0.635         |
+| jpeg_90 | 0.824             | 0.979          | 0.987          | 0.585         |
+| jpeg_70 | 0.775             | 0.960          | 0.990          | 0.508         |
+| jpeg_50 | 0.731             | 0.939          | 0.984          | 0.486         |
+| jpeg_30 | 0.672             | 0.910          | 0.969          | 0.468         |
+
+Three ladder reads (BCE·both only so far):
+1. **fr_bg_matched-vs-real hits chance at jpeg_70** (0.508 [0.460,0.554]) — the
+   background-regen fingerprint is ~pure high-frequency; JPEG q70 erases it.
+2. **Interior detection does NOT collapse** (0.775 at q70, 0.672 [0.628,0.715] at
+   q30 — still above chance) — the edit signal has a mid/low-frequency component
+   beyond regen texture.
+3. **sp_boundary is FLAT** (0.978→0.990→0.969) — the predicted sanity anchor holds;
+   seam evidence is compression-robust.
+Prediction for the pending cont ladders: if Cont·inpaint's interior detection is
+mostly regen texture (per the decomposition above), its int-vs-real AUROC should
+crash toward chance by jpeg_70 while BCE·both retains ~0.78. Falsifiable as soon
+as the cont_both/cont_inpaint ladders land.
+
+Localization under the ladder at fixed t=0.5 (mean F1, fakes): ai_boundary
+0.802→0.589, sp_boundary 0.687→0.614, interiors collapse (0.427→0.171 /
+0.155→0.099). Fixed-t decay confounds signal loss with calibration drift until the
+per-level oracle sweeps land (jpeg_90..30 pending); the AUROC columns above are
+threshold-free and unaffected. Caveat for all ladder claims: q≤80 is OOD w.r.t.
+training aug (light tier: JPEG q∈[88,98] @ p=0.25), identical across conditions,
+so relative decay comparisons are clean but absolute decay mixes in generic
+distribution-shift fragility.
+
+Still pending: bce_inpaint/bce_splice epoch-5 probe_eval2 + clean threshold_sweeps
+(current CSVs stale best.pt), cont noise ladders, per-level oracle sweeps
+(only bce_both/clean committed).
+
 ## Figure inventory (artifacts in Claude Science project proj_6a53bb0928d9)
 fig1 fullfakes aggregate · fig2 probe by-type (F1/IoU/AUROC/imgscore/predpos) · fig3
 generator AUROC · fig4 comparisons · fig5 sp_interior distribution · fig6 bce-vs-cont
