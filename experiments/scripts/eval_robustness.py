@@ -24,7 +24,7 @@ import torch
 from PIL import Image, ImageFilter
 from tqdm import tqdm
 
-from lab_utils.eval.aggregate import save_summary_json
+from lab_utils.eval.aggregate import save_summary_json, write_records_csv
 from lab_utils.eval.decode.hdbscan import decode_hdbscan
 from lab_utils.eval.decode.kmeans import decode_kmeans
 from lab_utils.eval.decode.threshold import decode_threshold
@@ -34,9 +34,9 @@ from lab_utils.eval.metric import metric as eval_metric
 from lab_utils.eval.record import EvalRecord
 from lab_utils.eval.val_sources import add_source_root_args, collect_val_items_by_source
 from lab_utils.errors import DataError
-from lab_utils.logging.text import log_line
+from lab_utils.logging.text import install_log, log_line
 from lab_utils.train.distributed import unwrap_model
-from lab_utils.eval.preprocess import load_image_tensor
+from lab_utils.eval.preprocess import _resolve_pil, load_image_tensor
 from lab_utils.eval.robustness import robustness_sweep
 
 from experiments.configs.zoom import DEFAULT_ZOOM
@@ -155,6 +155,18 @@ def _build_parser() -> argparse.ArgumentParser:
                         'CONDITIONS, e.g. "clean jpeg_50 noise_0.10". Splitting a large run '
                         'into per-condition-group cells keeps each process from accumulating '
                         'all conditions in RAM (the cause of host-OOM SIGKILLs on big TGIF runs).')
+    g.add_argument('--corrupt_at', default='native', choices=['native', 'model_input'],
+                   help="Where the corruption is applied. 'native': on the native-resolution "
+                        'image (probe items: the cropped window) BEFORE the model resize — '
+                        'the laundering threat model; artifact scale in model space then '
+                        'varies with each crop\'s upsample factor. \'model_input\': resize to '
+                        'the model\'s square input first, corrupt after — every item gets '
+                        'IDENTICAL model-space frequency destruction (the signal-isolation '
+                        'instrument: use this to ask WHAT frequency band a model relies on).')
+    g.add_argument('--out_dir', default=None,
+                   help='Directory for a durable eval.log and per-item records CSVs '
+                        '(one CSV per decoder x condition, write_records_csv format). '
+                        'Required for any analysis beyond the printed summary tables.')
 
     return p
 
@@ -193,6 +205,11 @@ def main() -> None:
         active_conditions = dict(CONDITIONS)
     device = torch.device(args.device if (args.device != 'cuda' or torch.cuda.is_available()) else 'cpu')
     use_amp = (not args.no_amp) and (device.type == 'cuda')
+
+    # Durable log — installed before dataset builders so their [data]/[probe]
+    # lines land in the file, and any crash leaves evidence on disk.
+    if args.out_dir:
+        install_log(str(Path(args.out_dir) / 'eval.log'))
 
     # ── Load checkpoint + build model ─────────────────────────────────────────
     log_line(f'[robust] loading checkpoint: {args.checkpoint}')
@@ -257,8 +274,15 @@ def main() -> None:
         
         for item in tqdm(all_items, desc=f'[robust] {cond_name}', unit='item', disable=disable_tqdm):
             try:
-                # 1. Load image and apply corruption in PIL
-                img_pil = Image.open(item.image).convert('RGB')
+                # 1. Load image and apply corruption in PIL. _resolve_pil (NOT a
+                # bare Image.open) applies region-probe crop windows — probe
+                # items must be corrupted as the crop the model actually sees,
+                # never as the full frame.
+                img_pil = _resolve_pil(item)
+                if args.corrupt_at == 'model_input':
+                    S = res.image_size
+                    if img_pil.size != (S, S):
+                        img_pil = img_pil.resize((S, S), Image.BILINEAR)
                 img_corrupted_pil = apply_fn(img_pil)
 
                 if args.zoom:
@@ -277,8 +301,12 @@ def main() -> None:
                         )
                         import dataclasses
                         subgroup = item.meta.get('generator') or item.meta.get('tgif_subcat')
-                        rec = dataclasses.replace(rec, subgroup=subgroup)
-                        
+                        # Strip pixel-res arrays before accumulating: scores are
+                        # already computed, and holding gt/pred masks across
+                        # items x conditions is the documented host-OOM cause.
+                        rec = dataclasses.replace(rec, subgroup=subgroup,
+                                                  gt_mask=None, pred_mask=None,
+                                                  attention=None)
                         records_by_dataset_decoder_condition[item.source][decoder_name][cond_name].append(rec)
                 else:
                     # 2. Preprocess to normalized tensor and forward
@@ -293,8 +321,11 @@ def main() -> None:
 
                         import dataclasses
                         subgroup = item.meta.get('generator') or item.meta.get('tgif_subcat')
-                        rec = dataclasses.replace(rec, subgroup=subgroup)
-                        
+                        # Strip pixel-res arrays before accumulating (see zoom
+                        # branch comment — the documented host-OOM cause).
+                        rec = dataclasses.replace(rec, subgroup=subgroup,
+                                                  gt_mask=None, pred_mask=None,
+                                                  attention=None)
                         records_by_dataset_decoder_condition[item.source][decoder_name][cond_name].append(rec)
             except DataError:
                 raise  # alignment/pairing bug — abort the sweep, never a skip
@@ -327,6 +358,23 @@ def main() -> None:
                     if not isinstance(v, dict) and not np.isnan(v):
                         decoder_summary[f"{cond_name}_{k}"] = v
             summaries_dict[f"{ds}_{decoder_name}"] = decoder_summary
+
+    # ── Per-item records CSVs (the analysis-side artifact) ────────────────────
+    # One CSV per decoder x condition, all datasets flattened (source column
+    # disambiguates) — same format as eval.py's records CSVs so downstream
+    # stratified-AUROC analysis joins on item_id against the probe manifest.
+    if args.out_dir:
+        for decoder_name in args.decoder:
+            for cond_name in active_conditions:
+                recs = [
+                    r for ds in dataset_names
+                    for r in records_by_dataset_decoder_condition[ds][decoder_name][cond_name]
+                ]
+                if not recs:
+                    continue
+                csv_path = Path(args.out_dir) / f'{decoder_name}_{cond_name}_records.csv'
+                write_records_csv(recs, str(csv_path))
+                log_line(f'[robust] wrote {len(recs)} records -> {csv_path}')
 
     # ── Save flat JSON summary if requested ───────────────────────────────────
     if args.summary_out:

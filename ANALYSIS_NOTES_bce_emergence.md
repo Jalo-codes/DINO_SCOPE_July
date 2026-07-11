@@ -183,6 +183,36 @@ contrastive fixed k-means per boundary type — the calibration-vs-features read
 (c) paired BCE↔Cont detection AUROC-difference bootstrap (same item_ids across
 conditions) for the small consistent BCE image-detection edge.
 
+## Noise-reliance probe sweep (JPEG ladder) [planned 2026-07-11]
+
+Rationale (Jake): corrupting the high-frequency band partially ISOLATES the signal a
+model is using. If bce_* and cont_* degrade differently down a JPEG ladder, the
+objectives learned fundamentally different signals — the direct test of the
+"absolute AI-ness (high-freq fingerprint) vs relational/contextual evidence" split
+suggested by the clean results (BCE leads image detection where AI texture exists;
+contrastive leads boundary localization and cross-type generalization).
+
+Predictions the ladder discriminates:
+- If BCE·inpaint's ai_interior edge (0.94) is a high-freq generator fingerprint, it
+  should collapse toward Cont's level (or below) by jpeg_50.
+- Boundary detection/localization (seam evidence is partly structural) should be the
+  most compression-robust stratum for BOTH objectives; if contrastive's boundary F1
+  advantage GROWS as quality drops, its signal is the lower-frequency one.
+- sp_* (real-content splices, no generator fingerprint available at all) should be
+  the flattest curves — a sanity anchor.
+
+Mechanics: `run_bce_emergence_noise.sh` → eval_robustness.py over the probe
+conditions, `--conditions clean jpeg_90 jpeg_70 jpeg_50 jpeg_30`,
+`--corrupt_at model_input` (corruption AFTER the 448 resize → identical model-space
+frequency destruction for every crop; `native` would confound the ladder with each
+crop's upsample factor). Per-item records CSVs land in
+`results/bce_emergence/<cond>/noise_probe/{decoder}_{level}_records.csv` — same
+format as probe_eval records, so all stratified/matched-null AUROC analyses apply
+per level. The re-run `clean` level should reproduce probe_eval2 (consistency
+check). eval_robustness fixes that made this possible: probe crop windows now
+respected (was full-frame), per-item CSVs + durable eval.log added, pixel-res
+masks stripped from accumulated records (the old host-OOM cause).
+
 ## Figure inventory (artifacts in Claude Science project proj_6a53bb0928d9)
 fig1 fullfakes aggregate · fig2 probe by-type (F1/IoU/AUROC/imgscore/predpos) · fig3
 generator AUROC · fig4 comparisons · fig5 sp_interior distribution · fig6 bce-vs-cont
