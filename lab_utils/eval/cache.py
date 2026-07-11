@@ -87,6 +87,18 @@ def _arrays_to_info(arrays: dict) -> ModelInfo:
     )
 
 
+# ── Single-item save/load (public wrappers over the npz contract) ──────────────
+
+def save_info(info: ModelInfo, path: Path) -> None:
+    """Save one ModelInfo to a .npz — same on-disk contract as build_cache."""
+    np.savez_compressed(str(path), **_info_to_arrays(info))
+
+
+def load_info(path: Path) -> ModelInfo:
+    """Load one ModelInfo .npz written by save_info/build_cache."""
+    return _arrays_to_info(dict(np.load(str(path), allow_pickle=False)))
+
+
 # ── Build ──────────────────────────────────────────────────────────────────────
 
 def build_cache(

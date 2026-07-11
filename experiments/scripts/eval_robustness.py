@@ -167,6 +167,14 @@ def _build_parser() -> argparse.ArgumentParser:
                    help='Directory for a durable eval.log and per-item records CSVs '
                         '(one CSV per decoder x condition, write_records_csv format). '
                         'Required for any analysis beyond the printed summary tables.')
+    g.add_argument('--cache_dir', default=None,
+                   help='If set, save each (condition, item) ModelInfo npz under '
+                        '<cache_dir>/<condition>/ (build_cache on-disk contract, '
+                        'index.json included) and SKIP the forward pass for items '
+                        'already cached (crash resume). Enables post-hoc decoder '
+                        'work per corruption level with zero GPU — e.g. '
+                        'eval_threshold_sweep --cache_dir <cache_dir>/jpeg_50. '
+                        'Ignored under --zoom (dynamic two-pass crops).')
 
     return p
 
@@ -266,26 +274,37 @@ def main() -> None:
 
     # ── Robustness sweep loop ─────────────────────────────────────────────────
     import sys
+    if args.cache_dir and args.zoom:
+        log_line('[robust] WARN: --cache_dir is ignored under --zoom (dynamic crops)')
     disable_tqdm = not sys.stdout.isatty()
     for cond_name, apply_fn in active_conditions.items():
         log_line(f'[robust] running condition: {cond_name}')
         if disable_tqdm:
             log_line(f'[robust] processing {len(all_items)} items for {cond_name}...')
-        
+
+        level_cache_dir = None
+        cached_ids: List[str] = []
+        if args.cache_dir and not args.zoom:
+            level_cache_dir = Path(args.cache_dir) / cond_name
+            level_cache_dir.mkdir(parents=True, exist_ok=True)
+
         for item in tqdm(all_items, desc=f'[robust] {cond_name}', unit='item', disable=disable_tqdm):
             try:
-                # 1. Load image and apply corruption in PIL. _resolve_pil (NOT a
-                # bare Image.open) applies region-probe crop windows — probe
-                # items must be corrupted as the crop the model actually sees,
-                # never as the full frame.
-                img_pil = _resolve_pil(item)
-                if args.corrupt_at == 'model_input':
-                    S = res.image_size
-                    if img_pil.size != (S, S):
-                        img_pil = img_pil.resize((S, S), Image.BILINEAR)
-                img_corrupted_pil = apply_fn(img_pil)
+                # 1. Load image and apply corruption in PIL — lazily, so a
+                # cache hit skips the decode+corrupt work entirely.
+                # _resolve_pil (NOT a bare Image.open) applies region-probe
+                # crop windows — probe items must be corrupted as the crop the
+                # model actually sees, never as the full frame.
+                def _corrupted_pil():
+                    p = _resolve_pil(item)
+                    if args.corrupt_at == 'model_input':
+                        S = res.image_size
+                        if p.size != (S, S):
+                            p = p.resize((S, S), Image.BILINEAR)
+                    return apply_fn(p)
 
                 if args.zoom:
+                    img_corrupted_pil = _corrupted_pil()
                     from experiments.labs.attention_zoom import attention_zoom_single
                     # For zoom, evaluate each decoder individually using the corrupted PIL image
                     for decoder_name in args.decoder:
@@ -309,10 +328,25 @@ def main() -> None:
                                                   attention=None)
                         records_by_dataset_decoder_condition[item.source][decoder_name][cond_name].append(rec)
                 else:
-                    # 2. Preprocess to normalized tensor and forward
-                    img_t = load_image_tensor(img_corrupted_pil, res, device=device)
-                    with torch.no_grad():
-                        info = model_info(bare_model, img_t, device=device, amp=use_amp, amp_dtype=args.amp_dtype)
+                    # 2. Forward (or reload from the per-level cache — the
+                    # corrupted input is fully determined by (item, condition),
+                    # so a cached ModelInfo is exact, not approximate)
+                    info = None
+                    cache_path = None
+                    if level_cache_dir is not None:
+                        cache_path = level_cache_dir / f'{item.item_id}.npz'
+                        if cache_path.exists():
+                            from lab_utils.eval.cache import load_info
+                            info = load_info(cache_path)
+                    if info is None:
+                        img_t = load_image_tensor(_corrupted_pil(), res, device=device)
+                        with torch.no_grad():
+                            info = model_info(bare_model, img_t, device=device, amp=use_amp, amp_dtype=args.amp_dtype)
+                        if cache_path is not None:
+                            from lab_utils.eval.cache import save_info
+                            save_info(info, cache_path)
+                    if cache_path is not None:
+                        cached_ids.append(item.item_id)
 
                     # 3. Decode + Metric for each decoder
                     for decoder_name in args.decoder:
@@ -331,6 +365,15 @@ def main() -> None:
                 raise  # alignment/pairing bug — abort the sweep, never a skip
             except Exception as exc:
                 log_line(f'[robust] WARN: skipped item={item.item_id} under {cond_name}: {exc}')
+
+        # Per-level cache index (build_cache contract) — written after the
+        # level completes so eval_threshold_sweep --cache_dir <dir>/<level>
+        # works on it directly. A crash mid-level leaves no index; the resume
+        # run reuses the npz files and rewrites it.
+        if level_cache_dir is not None and cached_ids:
+            with open(level_cache_dir / 'index.json', 'w') as f:
+                json.dump(cached_ids, f, indent=2)
+            log_line(f'[robust] cache: {len(cached_ids)} items indexed at {level_cache_dir}')
 
     # Run robustness sweeps and collect summaries
     summaries_dict = {}

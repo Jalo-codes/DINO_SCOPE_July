@@ -48,6 +48,7 @@ for cond in "${CONDS[@]}"; do
   mkdir -p "$outdir"
 
   if [[ $cond == bce_* ]]; then decoder=threshold; else decoder=kmeans; fi
+  cachedir="$RUNS/$cond/noise_cache_${CKPT_FILE%.pt}"
 
   echo "=== $cond (decoder=$decoder, levels: $LEVELS) ==="
   # shellcheck disable=SC2086  # LEVELS is intentionally word-split
@@ -57,8 +58,22 @@ for cond in "${CONDS[@]}"; do
       --amp_dtype float16 \
       --conditions $LEVELS \
       --corrupt_at model_input \
+      --cache_dir "$cachedir" \
       "${ROOTS[@]}" \
       --out_dir "$outdir" \
       --summary_out "$outdir/robustness_summary.json"
+
+  # Per-level BCE threshold sweeps over the just-written caches (CPU) — under
+  # compression the score distribution shifts, so fixed-t=0.5 curves confound
+  # signal loss with calibration drift; the per-level oracle envelope (vs
+  # k-means' built-in per-crop self-calibration) separates the two.
+  if [[ $cond == bce_* ]]; then
+    for lvl in $LEVELS; do
+      "$PY" -m experiments.scripts.eval_threshold_sweep \
+          --cache_dir "$cachedir/$lvl" \
+          --out_dir "$OUT/$cond/noise_threshold_sweep/$lvl" \
+          "${ROOTS[@]}"
+    done
+  fi
 done
 echo "DONE: ${CONDS[*]}"
