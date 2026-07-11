@@ -206,3 +206,26 @@
 [eval] threshold bucket=large     recall: n= 228  med=0.9939  mean=0.7838±0.3695  [p25=0.8018, p75=1.0000]
 [eval] threshold reals accuracy: n= 650  med=1.0000  mean=0.9833±0.0730  [p25=1.0000, p75=1.0000]
 [eval] wrote 2020 records -> results/bce_emergence/bce_both_s0/probe_eval2/threshold_records.csv
+# ============================================================
+# log opened  pid=3477293  ts=2026-07-11T14:32:03  git=14df988
+# python=3.10.12  torch=2.7.1+cu118  device=NVIDIA GeForce RTX 2080 Ti 10.6GB  n_gpu=1
+# cmd: /home/fri-team-4/fri-team4/DINO_SCOPE_July/experiments/scripts/eval.py --checkpoint /media/ssd/runs/bce_emergence/bce_both_s0/epoch_0005.pt --decoder threshold --amp_dtype float16 --cache_dir /media/ssd/runs/bce_emergence/bce_both_s0/probe_cache_epoch_0005 --ai_interior_root /media/ssd/DINO_SCOPE_DATA/SAGI_D --ai_boundary_root /media/ssd/DINO_SCOPE_DATA/SAGI_D --real_crop_root /media/ssd/DINO_SCOPE_DATA/SAGI_D --sp_interior_root /media/ssd/DINO_SCOPE_DATA/IMD2020 --sp_boundary_root /media/ssd/DINO_SCOPE_DATA/IMD2020 --fr_bg_matched_root /media/ssd/DINO_SCOPE_DATA/content/flux_originals --ai_interior_tgif_root /media/ssd/DINO_SCOPE_DATA/content/flux_originals --ai_boundary_tgif_root /media/ssd/DINO_SCOPE_DATA/content/flux_originals --real_crop_tgif_root /media/ssd/DINO_SCOPE_DATA/content/flux_originals --out_dir results/bce_emergence/bce_both_s0/probe_eval2
+# ============================================================
+[eval] loading checkpoint: /media/ssd/runs/bce_emergence/bce_both_s0/epoch_0005.pt
+[ckpt] loaded epoch=5 ← /media/ssd/runs/bce_emergence/bce_both_s0/epoch_0005.pt
+[data] Indexing inpaint (sagid): /media/ssd/DINO_SCOPE_DATA/SAGI_D
+[data] sagid train kept=3046 dropped=0/3046 warns=warn_mask_native_resize:4
+[data] sagid val kept=338 dropped=0/338 warns=warn_mask_native_resize:2
+[data] inpaint sagid: train=3046 val=338 triplets=1692 unmatched_mods=0
+[data] ai_interior (sagid @ /media/ssd/DINO_SCOPE_DATA/SAGI_D): 50 probes from 169/169 parents scanned (gated=140, available_in_scanned=50, stopped_early=False, spec=v5)
+[eval] ai_interior: 50 val items
+[data] Indexing inpaint (sagid): /media/ssd/DINO_SCOPE_DATA/SAGI_D
+[data] sagid train kept=3046 dropped=0/3046 warns=warn_mask_native_resize:4
+[data] sagid val kept=338 dropped=0/338 warns=warn_mask_native_resize:2
+[data] inpaint sagid: train=3046 val=338 triplets=1692 unmatched_mods=0
+[data] ai_boundary (sagid @ /media/ssd/DINO_SCOPE_DATA/SAGI_D): 300 probes from 169/169 parents scanned (gated=29, available_in_scanned=590, stopped_early=False, spec=v5)
+[eval] ai_boundary: 300 val items
+[data] Indexing IMD2020: /media/ssd/DINO_SCOPE_DATA/IMD2020
+[data] imd2020 train kept=0 dropped=0/0
+[data] imd2020 val kept=2401 dropped=23/2424 reasons=mask_area_too_small:23
+[data] IMD2020: train=0 val=2401 real_cases=414 splices=2010 skipped_unmasked=0
