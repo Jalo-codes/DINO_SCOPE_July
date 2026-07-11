@@ -21,6 +21,8 @@ DATA=/media/ssd/DINO_SCOPE_DATA
 RUNS=/media/ssd/runs/bce_emergence
 OUT=results/bce_emergence
 LEVELS=${LEVELS:-"clean jpeg_90 jpeg_70 jpeg_50 jpeg_30"}
+# Fixed epoch-5 study checkpoint — see run_bce_emergence_rerun.sh. NOT best.pt.
+CKPT_FILE=${CKPT_FILE:-epoch_0005.pt}
 
 "$PY" -c 'import torch' 2>/dev/null || {
   echo "ERROR: $PY has no torch — set PY=/path/to/venv/python" >&2; exit 1; }
@@ -40,7 +42,8 @@ ALL=(bce_both_s0 bce_inpaint_s0 bce_splice_s0 cont_both_s0 cont_inpaint_s0 cont_
 CONDS=("${@:-${ALL[@]}}")
 
 for cond in "${CONDS[@]}"; do
-  ckpt="$RUNS/$cond/best.pt"
+  ckpt="$RUNS/$cond/$CKPT_FILE"
+  [[ -f $ckpt ]] || { echo "ERROR: missing checkpoint $ckpt" >&2; exit 1; }
   outdir="$OUT/$cond/noise_probe"
   mkdir -p "$outdir"
 

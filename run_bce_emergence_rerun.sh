@@ -23,6 +23,15 @@ PY=${PY:-$HOME/dino_venv/bin/python}
 DATA=/media/ssd/DINO_SCOPE_DATA
 RUNS=/media/ssd/runs/bce_emergence
 OUT=results/bce_emergence
+# The study checkpoint is the FIXED epoch-5 snapshot for every condition —
+# the same file all official evals used (equal training budget across
+# conditions; best.pt lands on epochs 0-9 and confounds objective with
+# training length). Do NOT switch to best.pt.
+CKPT_FILE=${CKPT_FILE:-epoch_0005.pt}
+# Cache dir is keyed to the checkpoint file: build_cache reuses existing npz
+# blindly, so a cache built from different weights would silently poison the
+# sweep.
+CACHE_NAME=probe_cache_${CKPT_FILE%.pt}
 
 # Fail fast if PY is not the torch venv (bare `python` on this box is a
 # torchless conda-base 3.7 — see 2080-box notes).
@@ -56,13 +65,14 @@ fi
 CONDS=("${@:-${ALL[@]}}")
 
 for cond in "${CONDS[@]}"; do
-  ckpt="$RUNS/$cond/best.pt"
+  ckpt="$RUNS/$cond/$CKPT_FILE"
+  [[ -f $ckpt ]] || { echo "ERROR: missing checkpoint $ckpt" >&2; exit 1; }
   outdir="$OUT/$cond/probe_eval2"
   mkdir -p "$outdir"
 
   if [[ $cond == bce_* ]]; then
     decoder=threshold
-    cache_args=(--cache_dir "$RUNS/$cond/probe_cache")
+    cache_args=(--cache_dir "$RUNS/$cond/$CACHE_NAME")
   else
     decoder=kmeans
     cache_args=()
@@ -81,7 +91,7 @@ for cond in "${CONDS[@]}"; do
     swout="$OUT/$cond/threshold_sweep"
     mkdir -p "$swout"
     "$PY" -m experiments.scripts.eval_threshold_sweep \
-        --cache_dir "$RUNS/$cond/probe_cache" \
+        --cache_dir "$RUNS/$cond/$CACHE_NAME" \
         --out_dir "$swout" \
         "${ROOTS[@]}"
   fi

@@ -183,6 +183,25 @@ contrastive fixed k-means per boundary type — the calibration-vs-features read
 (c) paired BCE↔Cont detection AUROC-difference bootstrap (same item_ids across
 conditions) for the small consistent BCE image-detection edge.
 
+## ⚠️ Checkpoint mismatch — first probe_eval2/threshold_sweep run INVALID [2026-07-11]
+
+The rerun committed as 8e984b7 evaluated **best.pt** (epochs 9/0/4/4/7/2 across the
+six conditions) while EVERY official eval (probe_eval, full_fakes_eval) used the
+**fixed epoch_0005.pt snapshot** — a uniform-training-budget choice best.pt breaks
+(it confounds objective with training length). Discovered via the consistency check:
+shared-item |Δ image_score| means of 0.05–0.28 with identical windows (windows
+verified bit-identical between manifests) traced to `[ckpt] loaded epoch=` lines in
+the eval.log headers. Runners now pin CKPT_FILE=epoch_0005.pt and key the sweep
+cache to the checkpoint name (probe_cache_epoch_0005 — the old probe_cache holds
+best.pt outputs and build_cache reuses blindly). Results under probe_eval2/ and
+threshold_sweep/ are superseded by the epoch_0005 rerun; do not mix them with
+report numbers. Two durable side-findings from the invalid run: (1) the
+fr_bg_matched CONSTRUCTION is verified — median min-side 260px vs ai_interior 262px
+(ratio 0.994), TV=0.067 at full N=300/300 (vs the old 1.31× mismatch), a
+checkpoint-independent property of the sampler; (2) bce_inpaint's best.pt is
+epoch 0 — the best-checkpoint criterion may be broken; check before ever using
+best.pt for anything.
+
 ## Noise-reliance probe sweep (JPEG ladder) [planned 2026-07-11]
 
 Rationale (Jake): corrupting the high-frequency band partially ISOLATES the signal a
