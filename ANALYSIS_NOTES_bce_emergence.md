@@ -320,6 +320,97 @@ Still pending: bce_inpaint/bce_splice epoch-5 probe_eval2 + clean threshold_swee
 (current CSVs stale best.pt), cont noise ladders, per-level oracle sweeps
 (only bce_both/clean committed).
 
+## Epoch-5 rerun, ALL SIX conditions + full BCE JPEG ladders [2026-07-14]
+
+Data now complete for: probe_eval2 @ epoch_0005, all six conditions (validity
+PASS, mean|Δscore| ≤ 2e-5 vs old probe_eval on 1720 shared items, all six). All
+three BCE JPEG ladders complete (clean/90/70/50/30) with per-level oracle
+sweeps. Still pending: cont_* JPEG ladders (this is the direct test of the
+"Cont.inpaint's interior lead is mostly texture" prediction below — falsifiable
+as soon as it lands). Analysis: scratchpad analyze_full6.py (this box).
+
+**Clean interior detection, all six, matched nulls (tgif2, n=300/300):**
+
+| condition    | int vs real_crop | int vs fr_bg_matched | fr_bg_matched vs real_crop |
+|--------------|-------------------|-----------------------|-----------------------------|
+| BCE·both     | 0.839             | 0.773                 | 0.635                       |
+| BCE·inpaint  | **0.939**         | **0.857**             | 0.663                       |
+| BCE·splice   | 0.757             | 0.554                 | **0.781**                   |
+| Cont·both    | 0.862             | 0.680                 | 0.808                       |
+| Cont·inpaint | 0.901             | 0.724                 | 0.852                       |
+| Cont·splice  | 0.719             | 0.602                 | 0.606                       |
+
+BCE·inpaint (trained ONLY on sagid+coco_inpaint edits, fr_bg_negative_prob=0.12)
+is the cleanest edit-specific detector of all six cells — highest int-vs-real
+AND highest int-vs-fr_bg, i.e. it separates the edit from the background best
+because that's exactly its training distribution. BCE·splice inverts: trained
+only on CASIA (natural-photo splices, no diffusion content, no
+fr_bg_negative_prob), its int-vs-fr_bg (0.554) is barely above chance while
+fr_bg-vs-real (0.781) is its highest number — on this OOD (tgif2/sagid)
+content, BCE·splice can't distinguish "edited" from "passed through a
+generator at all"; it's running one undifferentiated anomaly detector, not two.
+BCE·both sits in between, consistent with its mixed training. (Boundary/sp
+detection vs real_crop-only, unpooled, reproduces the earlier pooled-null
+numbers within noise — confirms rule 4's boundary null-insensitivity claim.)
+
+**Oracle sweep verdict, all three BCE conditions (clean, calibration vs
+features) — settles most of the boundary-gap question:**
+
+| stratum | BCE·both | BCE·inpaint | BCE·splice |
+|---|---|---|---|
+| ai_boundary | FEATURES (oracle 0.802 ≈ t=0.5, cont 0.871) | FEATURES (oracle 0.781 ≈ t=0.5, cont 0.884) | oracle wins (0.700 vs t=0.5's 0.625, still < cont 0.623 — a wash) |
+| sp_boundary | FEATURES (oracle 0.720, cont 0.813) | FEATURES (oracle 0.478, cont 0.712) | FEATURES (oracle 0.769, cont 0.790) |
+
+sp_boundary is a clean, robust FEATURES verdict across all three train mixes —
+contrastive's boundary-localization advantage is not a calibration artifact
+anywhere. ai_boundary is FEATURES for both/inpaint but genuinely miscalibrated
+for BCE·splice (oracle t=0.05, far from production t=0.5) — the one place a
+calibration fix would matter. (Interior oracle rescues are the mechanical
+predict-everything floor per rule 3, ignore, except BCE·inpaint sp_interior:
+oracle 0.296 still far below cont 0.548 — that cell trained on zero splice
+content and is genuinely blind on IMD2020 sp_interior, not just miscalibrated.)
+
+**Three-way JPEG ladder — the headline finding.** AUROC at clean/jpeg_70/jpeg_30,
+int-vs-real_crop / fr_bg_matched-vs-real_crop (tgif2):
+
+| condition | clean | jpeg_70 | jpeg_30 |
+|---|---|---|---|
+| BCE·both | 0.839 / 0.635 | 0.775 / 0.508 | 0.672 / 0.468 |
+| BCE·inpaint | 0.939 / 0.663 | 0.886 / 0.519 | 0.778 / **0.418** |
+| BCE·splice | 0.757 / 0.781 | 0.678 / 0.682 | 0.566 / 0.494 |
+
+BCE·inpaint shows the cleanest edit/texture DISSOCIATION of all three, and it
+WIDENS under compression: the edit signal decays slowly (0.939→0.778) while the
+texture signal doesn't just hit chance, it goes significantly BELOW 0.5
+(0.418, 95% CI [0.374, 0.466] — a real inversion: at q30, heavily-compressed
+regen background scores LOWER, i.e. "more real," than pristine real_crop on
+average). BCE·splice shows the OPPOSITE pattern: int and fr_bg-vs-real decay in
+near lockstep at every level (0.757/0.781 → 0.678/0.682 → 0.566/0.494) — its
+"interior detection" and "texture detection" are the same channel throughout
+the ladder, confirming the clean-level finding that splice-only training never
+taught the edit/texture distinction on this OOD content. BCE·both is
+intermediate, matching its 50/50 mixed training. Training-mix specificity
+predicts how cleanly the two signals factor apart, and it's visible in both
+the static number and the decay shape.
+
+**Per-level oracle sweep — settles WHICH decay is real signal loss vs
+calibration drift, across the full ladder (not just clean):** BCE·both and
+BCE·inpaint ai_boundary stay well-calibrated at every level (oracle tracks
+fixed-t=0.5 within ~0.01–0.03 from clean through jpeg_30 for both) — their
+decay is real signal loss. BCE·splice ai_boundary's calibration gap WIDENS
+under compression (oracle−fixed = 0.075 at clean → 0.193 at jpeg_30) — on top
+of already losing features at clean, it also miscalibrates further as quality
+drops. BCE·inpaint sp_boundary carries a large, roughly constant calibration
+gap throughout (~0.17–0.19) — consistent with a decoder that was never tuned
+for splice-style content at all (cross-domain, not compression-driven).
+
+Prediction for the pending cont ladders, sharpened by this batch: if
+Cont·inpaint's interior AUROC is mostly the fr_bg_matched-style texture channel
+(per the earlier decomposition), it should track BCE·inpaint's fr_bg column
+toward/below chance by jpeg_50–70, NOT its int column. BCE·inpaint is now the
+per-objective best case for edit/texture separation, so it's the sharpest
+contrast available once cont lands.
+
 ## Figure inventory (artifacts in Claude Science project proj_6a53bb0928d9)
 fig1 fullfakes aggregate · fig2 probe by-type (F1/IoU/AUROC/imgscore/predpos) · fig3
 generator AUROC · fig4 comparisons · fig5 sp_interior distribution · fig6 bce-vs-cont
