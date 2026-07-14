@@ -404,12 +404,51 @@ drops. BCE·inpaint sp_boundary carries a large, roughly constant calibration
 gap throughout (~0.17–0.19) — consistent with a decoder that was never tuned
 for splice-style content at all (cross-domain, not compression-driven).
 
-Prediction for the pending cont ladders, sharpened by this batch: if
-Cont·inpaint's interior AUROC is mostly the fr_bg_matched-style texture channel
-(per the earlier decomposition), it should track BCE·inpaint's fr_bg column
-toward/below chance by jpeg_50–70, NOT its int column. BCE·inpaint is now the
-per-objective best case for edit/texture separation, so it's the sharpest
-contrast available once cont lands.
+## Cont JPEG ladders landed — prediction FALSIFIED, and the real finding is bigger
+[2026-07-14]
+
+All three cont ladders complete (clean/90/70/50/30). The prediction above —
+Cont·inpaint's interior AUROC should crash toward chance like BCE's fr_bg
+channel did, if it's mostly texture — is **falsified in its strong form**:
+Cont·inpaint int-vs-real_crop is 0.901→0.819→0.714 (clean→q70→q30), nowhere
+near chance. Its own fr_bg_matched-vs-real_crop is 0.852→0.751→0.699 — ALSO
+stays well above chance. Contrastive's texture/background channel is not
+high-frequency-only the way BCE's is; whatever it's reading off regen
+background survives compression BCE's equivalent signal does not.
+
+**The bigger, unpredicted finding is what matched-mix pairing reveals.** Every
+number so far comparing "contrastive interior lead" used mismatched training
+mixes (Cont·inpaint 0.901 vs BCE·**both** 0.839). Properly matched
+(Cont·inpaint vs BCE·**inpaint**), the ranking reverses — paired ΔAUROC
+(Cont−BCE), int-vs-real_crop, tgif2, 4000× joint resample:
+
+| pair | clean | jpeg_70 | jpeg_30 |
+|---|---|---|---|
+| Cont·both − BCE·both | +0.024 [-0.010,+0.059] ns | +0.025 [-0.006,+0.058] ns | +0.019 [-0.022,+0.060] ns |
+| Cont·inpaint − BCE·inpaint | **-0.038 [-0.059,-0.019]** | **-0.066 [-0.089,-0.045]** | **-0.064 [-0.092,-0.037]** |
+| Cont·splice − BCE·splice | -0.038 [-0.085,+0.008] ns | -0.026 [-0.078,+0.027] ns | +0.060 [+0.006,+0.115] |
+
+For the inpaint mix, **BCE significantly leads interior detection at every
+level, and the gap widens under compression** (BCE ahead by 0.066 AUROC at
+q70). The `both` mix stays a wash at every level (consistent with the earlier
+clean-only finding). Splice is mostly noise except a small, marginally
+significant Cont edge at q30.
+
+**Revised synthesis.** The earlier "Cont.inpaint's interior lead is mostly
+texture" story was built on an apples-to-oranges comparison and doesn't
+survive matched pairing — retire it. What's actually true: (1) BCE's edit
+signal (int) is the most durable channel of anything measured here for the
+matched inpaint mix, beating contrastive at every compression level; (2) BCE's
+OWN background/texture channel (fr_bg) is uniquely fragile — the only signal
+in the whole study that drops significantly below chance under compression;
+(3) contrastive doesn't cleanly separate an edit-specific channel from a
+texture channel the way BCE·inpaint does — its fr_bg and int columns move
+together more (0.852/0.901 clean → 0.699/0.714 at q30, gap barely changes),
+suggesting a less factored representation, not a texture-dominated one. The
+"high-frequency-fingerprint vs relational/contextual" framing from the
+original report holds in a narrower, more precise form than first stated:
+BCE·inpaint's texture channel specifically is the fragile high-frequency one;
+its edit channel is not, and is the most robust signal in the study.
 
 ## Figure inventory (artifacts in Claude Science project proj_6a53bb0928d9)
 fig1 fullfakes aggregate · fig2 probe by-type (F1/IoU/AUROC/imgscore/predpos) · fig3
