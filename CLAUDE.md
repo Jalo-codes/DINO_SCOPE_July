@@ -10,15 +10,34 @@ truthful and current; correct it in place when a claim is superseded.
   `cont_both_s0`, `cont_inpaint_s0`, `cont_splice_s0`.
   - `both` / `inpaint` / `splice` = which manipulation family the model was trained on.
   - `bce_*` vs `cont_*` = localization objective (per-patch BCE head vs contrastive head).
-- Per condition: `full_fakes_eval/` (whole-image fakes benchmark) and `probe_eval/`
-  (region-probe benchmark, per-crop). Each has a decoder-specific records CSV:
-  `threshold_records.csv` for `bce_*`, `kmeans_records.csv` for `cont_*`.
-- `results/bce_emergence/probe_manifest.csv` (n=2020) — join table for probe geometry
-  and provenance. item_ids match the eval records 1:1.
+- Per condition, **which subdirectory is canonical (as of 2026-07-14, all six
+  conditions, epoch_0005, validated)** — go-to list, use these for new analysis:
+  | dir | contents |
+  |---|---|
+  | `probe_eval2/` | clean-condition detection/localization, `fr_bg_matched` null |
+  | `noise_probe/` | JPEG ladder (clean/90/70/50/30); `clean` level ≈ `probe_eval2` (validated, mean\|Δscore\|<2e-5) |
+  | `threshold_sweep/` (bce_* only) | oracle BCE-threshold envelope, clean level |
+  | `noise_threshold_sweep/<level>/` (bce_* only) | oracle envelope, per JPEG level |
+  | `full_fakes_eval/` | whole-image AUC only (rule 2 — ignore its F1/IoU) |
+
+  Each records CSV is decoder-specific: `threshold_*.csv` for `bce_*`, `kmeans_*.csv`
+  for `cont_*`.
+
+  **Superseded — do not use for new analysis:**
+  | path | why |
+  |---|---|
+  | `<cond>/probe_eval/` | pre-checkpoint-fix AND pre-`fr_bg_matched` (uses retired `fr_bg`, see rule 4). Kept only as the validity-check baseline against `probe_eval2` — do not cite its numbers directly. |
+  | `probe_manifest.csv` | old `fr_bg` geometry. Use `probe_manifest2.csv` (current join table, `fr_bg_matched` geometry) instead. |
+  | `probe_contrasts.csv` / `.log` | generated before the checkpoint fix and before `fr_bg_matched` existed (the original Claude-Science report pass). Numbers in `REPORT_bce_emergence.md` sourced from this are stale — cross-check against `ANALYSIS_NOTES_bce_emergence.md` before citing. Not regenerated yet. |
+  | `probe_renders/` | illustrative crops only; some filenames still say `fr_bg` (retired name). Qualitative reference, not a data source. |
+
 - Eval code: `lab_utils/eval/aggregate.py`, `lab_utils/data/datasets/region_probes.py`,
-  `experiments/labs/probe_contrasts.py`.
+  `experiments/labs/probe_contrasts.py`, `experiments/scripts/eval_robustness.py` (JPEG
+  ladder), `experiments/scripts/eval_threshold_sweep.py` (oracle sweep, model-free over a
+  frozen cache).
 - `ANALYSIS_NOTES_bce_emergence.md` — detailed findings + corrected procedures (read it
-  before re-deriving anything).
+  before re-deriving anything; it's the current source of truth, ahead of
+  `REPORT_bce_emergence.md`).
 
 ## Hard-won methodology rules (do not relearn the hard way)
 
@@ -53,9 +72,9 @@ truthful and current; correct it in place when a claim is superseded.
      RETIRED 2026-07-09: its sides came from a different generating process
      ([floor, 1.6·floor]) than interiors (mask-inscribed) — the size artifact. Replaced
      by `fr_bg_matched` (sizes drawn from the re-derived tgif2-sp ai_interior pool →
-     matched by construction, full N; flag `--fr_bg_matched_root`). Everything under
-     `results/bce_emergence/` still carries OLD fr_bg rows; rerun pending on the 2080
-     box (Turing → fp16, never bf16). See ANALYSIS_NOTES "Planned rerun".
+     matched by construction, full N; flag `--fr_bg_matched_root`). Rerun on the 2080
+     box (Turing → fp16, never bf16) is DONE for all six conditions — see
+     `probe_eval2/` and `noise_probe/` (canonical, above), not `probe_eval/` (old rows).
    Report interior detection AUROC against the matched `real_crop`, not pooled reals.
 
 5. **Provenance is mixed — restrict before comparing.** ai_interior and real_crop are each
