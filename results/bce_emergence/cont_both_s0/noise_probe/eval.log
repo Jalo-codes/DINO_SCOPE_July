@@ -112,3 +112,170 @@
 [data] imd2020 train kept=0 dropped=0/0
 [data] imd2020 val kept=2401 dropped=23/2424 reasons=mask_area_too_small:23
 [data] IMD2020: train=0 val=2401 real_cases=414 splices=2010 skipped_unmasked=0
+# ============================================================
+# log opened  pid=3563065  ts=2026-07-14T11:17:21  git=bdad58c
+# python=3.10.12  torch=2.7.1+cu118  device=NVIDIA GeForce RTX 2080 Ti 10.6GB  n_gpu=1
+# cmd: /home/fri-team-4/fri-team4/DINO_SCOPE_July/experiments/scripts/eval_robustness.py --checkpoint /media/ssd/runs/bce_emergence/cont_both_s0/epoch_0005.pt --decoder kmeans --amp_dtype float16 --conditions clean jpeg_90 jpeg_70 jpeg_50 jpeg_30 --corrupt_at model_input --cache_dir /media/ssd/runs/bce_emergence/cont_both_s0/noise_cache_epoch_0005 --ai_interior_root /media/ssd/DINO_SCOPE_DATA/SAGI_D --ai_boundary_root /media/ssd/DINO_SCOPE_DATA/SAGI_D --real_crop_root /media/ssd/DINO_SCOPE_DATA/SAGI_D --sp_interior_root /media/ssd/DINO_SCOPE_DATA/IMD2020 --sp_boundary_root /media/ssd/DINO_SCOPE_DATA/IMD2020 --fr_bg_matched_root /media/ssd/DINO_SCOPE_DATA/content/flux_originals --ai_interior_tgif_root /media/ssd/DINO_SCOPE_DATA/content/flux_originals --ai_boundary_tgif_root /media/ssd/DINO_SCOPE_DATA/content/flux_originals --real_crop_tgif_root /media/ssd/DINO_SCOPE_DATA/content/flux_originals --out_dir results/bce_emergence/cont_both_s0/noise_probe --summary_out results/bce_emergence/cont_both_s0/noise_probe/robustness_summary.json
+# ============================================================
+[robust] loading checkpoint: /media/ssd/runs/bce_emergence/cont_both_s0/epoch_0005.pt
+[ckpt] loaded epoch=5 ← /media/ssd/runs/bce_emergence/cont_both_s0/epoch_0005.pt
+[data] Indexing inpaint (sagid): /media/ssd/DINO_SCOPE_DATA/SAGI_D
+[data] sagid train kept=3046 dropped=0/3046 warns=warn_mask_native_resize:4
+[data] sagid val kept=338 dropped=0/338 warns=warn_mask_native_resize:2
+[data] inpaint sagid: train=3046 val=338 triplets=1692 unmatched_mods=0
+[data] ai_interior (sagid @ /media/ssd/DINO_SCOPE_DATA/SAGI_D): 50 probes from 169/169 parents scanned (gated=140, available_in_scanned=50, stopped_early=False, spec=v5)
+[robust] ai_interior: 50 val items
+[data] Indexing inpaint (sagid): /media/ssd/DINO_SCOPE_DATA/SAGI_D
+[data] sagid train kept=3046 dropped=0/3046 warns=warn_mask_native_resize:4
+[data] sagid val kept=338 dropped=0/338 warns=warn_mask_native_resize:2
+[data] inpaint sagid: train=3046 val=338 triplets=1692 unmatched_mods=0
+[data] ai_boundary (sagid @ /media/ssd/DINO_SCOPE_DATA/SAGI_D): 300 probes from 169/169 parents scanned (gated=29, available_in_scanned=590, stopped_early=False, spec=v5)
+[robust] ai_boundary: 300 val items
+[data] Indexing IMD2020: /media/ssd/DINO_SCOPE_DATA/IMD2020
+[data] imd2020 train kept=0 dropped=0/0
+[data] imd2020 val kept=2401 dropped=23/2424 reasons=mask_area_too_small:23
+[data] IMD2020: train=0 val=2401 real_cases=414 splices=2010 skipped_unmasked=0
+[data] sp_interior (imd2020 @ /media/ssd/DINO_SCOPE_DATA/IMD2020): 120 probes from 1987/1987 parents scanned (gated=1892, available_in_scanned=120, stopped_early=False, spec=v5)
+[robust] sp_interior: 120 val items
+[data] Indexing IMD2020: /media/ssd/DINO_SCOPE_DATA/IMD2020
+[data] imd2020 train kept=0 dropped=0/0
+[data] imd2020 val kept=2401 dropped=23/2424 reasons=mask_area_too_small:23
+[data] IMD2020: train=0 val=2401 real_cases=414 splices=2010 skipped_unmasked=0
+[data] sp_boundary (imd2020 @ /media/ssd/DINO_SCOPE_DATA/IMD2020): 300 probes from 551/1987 parents scanned (gated=251, available_in_scanned=1254, stopped_early=True, spec=v5)
+[robust] sp_boundary: 300 val items
+[data] Indexing tgif2 (341 coco_ids): /media/ssd/DINO_SCOPE_DATA/content/flux_originals/tgif2_index.json
+[data] tgif2 train kept=0 dropped=0/0
+[data] tgif2 val kept=9547 dropped=1/9548 reasons=image_corrupt:1
+[data] tgif2: train=0 val=9547 coco_ids=341 train_frac=0.0 max_per_cell=None eval_per_cell=None types=['sp']
+[data] ai_interior (tgif2 @ /media/ssd/DINO_SCOPE_DATA/content/flux_originals): 300 probes from 2818/9206 parents scanned (gated=2518, available_in_scanned=358, stopped_early=True, spec=v5)
+[data] fr_bg_matched: size pool from ai_interior ref (n=300, median side=262px)
+[data] Indexing tgif2 (341 coco_ids): /media/ssd/DINO_SCOPE_DATA/content/flux_originals/tgif2_index.json
+[data] tgif2 train kept=0 dropped=0/0
+[data] tgif2 val kept=9059 dropped=489/9548 reasons=image_corrupt:1,image_degenerate:272,mask_aspect_misaligned:216 warns=warn_mask_native_resize:6147
+[data] tgif2: train=0 val=9059 coco_ids=341 train_frac=0.0 max_per_cell=None eval_per_cell=None types=['fr']
+[data] fr_bg_matched (tgif2 @ /media/ssd/DINO_SCOPE_DATA/content/flux_originals): 300 probes from 300/8718 parents scanned (gated=0, available_in_scanned=2112, stopped_early=True, spec=v5)
+[robust] fr_bg_matched: 300 val items
+[data] Indexing inpaint (sagid): /media/ssd/DINO_SCOPE_DATA/SAGI_D
+[data] sagid train kept=3046 dropped=0/3046 warns=warn_mask_native_resize:4
+[data] sagid val kept=338 dropped=0/338 warns=warn_mask_native_resize:2
+[data] inpaint sagid: train=3046 val=338 triplets=1692 unmatched_mods=0
+[data] real_crop (sagid @ /media/ssd/DINO_SCOPE_DATA/SAGI_D): 50 probes from 169/169 parents scanned (gated=140, unpaired=0, available_in_scanned=50, stopped_early=False, spec=v5)
+[robust] real_crop: 50 val items
+[data] Indexing tgif2 (341 coco_ids): /media/ssd/DINO_SCOPE_DATA/content/flux_originals/tgif2_index.json
+[data] tgif2 train kept=0 dropped=0/0
+[data] tgif2 val kept=9547 dropped=1/9548 reasons=image_corrupt:1
+[data] tgif2: train=0 val=9547 coco_ids=341 train_frac=0.0 max_per_cell=None eval_per_cell=None types=['sp']
+[data] ai_interior (tgif2 @ /media/ssd/DINO_SCOPE_DATA/content/flux_originals): 300 probes from 2818/9206 parents scanned (gated=2518, available_in_scanned=358, stopped_early=True, spec=v5)
+[robust] ai_interior_tgif: 300 val items
+[data] Indexing tgif2 (341 coco_ids): /media/ssd/DINO_SCOPE_DATA/content/flux_originals/tgif2_index.json
+[data] tgif2 train kept=0 dropped=0/0
+[data] tgif2 val kept=9547 dropped=1/9548 reasons=image_corrupt:1
+[data] tgif2: train=0 val=9547 coco_ids=341 train_frac=0.0 max_per_cell=None eval_per_cell=None types=['sp']
+[data] ai_boundary (tgif2 @ /media/ssd/DINO_SCOPE_DATA/content/flux_originals): 300 probes from 426/9206 parents scanned (gated=126, available_in_scanned=1129, stopped_early=True, spec=v5)
+[robust] ai_boundary_tgif: 300 val items
+[data] Indexing tgif2 (341 coco_ids): /media/ssd/DINO_SCOPE_DATA/content/flux_originals/tgif2_index.json
+[data] tgif2 train kept=0 dropped=0/0
+[data] tgif2 val kept=9547 dropped=1/9548 reasons=image_corrupt:1
+[data] tgif2: train=0 val=9547 coco_ids=341 train_frac=0.0 max_per_cell=None eval_per_cell=None types=['sp']
+[data] real_crop (tgif2 @ /media/ssd/DINO_SCOPE_DATA/content/flux_originals): 300 probes from 2818/9206 parents scanned (gated=2518, unpaired=0, available_in_scanned=358, stopped_early=True, spec=v5)
+[robust] real_crop_tgif: 300 val items
+[robust] running condition: clean
+[eval] mask-resize: (1024, 682) → (2048, 1364) (same aspect, NEAREST) /media/ssd/DINO_SCOPE_DATA/SAGI_D/mask/triplet_00961.png
+[eval] mask-resize: (612, 612) → (2048, 2048) (same aspect, NEAREST) /media/ssd/DINO_SCOPE_DATA/SAGI_D/mask/triplet_01670.png
+[eval] mask-resize: (1024, 682) → (2048, 1364) (same aspect, NEAREST) /media/ssd/DINO_SCOPE_DATA/SAGI_D/mask/triplet_00961.png
+[eval] mask-resize: (612, 612) → (2048, 2048) (same aspect, NEAREST) /media/ssd/DINO_SCOPE_DATA/SAGI_D/mask/triplet_01670.png
+[eval] mask-resize: (1024, 682) → (2048, 1364) (same aspect, NEAREST) /media/ssd/DINO_SCOPE_DATA/SAGI_D/mask/triplet_00961.png
+[robust] cache: 2020 items indexed at /media/ssd/runs/bce_emergence/cont_both_s0/noise_cache_epoch_0005/clean
+[robust] running condition: jpeg_90
+[eval] mask-resize: (1024, 682) → (2048, 1364) (same aspect, NEAREST) /media/ssd/DINO_SCOPE_DATA/SAGI_D/mask/triplet_00961.png
+[eval] mask-resize: (612, 612) → (2048, 2048) (same aspect, NEAREST) /media/ssd/DINO_SCOPE_DATA/SAGI_D/mask/triplet_01670.png
+[eval] mask-resize: (1024, 682) → (2048, 1364) (same aspect, NEAREST) /media/ssd/DINO_SCOPE_DATA/SAGI_D/mask/triplet_00961.png
+[eval] mask-resize: (612, 612) → (2048, 2048) (same aspect, NEAREST) /media/ssd/DINO_SCOPE_DATA/SAGI_D/mask/triplet_01670.png
+[eval] mask-resize: (1024, 682) → (2048, 1364) (same aspect, NEAREST) /media/ssd/DINO_SCOPE_DATA/SAGI_D/mask/triplet_00961.png
+[robust] cache: 2020 items indexed at /media/ssd/runs/bce_emergence/cont_both_s0/noise_cache_epoch_0005/jpeg_90
+[robust] running condition: jpeg_70
+[eval] mask-resize: (1024, 682) → (2048, 1364) (same aspect, NEAREST) /media/ssd/DINO_SCOPE_DATA/SAGI_D/mask/triplet_00961.png
+[eval] mask-resize: (612, 612) → (2048, 2048) (same aspect, NEAREST) /media/ssd/DINO_SCOPE_DATA/SAGI_D/mask/triplet_01670.png
+[eval] mask-resize: (1024, 682) → (2048, 1364) (same aspect, NEAREST) /media/ssd/DINO_SCOPE_DATA/SAGI_D/mask/triplet_00961.png
+[eval] mask-resize: (612, 612) → (2048, 2048) (same aspect, NEAREST) /media/ssd/DINO_SCOPE_DATA/SAGI_D/mask/triplet_01670.png
+[eval] mask-resize: (1024, 682) → (2048, 1364) (same aspect, NEAREST) /media/ssd/DINO_SCOPE_DATA/SAGI_D/mask/triplet_00961.png
+[robust] cache: 2020 items indexed at /media/ssd/runs/bce_emergence/cont_both_s0/noise_cache_epoch_0005/jpeg_70
+[robust] running condition: jpeg_50
+[eval] mask-resize: (1024, 682) → (2048, 1364) (same aspect, NEAREST) /media/ssd/DINO_SCOPE_DATA/SAGI_D/mask/triplet_00961.png
+[eval] mask-resize: (612, 612) → (2048, 2048) (same aspect, NEAREST) /media/ssd/DINO_SCOPE_DATA/SAGI_D/mask/triplet_01670.png
+[eval] mask-resize: (1024, 682) → (2048, 1364) (same aspect, NEAREST) /media/ssd/DINO_SCOPE_DATA/SAGI_D/mask/triplet_00961.png
+[eval] mask-resize: (612, 612) → (2048, 2048) (same aspect, NEAREST) /media/ssd/DINO_SCOPE_DATA/SAGI_D/mask/triplet_01670.png
+[eval] mask-resize: (1024, 682) → (2048, 1364) (same aspect, NEAREST) /media/ssd/DINO_SCOPE_DATA/SAGI_D/mask/triplet_00961.png
+[robust] cache: 2020 items indexed at /media/ssd/runs/bce_emergence/cont_both_s0/noise_cache_epoch_0005/jpeg_50
+[robust] running condition: jpeg_30
+[eval] mask-resize: (1024, 682) → (2048, 1364) (same aspect, NEAREST) /media/ssd/DINO_SCOPE_DATA/SAGI_D/mask/triplet_00961.png
+[eval] mask-resize: (612, 612) → (2048, 2048) (same aspect, NEAREST) /media/ssd/DINO_SCOPE_DATA/SAGI_D/mask/triplet_01670.png
+[eval] mask-resize: (1024, 682) → (2048, 1364) (same aspect, NEAREST) /media/ssd/DINO_SCOPE_DATA/SAGI_D/mask/triplet_00961.png
+[eval] mask-resize: (612, 612) → (2048, 2048) (same aspect, NEAREST) /media/ssd/DINO_SCOPE_DATA/SAGI_D/mask/triplet_01670.png
+[eval] mask-resize: (1024, 682) → (2048, 1364) (same aspect, NEAREST) /media/ssd/DINO_SCOPE_DATA/SAGI_D/mask/triplet_00961.png
+[robust] cache: 2020 items indexed at /media/ssd/runs/bce_emergence/cont_both_s0/noise_cache_epoch_0005/jpeg_30
+[robust] ─── Robustness Sweep Table: dataset=ai_boundary, decoder=kmeans ───
+[robust] ai_boundary_kmeans robustness_sweep: 5 conditions metric=f1
+[robust] ai_boundary_kmeans condition    overall      tiny     small    medium     large  image_auc   Δ(base)
+[robust] ai_boundary_kmeans ─────────────────────────────────────────────────────────────────────────────────
+[robust] ai_boundary_kmeans clean         0.9610    0.9609    0.9540    0.9670    0.9642         —   +0.0000
+[robust] ai_boundary_kmeans jpeg_90       0.9525    0.9563    0.9414    0.9513    0.9671         —   -0.0085
+[robust] ai_boundary_kmeans jpeg_70       0.9332    0.9409    0.9086    0.9248    0.9572         —   -0.0278
+[robust] ai_boundary_kmeans jpeg_50       0.9122    0.9279    0.8632    0.9046    0.9456         —   -0.0489
+[robust] ai_boundary_kmeans jpeg_30       0.8628    0.9233    0.8236    0.8394    0.9251         —   -0.0982
+[robust] ─── Robustness Sweep Table: dataset=ai_interior, decoder=kmeans ───
+[robust] ai_interior_kmeans robustness_sweep: 5 conditions metric=f1
+[robust] ai_interior_kmeans condition    overall      tiny     small    medium     large  image_auc   Δ(base)
+[robust] ai_interior_kmeans ─────────────────────────────────────────────────────────────────────────────────
+[robust] ai_interior_kmeans clean         0.5693         —    0.4064    0.5600    0.6106         —   +0.0000
+[robust] ai_interior_kmeans jpeg_90       0.5619         —    0.4065    0.5480    0.6070         —   -0.0074
+[robust] ai_interior_kmeans jpeg_70       0.5756         —    0.4064    0.5733    0.5938         —   +0.0063
+[robust] ai_interior_kmeans jpeg_50       0.5663         —    0.4333    0.5682    0.5788         —   -0.0030
+[robust] ai_interior_kmeans jpeg_30       0.5686         —    0.4263    0.5960    0.5467         —   -0.0007
+[robust] ─── Robustness Sweep Table: dataset=fr_bg_matched, decoder=kmeans ───
+[robust] fr_bg_matched_kmeans robustness_sweep: 5 conditions metric=f1
+[robust] fr_bg_matched_kmeans condition    overall      tiny     small    medium     large  image_auc   Δ(base)
+[robust] fr_bg_matched_kmeans ─────────────────────────────────────────────────────────────────────────────────
+[robust] fr_bg_matched_kmeans clean              —         —         —         —         —         —      +nan
+[robust] fr_bg_matched_kmeans jpeg_90            —         —         —         —         —         —      +nan
+[robust] fr_bg_matched_kmeans jpeg_70            —         —         —         —         —         —      +nan
+[robust] fr_bg_matched_kmeans jpeg_50            —         —         —         —         —         —      +nan
+[robust] fr_bg_matched_kmeans jpeg_30            —         —         —         —         —         —      +nan
+[robust] ─── Robustness Sweep Table: dataset=real_crop, decoder=kmeans ───
+[robust] real_crop_kmeans robustness_sweep: 5 conditions metric=f1
+[robust] real_crop_kmeans condition    overall      tiny     small    medium     large  image_auc   Δ(base)
+[robust] real_crop_kmeans ─────────────────────────────────────────────────────────────────────────────────
+[robust] real_crop_kmeans clean              —         —         —         —         —         —      +nan
+[robust] real_crop_kmeans jpeg_90            —         —         —         —         —         —      +nan
+[robust] real_crop_kmeans jpeg_70            —         —         —         —         —         —      +nan
+[robust] real_crop_kmeans jpeg_50            —         —         —         —         —         —      +nan
+[robust] real_crop_kmeans jpeg_30            —         —         —         —         —         —      +nan
+[robust] ─── Robustness Sweep Table: dataset=sp_boundary, decoder=kmeans ───
+[robust] sp_boundary_kmeans robustness_sweep: 5 conditions metric=f1
+[robust] sp_boundary_kmeans condition    overall      tiny     small    medium     large  image_auc   Δ(base)
+[robust] sp_boundary_kmeans ─────────────────────────────────────────────────────────────────────────────────
+[robust] sp_boundary_kmeans clean         0.9512    0.9347    0.9540    0.9647    0.8756         —   +0.0000
+[robust] sp_boundary_kmeans jpeg_90       0.9508    0.9389    0.9560    0.9621    0.8680         —   -0.0004
+[robust] sp_boundary_kmeans jpeg_70       0.9505    0.9390    0.9558    0.9648    0.9155         —   -0.0006
+[robust] sp_boundary_kmeans jpeg_50       0.9527    0.9446    0.9551    0.9609    0.8313         —   +0.0015
+[robust] sp_boundary_kmeans jpeg_30       0.9499    0.9450    0.9509    0.9585    0.8809         —   -0.0013
+[robust] ─── Robustness Sweep Table: dataset=sp_interior, decoder=kmeans ───
+[robust] sp_interior_kmeans robustness_sweep: 5 conditions metric=f1
+[robust] sp_interior_kmeans condition    overall      tiny     small    medium     large  image_auc   Δ(base)
+[robust] sp_interior_kmeans ─────────────────────────────────────────────────────────────────────────────────
+[robust] sp_interior_kmeans clean         0.5776    0.7594    0.5653    0.5738    0.5900         —   +0.0000
+[robust] sp_interior_kmeans jpeg_90       0.5842    0.8202    0.5780    0.5842    0.5900         —   +0.0066
+[robust] sp_interior_kmeans jpeg_70       0.5805    0.6874    0.5318    0.5829    0.6076         —   +0.0029
+[robust] sp_interior_kmeans jpeg_50       0.5953    0.7333    0.5846    0.5784    0.6270         —   +0.0177
+[robust] sp_interior_kmeans jpeg_30       0.5635    0.6224    0.5402    0.5712    0.6016         —   -0.0140
+[eval] wrote 2020 records -> results/bce_emergence/cont_both_s0/noise_probe/kmeans_clean_records.csv
+[robust] wrote 2020 records -> results/bce_emergence/cont_both_s0/noise_probe/kmeans_clean_records.csv
+[eval] wrote 2020 records -> results/bce_emergence/cont_both_s0/noise_probe/kmeans_jpeg_90_records.csv
+[robust] wrote 2020 records -> results/bce_emergence/cont_both_s0/noise_probe/kmeans_jpeg_90_records.csv
+[eval] wrote 2020 records -> results/bce_emergence/cont_both_s0/noise_probe/kmeans_jpeg_70_records.csv
+[robust] wrote 2020 records -> results/bce_emergence/cont_both_s0/noise_probe/kmeans_jpeg_70_records.csv
+[eval] wrote 2020 records -> results/bce_emergence/cont_both_s0/noise_probe/kmeans_jpeg_50_records.csv
+[robust] wrote 2020 records -> results/bce_emergence/cont_both_s0/noise_probe/kmeans_jpeg_50_records.csv
+[eval] wrote 2020 records -> results/bce_emergence/cont_both_s0/noise_probe/kmeans_jpeg_30_records.csv
+[robust] wrote 2020 records -> results/bce_emergence/cont_both_s0/noise_probe/kmeans_jpeg_30_records.csv
+[robust] saving flat robustness summary to results/bce_emergence/cont_both_s0/noise_probe/robustness_summary.json
