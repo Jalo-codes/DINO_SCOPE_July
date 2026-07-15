@@ -41,7 +41,7 @@ def find_images_and_generators(output_dir: Path, manifest_name: str = "downloade
     items: List[Tuple[Path, str]] = []
 
     if manifest_path.exists():
-        log_line(f"[eval_openfake] Found manifest at {manifest_path}")
+        log_line(f"[eval] Found manifest at {manifest_path}")
         with open(manifest_path, "r", encoding="utf-8") as f:
             reader = csv.DictReader(f)
             for row in reader:
@@ -63,11 +63,11 @@ def find_images_and_generators(output_dir: Path, manifest_name: str = "downloade
                 if p.exists() and p.is_file():
                     items.append((p, generator))
                 else:
-                    log_line(f"[eval_openfake] Warning: file in manifest not found: {file_path_str}")
+                    log_line(f"[eval] Warning: file in manifest not found: {file_path_str}")
         if items:
             return items
 
-    log_line(f"[eval_openfake] Manifest missing or yielded no valid paths. Scanning subdirectories in {output_dir}...")
+    log_line(f"[eval] Manifest missing or yielded no valid paths. Scanning subdirectories in {output_dir}...")
     for sub in sorted(output_dir.iterdir()):
         if sub.is_dir():
             gen_name = sub.name
@@ -97,7 +97,7 @@ def evaluate_generator_directory(
     if not items:
         raise RuntimeError(f"No images found in {output_dir}")
 
-    log_line(f"[eval_openfake] Loading model from {checkpoint_path} across {len(items)} images...")
+    log_line(f"[eval] Loading model from {checkpoint_path} across {len(items)} images...")
     model, cfg, res = load_eval_model(checkpoint_path, device=device, strict=False)
     bare_model = unwrap_model(model)
     bare_model.eval()
@@ -122,9 +122,9 @@ def evaluate_generator_directory(
                 scores_by_gen[gen].append(score)
                 all_scores.append(score)
             if i % 20 == 0 or i == len(items):
-                log_line(f"[eval_openfake] Processed {i}/{len(items)} images...")
+                log_line(f"[eval] Processed {i}/{len(items)} images...")
         except Exception as e:
-            log_line(f"⚠️ Error processing {path} ({gen}): {e}")
+            log_line(f"[eval] Error processing {path} ({gen}): {e}")
 
     # Summary Display
     print("\n" + "=" * 65)
