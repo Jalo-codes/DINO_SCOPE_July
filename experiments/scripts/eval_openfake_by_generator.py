@@ -5,11 +5,13 @@ or directly by scanning subdirectories inside `output_dir`.
 
 Computes GT-free activation scores (sigmoid of `image_logit`, i.e., detector probability score)
 and outputs both the overall mean activation score and a per-generator breakdown.
+Optionally displays and/or saves matplotlib visualizations (input | prediction | attention).
 
 Usage (CLI in Colab or local):
     python -m experiments.scripts.eval_openfake_by_generator \
         --checkpoint /content/drive/MyDrive/DINO_SCOPE_RUNS/gemini_finetune_v3/epoch_0003.pt \
-        --output_dir ./openfake_by_generator
+        --output_dir ./openfake_by_generator \
+        --viz --viz_per_gen 3
 """
 
 import argparse
@@ -22,20 +24,32 @@ from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 
+from lab_utils.eval.decode.hdbscan import decode_hdbscan
+from lab_utils.eval.decode.kmeans import decode_kmeans
+from lab_utils.eval.decode.threshold import decode_threshold
 from lab_utils.eval.fetch import model_info
 from lab_utils.eval.load_model import load_eval_model
 from lab_utils.eval.preprocess import load_image_tensor
 from lab_utils.logging.text import log_line
 from lab_utils.train.distributed import unwrap_model
+from experiments.labs.viz import display_image_inline, plot_prediction
+
+_DECODERS = {
+    "kmeans": decode_kmeans,
+    "threshold": decode_threshold,
+    "hdbscan": decode_hdbscan,
+}
 
 
 def _sigmoid(logit: Optional[float]) -> float:
     if logit is None or not math.isfinite(logit):
-        return float('nan')
+        return float("nan")
     return float(1.0 / (1.0 + math.exp(-logit)))
 
 
-def find_images_and_generators(output_dir: Path, manifest_name: str = "downloaded_manifest.csv") -> List[Tuple[Path, str]]:
+def find_images_and_generators(
+    output_dir: Path, manifest_name: str = "downloaded_manifest.csv"
+) -> List[Tuple[Path, str]]:
     """Locate images and their generator labels from manifest CSV or folder structure."""
     manifest_path = output_dir / manifest_name
     items: List[Tuple[Path, str]] = []
@@ -89,6 +103,11 @@ def evaluate_generator_directory(
     use_amp: bool = True,
     amp_dtype: str = "bf16",
     manifest_name: str = "downloaded_manifest.csv",
+    viz: bool = False,
+    save_viz: bool = False,
+    viz_dir: Optional[Union[str, Path]] = None,
+    viz_per_gen: int = 3,
+    decoder: str = "kmeans",
 ) -> Dict[str, List[float]]:
     import torch
 
@@ -105,10 +124,15 @@ def evaluate_generator_directory(
     # Map generator -> list of activation scores
     scores_by_gen: Dict[str, List[float]] = defaultdict(list)
     all_scores: List[float] = []
+    gen_viz_count: Dict[str, int] = defaultdict(int)
+
+    if save_viz and viz_dir is not None:
+        viz_dir = Path(viz_dir)
+        viz_dir.mkdir(parents=True, exist_ok=True)
 
     for i, (path, gen) in enumerate(items, 1):
         try:
-            img_t = load_image_tensor(path, res, device=device, return_pil=False)
+            img_t, img_pil = load_image_tensor(path, res, device=device, return_pil=True)
             with torch.no_grad():
                 info = model_info(
                     bare_model,
@@ -121,6 +145,34 @@ def evaluate_generator_directory(
             if not math.isnan(score):
                 scores_by_gen[gen].append(score)
                 all_scores.append(score)
+
+            # Matplotlib visual display / save
+            if (viz or save_viz) and gen_viz_count[gen] < viz_per_gen:
+                decoder_fn = _DECODERS.get(decoder, decode_kmeans)
+                patch_mask = decoder_fn(info)
+                fig = plot_prediction(
+                    img_pil,
+                    patch_mask,
+                    info,
+                    title=f"Gen: {gen} | {path.name} | p={score:.3f}",
+                )
+                if save_viz and viz_dir is not None:
+                    out_p = viz_dir / f"{gen}_{path.stem}_p{score:.2f}.png"
+                    out_p.parent.mkdir(parents=True, exist_ok=True)
+                    if hasattr(fig, "savefig"):
+                        fig.savefig(out_p, dpi=130, bbox_inches="tight")
+                    else:
+                        fig.save(out_p)
+                if viz:
+                    display_image_inline(fig)
+                if hasattr(fig, "clf"):
+                    try:
+                        import matplotlib.pyplot as plt
+                        plt.close(fig)
+                    except Exception:
+                        pass
+                gen_viz_count[gen] += 1
+
             if i % 20 == 0 or i == len(items):
                 log_line(f"[eval] Processed {i}/{len(items)} images...")
         except Exception as e:
@@ -163,6 +215,11 @@ def main() -> None:
     parser.add_argument("--device", default="cuda:0", help="Torch device to run inference on.")
     parser.add_argument("--no_amp", action="store_true", help="Disable mixed precision autocast.")
     parser.add_argument("--amp_dtype", default="bf16", choices=["bf16", "fp16"], help="Mixed precision dtype.")
+    parser.add_argument("--viz", action="store_true", help="Display matplotlib prediction figures inline.")
+    parser.add_argument("--save_viz", action="store_true", help="Save prediction figure PNGs to disk.")
+    parser.add_argument("--viz_dir", default="./openfake_by_generator/viz_plots", help="Directory to save visual plots.")
+    parser.add_argument("--viz_per_gen", type=int, default=3, help="Max number of samples to visualize per generator.")
+    parser.add_argument("--decoder", default="kmeans", choices=["kmeans", "threshold", "hdbscan"], help="Decoder for patch mask overlay.")
 
     args = parser.parse_args()
     evaluate_generator_directory(
@@ -172,6 +229,11 @@ def main() -> None:
         use_amp=not args.no_amp,
         amp_dtype=args.amp_dtype,
         manifest_name=args.manifest_name,
+        viz=args.viz,
+        save_viz=args.save_viz,
+        viz_dir=args.viz_dir,
+        viz_per_gen=args.viz_per_gen,
+        decoder=args.decoder,
     )
 
 
