@@ -82,6 +82,12 @@ def _build_parser() -> argparse.ArgumentParser:
     p.add_argument('--max_scan', type=int, default=None,
                    help='Stop after scanning this many stream items regardless '
                         'of fill state (bound a slow stream)')
+    p.add_argument('--stop_after_dry', type=int, default=None,
+                   help='Stop after this many consecutive scanned rows with no '
+                        'new save (coupon-collector tail escape). CAUTION: if '
+                        'the stream is ordered by shard/generator, a long dry '
+                        'stretch can precede an unseen generator — keep this '
+                        'generous (e.g. 20000) or leave unset for a full scan.')
     p.add_argument('--generators', nargs='*', default=None,
                    help='Restrict to these generator names (as they appear in '
                         'the dataset "model" field). When given, the stream '
@@ -182,12 +188,18 @@ def download(args) -> Path:
 
         pbar = tqdm(desc='scanning stream') if tqdm else None
         n_scanned = 0
+        n_dry = 0
         for item in ds:
             n_scanned += 1
+            n_dry += 1
             if pbar is not None:
                 pbar.update(1)
             if args.max_scan and n_scanned >= args.max_scan:
                 print(f'hit --max_scan={args.max_scan}, stopping')
+                break
+            if args.stop_after_dry and n_dry >= args.stop_after_dry:
+                print(f'{n_dry} consecutive rows with no new save '
+                      f'(--stop_after_dry), stopping')
                 break
             if all_full():
                 print('all targets met, stopping early')
@@ -254,6 +266,7 @@ def download(args) -> Path:
             seen.add(md5)
             counts[key] += 1
             new_rows += 1
+            n_dry = 0
             if pbar is not None and new_rows % 25 == 0:
                 filled = sum(1 for k, c in counts.items() if c >= target_for(k))
                 pbar.set_postfix(saved=new_rows, pools=len(counts), full=filled)
