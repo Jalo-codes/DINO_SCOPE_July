@@ -184,7 +184,7 @@ def download(args) -> Path:
         n_scanned = 0
         for item in ds:
             n_scanned += 1
-            if pbar:
+            if pbar is not None:
                 pbar.update(1)
             if args.max_scan and n_scanned >= args.max_scan:
                 print(f'hit --max_scan={args.max_scan}, stopping')
@@ -224,7 +224,7 @@ def download(args) -> Path:
                 width, height = img.size
             except Exception as exc:
                 msg = f'skipped corrupt image from {gen}: {exc}'
-                (pbar.write(msg) if pbar else print(msg))
+                (pbar.write(msg) if pbar is not None else print(msg))
                 continue
 
             gen_dir = root / gen
@@ -254,10 +254,10 @@ def download(args) -> Path:
             seen.add(md5)
             counts[key] += 1
             new_rows += 1
-            if pbar and new_rows % 25 == 0:
+            if pbar is not None and new_rows % 25 == 0:
                 filled = sum(1 for k, c in counts.items() if c >= target_for(k))
                 pbar.set_postfix(saved=new_rows, pools=len(counts), full=filled)
-        if pbar:
+        if pbar is not None:
             pbar.close()
 
     print('\n' + '=' * 56)
