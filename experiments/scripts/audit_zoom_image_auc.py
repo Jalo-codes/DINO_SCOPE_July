@@ -331,6 +331,20 @@ def analyze(csv_path: Path, *, n_bootstrap: int, seed: int,
             entry['rules'][rule] = {'auroc': auc, 'delta': auc - flat_auc,
                                     'delta_ci95': [lo, hi]}
 
+        # Activation scores (mean sigmoid), reals vs fakes, per rule.  Reported
+        # per methodology rule 7: a mean is only readable NEXT TO the same
+        # condition's reals mean — never compare means across models/decoders,
+        # use the AUROCs above for that.
+        entry['activation'] = {}
+        log_line(f'[zoom]   activation (mean sigmoid):  reals    fakes')
+        for rule in ('flat', 'max', 'crop'):
+            s = 1.0 / (1.0 + np.exp(-_fused(full, crop, zoomed, rule)))
+            m_real = float(s[labels == 0].mean()) if (labels == 0).any() else float('nan')
+            m_fake = float(s[labels == 1].mean()) if (labels == 1).any() else float('nan')
+            log_line(f'[zoom]     {rule:<6}                     '
+                     f'{m_real:.4f}   {m_fake:.4f}')
+            entry['activation'][rule] = {'mean_real': m_real, 'mean_fake': m_fake}
+
         # Per-generator / per-cell breakdown: each subgroup's fakes vs the
         # SOURCE's whole real pool (reals carry no subgroup).  Point estimates
         # only — n per cell is small; the source-level CI above is the read.
@@ -345,10 +359,13 @@ def analyze(csv_path: Path, *, n_bootstrap: int, seed: int,
                 flat_auc = _auroc(_fused(cf, cc, cz, 'flat'), cy)
                 max_auc = _auroc(_fused(cf, cc, cz, 'max'), cy)
                 n_fake = int(cy.sum())
+                fake_act = float((1.0 / (1.0 + np.exp(-cf[cy == 1]))).mean())
                 log_line(f'[zoom]   -- {sub:<28} n_fake={n_fake:<4} '
-                         f'flat={flat_auc:.4f}  max={max_auc:.4f}')
+                         f'flat={flat_auc:.4f}  max={max_auc:.4f}  '
+                         f'act(flat)={fake_act:.4f}')
                 entry['subgroups'][sub] = {'n_fake': n_fake, 'flat_auroc': flat_auc,
-                                           'max_auroc': max_auc}
+                                           'max_auroc': max_auc,
+                                           'mean_fake_activation_flat': fake_act}
 
         # Zoomed-only subset: the lens where fusion can actually act.  Small-n
         # and label-imbalanced — read the CI, not the point.
