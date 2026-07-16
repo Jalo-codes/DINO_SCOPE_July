@@ -3,15 +3,15 @@
 Reads images either from `downloaded_manifest.csv` (created by `download_n_per_generator`)
 or directly by scanning subdirectories inside `output_dir`.
 
-Computes GT-free activation scores (sigmoid of `image_logit`, i.e., detector probability score)
-and outputs both the overall mean activation score and a per-generator breakdown.
-Optionally displays and/or saves matplotlib visualizations (input | prediction | attention).
+Supports both full-frame single-pass (`--no_zoom`) and two-pass attention-guided zooming (`--zoom`),
+computing GT-free activation scores (sigmoid of `image_logit`) and per-generator breakdowns.
+Optionally displays inline and/or saves rich matplotlib visualizations (full-frame or 7-panel zoom breakdown).
 
 Usage (CLI in Colab or local):
     python -m experiments.scripts.eval_openfake_by_generator \
         --checkpoint /content/drive/MyDrive/DINO_SCOPE_RUNS/gemini_finetune_v3/epoch_0003.pt \
         --output_dir ./openfake_by_generator \
-        --viz --viz_per_gen 3
+        --zoom --viz --viz_per_gen 3
 """
 
 import argparse
@@ -24,15 +24,22 @@ from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 
+from experiments.configs.zoom import DEFAULT_ZOOM
+from experiments.labs.viz import display_image_inline, plot_hdbscan_result, plot_prediction
 from lab_utils.eval.decode.hdbscan import decode_hdbscan
 from lab_utils.eval.decode.kmeans import decode_kmeans
 from lab_utils.eval.decode.threshold import decode_threshold
 from lab_utils.eval.fetch import model_info
 from lab_utils.eval.load_model import load_eval_model
 from lab_utils.eval.preprocess import load_image_tensor
+from lab_utils.eval.zoom import (
+    attention_to_bbox,
+    bbox_is_trivial,
+    crop_to_bbox,
+    place_mask_in_frame_pixels,
+)
 from lab_utils.logging.text import log_line
 from lab_utils.train.distributed import unwrap_model
-from experiments.labs.viz import display_image_inline, plot_prediction
 
 _DECODERS = {
     "kmeans": decode_kmeans,
@@ -103,11 +110,18 @@ def evaluate_generator_directory(
     use_amp: bool = True,
     amp_dtype: str = "bf16",
     manifest_name: str = "downloaded_manifest.csv",
+    zoom: bool = False,
     viz: bool = False,
     save_viz: bool = False,
     viz_dir: Optional[Union[str, Path]] = None,
     viz_per_gen: int = 3,
     decoder: str = "kmeans",
+    attn_percentile=DEFAULT_ZOOM.attn_percentile,
+    attn_thresh_mult: float = DEFAULT_ZOOM.attn_thresh_mult,
+    attn_pad_frac: float = DEFAULT_ZOOM.attn_pad_frac,
+    min_crop_frac: float = DEFAULT_ZOOM.min_crop_frac,
+    min_box_size: int = DEFAULT_ZOOM.min_box_size,
+    attn_min_pad_frac: float = DEFAULT_ZOOM.attn_min_pad_frac,
 ) -> Dict[str, List[float]]:
     import torch
 
@@ -116,7 +130,8 @@ def evaluate_generator_directory(
     if not items:
         raise RuntimeError(f"No images found in {output_dir}")
 
-    log_line(f"[eval] Loading model from {checkpoint_path} across {len(items)} images...")
+    mode_str = "ATTENTION ZOOM (2-PASS)" if zoom else "FULL FRAME (NO ZOOM)"
+    log_line(f"[eval] Loading model from {checkpoint_path} across {len(items)} images [{mode_str}]...")
     model, cfg, res = load_eval_model(checkpoint_path, device=device, strict=False)
     bare_model = unwrap_model(model)
     bare_model.eval()
@@ -130,32 +145,85 @@ def evaluate_generator_directory(
         viz_dir = Path(viz_dir)
         viz_dir.mkdir(parents=True, exist_ok=True)
 
+    decoder_fn = _DECODERS.get(decoder, decode_kmeans)
+
     for i, (path, gen) in enumerate(items, 1):
         try:
             img_t, img_pil = load_image_tensor(path, res, device=device, return_pil=True)
             with torch.no_grad():
-                info = model_info(
+                info1 = model_info(
                     bare_model,
                     img_t,
                     device=device,
                     amp=use_amp,
                     amp_dtype=amp_dtype if use_amp else "float16",
                 )
-            score = _sigmoid(info.image_logit)
+            score = _sigmoid(info1.image_logit)
             if not math.isnan(score):
                 scores_by_gen[gen].append(score)
                 all_scores.append(score)
 
+            patch_mask = decoder_fn(info1)
+            zoomed = False
+            bbox = None
+            mask_zoom = None
+            crop_pil = None
+            attn_crop = None
+            crop_grid_hw = None
+
+            if zoom and info1.attention is not None:
+                bbox = attention_to_bbox(
+                    info1.attention,
+                    info1.grid_hw,
+                    percentile=attn_percentile,
+                    thresh_mult=attn_thresh_mult,
+                    pad_frac=attn_pad_frac,
+                    min_box_size=min_box_size,
+                    min_pad_frac=attn_min_pad_frac,
+                )
+                if not bbox_is_trivial(bbox, min_crop_frac=min_crop_frac):
+                    crop_pil = crop_to_bbox(img_pil, bbox)
+                    crop_t = load_image_tensor(crop_pil, res, device=device)
+                    with torch.no_grad():
+                        info_crop = model_info(
+                            bare_model,
+                            crop_t,
+                            device=device,
+                            amp=use_amp,
+                            amp_dtype=amp_dtype if use_amp else "float16",
+                        )
+                    crop_mask = decoder_fn(info_crop)
+                    crop2d = np.asarray(crop_mask, dtype=bool)
+                    if crop2d.ndim == 1:
+                        crop2d = crop2d.reshape(info_crop.grid_hw)
+                    full_px = (int(res.image_size), int(res.image_size))
+                    mask_zoom = place_mask_in_frame_pixels(crop2d, bbox, full_px)
+                    attn_crop = info_crop.attention
+                    crop_grid_hw = info_crop.grid_hw
+                    zoomed = True
+
             # Matplotlib visual display / save
             if (viz or save_viz) and gen_viz_count[gen] < viz_per_gen:
-                decoder_fn = _DECODERS.get(decoder, decode_kmeans)
-                patch_mask = decoder_fn(info)
-                fig = plot_prediction(
-                    img_pil,
-                    patch_mask,
-                    info,
-                    title=f"Gen: {gen} | {path.name} | p={score:.3f}",
-                )
+                if zoom and zoomed and mask_zoom is not None:
+                    fig = plot_hdbscan_result(
+                        img_pil=img_pil,
+                        patch_mask=patch_mask,
+                        info=info1,
+                        zoom_mask=mask_zoom,
+                        crop_box=bbox,
+                        crop_pil=crop_pil,
+                        attn_crop=attn_crop,
+                        crop_grid_hw=crop_grid_hw,
+                        title=f"Gen: {gen} | {path.name} | p={score:.3f} (Zoomed)",
+                        decoder_name=decoder,
+                    )
+                else:
+                    fig = plot_prediction(
+                        img_pil,
+                        mask_zoom if (zoom and zoomed and mask_zoom is not None) else patch_mask,
+                        info1,
+                        title=f"Gen: {gen} | {path.name} | p={score:.3f}",
+                    )
                 if save_viz and viz_dir is not None:
                     out_p = viz_dir / f"{gen}_{path.stem}_p{score:.2f}.png"
                     out_p.parent.mkdir(parents=True, exist_ok=True)
@@ -180,7 +248,7 @@ def evaluate_generator_directory(
 
     # Summary Display
     print("\n" + "=" * 65)
-    print("OPENFAKE EVALUATION SUMMARY (NO ZOOM)")
+    print(f"OPENFAKE EVALUATION SUMMARY ({mode_str})")
     print("=" * 65)
     if all_scores:
         overall_mean = float(np.mean(all_scores))
@@ -215,6 +283,7 @@ def main() -> None:
     parser.add_argument("--device", default="cuda:0", help="Torch device to run inference on.")
     parser.add_argument("--no_amp", action="store_true", help="Disable mixed precision autocast.")
     parser.add_argument("--amp_dtype", default="bf16", choices=["bf16", "fp16"], help="Mixed precision dtype.")
+    parser.add_argument("--zoom", action="store_true", help="Enable two-pass attention-guided zooming.")
     parser.add_argument("--viz", action="store_true", help="Display matplotlib prediction figures inline.")
     parser.add_argument("--save_viz", action="store_true", help="Save prediction figure PNGs to disk.")
     parser.add_argument("--viz_dir", default="./openfake_by_generator/viz_plots", help="Directory to save visual plots.")
@@ -229,6 +298,7 @@ def main() -> None:
         use_amp=not args.no_amp,
         amp_dtype=args.amp_dtype,
         manifest_name=args.manifest_name,
+        zoom=args.zoom,
         viz=args.viz,
         save_viz=args.save_viz,
         viz_dir=args.viz_dir,

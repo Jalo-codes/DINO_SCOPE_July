@@ -56,3 +56,8 @@ Thumbs.d
 # Qualitative visuals (zoom debug panels) ARE committed — small PNGs only.
 !results/visuals/
 !results/visuals/**/*.png
+
+# IEDAL2 challenge submission repo — own git repo (GitLab remote, Apache-2.0
+# license, unrelated history), just nested here physically for convenience.
+# Never let the parent repo track it or turn it into a submodule gitlink.
+iedal2/
