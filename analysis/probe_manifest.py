@@ -1,4 +1,4 @@
-"""experiments.labs.probe_manifest — audit the region-probe conditions.
+"""analysis.probe_manifest — audit the region-probe conditions.
 
 No model, no GT scoring — builds the probe conditions exactly as eval will
 (same builders, same deterministic windows) and:

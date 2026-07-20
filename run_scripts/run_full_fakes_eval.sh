@@ -37,7 +37,7 @@ done
 
 # 2. Report: per-generator AUROC + localization distribution (predicted-
 #    positive fraction), across all 6 cells.
-"$PY" -m experiments.labs.full_fakes_report \
+"$PY" -m analysis.full_fakes_report \
   --records bce_inpaint_s0="$RUN_ROOT/bce_inpaint_s0/full_fakes_eval/threshold_records.csv" \
   --records bce_splice_s0="$RUN_ROOT/bce_splice_s0/full_fakes_eval/threshold_records.csv" \
   --records bce_both_s0="$RUN_ROOT/bce_both_s0/full_fakes_eval/threshold_records.csv" \

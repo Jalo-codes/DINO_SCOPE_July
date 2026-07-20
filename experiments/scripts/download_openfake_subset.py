@@ -35,7 +35,7 @@ Usage (Colab):
         --zip_out /content/drive/MyDrive/DINO_SCOPE_DATA/openfake_ff.zip
 
     # later, evaluate:
-    python -m experiments.scripts.audit_zoom_image_auc \
+    python -m analysis.audit_zoom_image_auc \
         --checkpoint ... --full_fakes_root /content/openfake_ff ...
 """
 

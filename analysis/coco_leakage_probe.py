@@ -1,4 +1,4 @@
-"""experiments.scripts.coco_leakage_probe — COCO-provenance leakage audit.
+"""analysis.coco_leakage_probe — COCO-provenance leakage audit.
 
 Several sources draw their *background real* images from the same COCO corpus:
 

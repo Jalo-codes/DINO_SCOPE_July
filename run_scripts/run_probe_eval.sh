@@ -28,7 +28,7 @@ PROBE_ROOTS=(
 )
 
 # 0. Manifest + render eyeball (data-only, no checkpoint -- run once).
-"$PY" -m experiments.labs.probe_manifest \
+"$PY" -m analysis.probe_manifest \
   "${PROBE_ROOTS[@]}" \
   --out_csv "$RUN_ROOT/probe_manifest.csv" \
   --render_dir "$RUN_ROOT/probe_renders" --render_n 12
@@ -56,7 +56,7 @@ for cell in bce_inpaint_s0 bce_splice_s0 bce_both_s0 cont_inpaint_s0 cont_splice
 done
 
 # 2. Contrasts report across all 6 cells.
-"$PY" -m experiments.labs.probe_contrasts \
+"$PY" -m analysis.probe_contrasts \
   --manifest "$RUN_ROOT/probe_manifest.csv" \
   --records bce_inpaint_s0="$RUN_ROOT/bce_inpaint_s0/probe_eval/threshold_records.csv" \
   --records bce_splice_s0="$RUN_ROOT/bce_splice_s0/probe_eval/threshold_records.csv" \

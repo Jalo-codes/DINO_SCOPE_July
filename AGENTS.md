@@ -1,6 +1,6 @@
-# CLAUDE.md — DINO_SCOPE_July
+# AGENTS.md — DINO_SCOPE_July
 
-Working notes for any Claude (Code or Science) picking up this repo. Keep this file
+Working notes for any Codex (Code or Science) picking up this repo. Keep this file
 truthful and current; correct it in place when a claim is superseded.
 
 ## Repo orientation
@@ -28,7 +28,7 @@ truthful and current; correct it in place when a claim is superseded.
   |---|---|
   | `<cond>/probe_eval/` | pre-checkpoint-fix AND pre-`fr_bg_matched` (uses retired `fr_bg`, see rule 4). Kept only as the validity-check baseline against `probe_eval2` — do not cite its numbers directly. |
   | `probe_manifest.csv` | old `fr_bg` geometry. Use `probe_manifest2.csv` (current join table, `fr_bg_matched` geometry) instead. |
-  | `probe_contrasts.csv` / `.log` | generated before the checkpoint fix and before `fr_bg_matched` existed (the original Claude-Science report pass). Numbers in `REPORT_bce_emergence.md` sourced from this are stale — cross-check against `ANALYSIS_NOTES_bce_emergence.md` before citing. Not regenerated yet. |
+  | `probe_contrasts.csv` / `.log` | generated before the checkpoint fix and before `fr_bg_matched` existed (the original Codex-Science report pass). Numbers in `REPORT_bce_emergence.md` sourced from this are stale — cross-check against `ANALYSIS_NOTES_bce_emergence.md` before citing. Not regenerated yet. |
   | `probe_renders/` | illustrative crops only; some filenames still say `fr_bg` (retired name). Qualitative reference, not a data source. |
 
 - Eval code: `lab_utils/eval/aggregate.py`, `lab_utils/data/datasets/region_probes.py`,

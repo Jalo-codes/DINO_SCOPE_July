@@ -143,6 +143,7 @@ class TestFetchIsSoleModelEntry:
         'experiments/scripts/predict.py',       # GT-free qualitative inference; docstring names I2
         'experiments/scripts/eval_oracle.py',   # isolated cheating-oracle eval; reuses fetch.model_info by design
         'experiments/scripts/gen_size_bucket_visuals.py',  # per-item viz forward, same shape as attention_zoom.py
+        'experiments/scripts/eval_openfake_by_generator.py',  # per-generator OpenFake eval; full+crop forwards
     }
 
     def test_model_info_not_called_elsewhere(self):

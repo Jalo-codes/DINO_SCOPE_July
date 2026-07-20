@@ -1,8 +1,8 @@
-"""experiments.labs.probe_contrasts — the BCE-emergence result tables.
+"""analysis.probe_contrasts — the BCE-emergence result tables.
 
 Consumes per-item records CSVs (experiments/scripts/eval.py --out_dir →
 <decoder>_records.csv) from one or more trained cells, plus the probe
-manifest (experiments/labs/probe_manifest.py), and prints RAW numbers per
+manifest (analysis/probe_manifest.py), and prints RAW numbers per
 cell × condition — no deltas, no normalization; analysis happens off the pure
 numbers:
 

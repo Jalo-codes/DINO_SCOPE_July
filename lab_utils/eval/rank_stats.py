@@ -1,6 +1,6 @@
 """lab_utils.eval.rank_stats — shared AUC/percentile helpers for lab report scripts.
 
-Extracted out of experiments/labs/probe_contrasts.py so experiments/labs/
+Extracted out of analysis/probe_contrasts.py so analysis/
 full_fakes_report.py (and any future records-CSV report) doesn't fork its own
 copy of the rank-based AUC computation — scripts may not import each other
 (C-script invariant, see lab_utils/eval/val_sources.py), so shared logic
