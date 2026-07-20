@@ -388,14 +388,21 @@ def localization_is_meaningful(items) -> bool:
     return not all(it.meta.get('gt_mask_reliable') is False for it in fakes)
 
 
-def summarize_full_fakes(
+def summarize_full_fakes(records, *, log_tag='[eval]', tag='', min_n=5) -> Dict:
+    """Back-compat alias: the sentinel-GT case of summarize_image_only()."""
+    return summarize_image_only(records, log_tag=log_tag, tag=tag, min_n=min_n,
+                                reason='sentinel GT, rule 2')
+
+
+def summarize_image_only(
     records: List[EvalRecord],
     *,
     log_tag: str = '[eval]',
     tag: str = '',
     min_n: int = 5,
+    reason: str = 'no localization decoder',
 ) -> Dict:
-    """Whole-image separability view: AUROC pooled and PER GENERATOR.
+    """Image-level separability view: AUROC pooled and PER SUBGROUP.
 
     The counterpart to summarize() for sources where localization is a
     category error. Reports no f1/iou/precision. Instead:
@@ -416,28 +423,34 @@ def summarize_full_fakes(
     splices = [r for r in records if not r.is_real]
     reals   = [r for r in records if r.is_real]
 
-    log_line(f'{prefix} ─── full-fakes view: n_fake={len(splices)} n_real={len(reals)} '
-             f'(localization suppressed — sentinel GT, rule 2) ───')
+    log_line(f'{prefix} ─── image-level view: n_fake={len(splices)} n_real={len(reals)} '
+             f'(localization suppressed — {reason}) ───')
 
     auc = _image_auc(records)
     if not np.isnan(auc):
         log_line(f'{prefix} image_auc: {auc:.4f}')
 
+    # lit / false_lit are the predicted-positive fractions. Meaningful when a
+    # decoder ran against sentinel GT (how much of a wholly-fake frame lights
+    # up); structurally 0.000 under decoder='none', where masks are empty by
+    # construction — so print them only when they carry information.
     lit = _stats([r.recall for r in splices]) if splices else None
-    if lit:
-        log_line(f'{prefix} fakes      lit: {_fmt_stat(lit)}')
     false_lit = _stats([1.0 - r.accuracy for r in reals]) if reals else None
-    if false_lit:
-        log_line(f'{prefix} reals false_lit: {_fmt_stat(false_lit)}')
+    if (lit and lit['mean'] > 0) or (false_lit and false_lit['mean'] > 0):
+        if lit:
+            log_line(f'{prefix} fakes      lit: {_fmt_stat(lit)}')
+        if false_lit:
+            log_line(f'{prefix} reals false_lit: {_fmt_stat(false_lit)}')
 
     out: Dict = {'image_auc': float(auc), 'n_fake': len(splices), 'n_real': len(reals),
                  'lit': lit, 'false_lit': false_lit, 'generators': {}}
+    # 'generators' key kept for callers written against the full_fakes view.
 
     groups = by_subgroup(splices)
     if not groups:
         return out
 
-    log_line(f'{prefix} ─── per generator ({len(groups)} cells, vs {len(reals)} pooled reals) ───')
+    log_line(f'{prefix} ─── per subgroup ({len(groups)} cells, vs {len(reals)} pooled reals) ───')
     rows, thin = [], []
     for gen, recs in groups.items():
         (thin if len(recs) < min_n else rows).append((gen, recs))

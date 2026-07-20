@@ -37,7 +37,9 @@ import torch
 from lab_utils.compat import trapz
 from lab_utils.data.datasets.registry import REGISTRY
 from lab_utils.data.resolution import Resolution
-from lab_utils.eval.aggregate import summarize, summarize_by_subgroup
+from lab_utils.eval.aggregate import (
+    summarize, summarize_by_subgroup, summarize_image_only,
+)
 from lab_utils.eval.decode.hdbscan import decode_hdbscan
 from lab_utils.eval.decode.kmeans import decode_kmeans
 from lab_utils.eval.decode.threshold import decode_threshold
@@ -514,8 +516,16 @@ def _eval_checkpoint(ckpt_path: str, label: str, item_sets: Dict[str, List],
         src_out: dict = {'n_items': len(items), 'image_level': _image_level_metrics(any_recs),
                          'localization': {}}
         for rlabel, recs in readouts.items():
-            entry = {'overall': summarize(recs, log_tag=f'{tag}', tag=rlabel)}
-            subs = summarize_by_subgroup(recs, log_tag=f'{tag}', tag=rlabel)
+            # decoder 'none' emits empty masks, so every localization block —
+            # overall, per bucket, per subgroup — reads a meaningless 0.0000.
+            # Report image-level separability per subgroup instead.
+            if rlabel.startswith('none_'):
+                entry = {'overall': summarize_image_only(
+                    recs, log_tag=f'{tag}', tag=rlabel)}
+                subs = {}
+            else:
+                entry = {'overall': summarize(recs, log_tag=f'{tag}', tag=rlabel)}
+                subs = summarize_by_subgroup(recs, log_tag=f'{tag}', tag=rlabel)
             if subs:   # only sources whose items carry a subgroup label (TGIF)
                 entry['subgroups'] = subs
             src_out['localization'][rlabel] = entry
