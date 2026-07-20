@@ -288,7 +288,18 @@ def main() -> None:
             level_cache_dir = Path(args.cache_dir) / cond_name
             level_cache_dir.mkdir(parents=True, exist_ok=True)
 
-        for item in tqdm(all_items, desc=f'[robust] {cond_name}', unit='item', disable=disable_tqdm):
+        # tqdm is disabled whenever stdout is not a tty — which is EVERY
+        # notebook/piped run — so without this the loop is silent for its whole
+        # duration and reads as a hang. Log every ~10% instead.
+        _n_items = len(all_items)
+        _step = max(1, _n_items // 10)
+        for _i, item in enumerate(
+            tqdm(all_items, desc=f'[robust] {cond_name}', unit='item', disable=disable_tqdm),
+            start=1,
+        ):
+            if disable_tqdm and (_i % _step == 0 or _i == _n_items):
+                log_line(f'[robust]   {cond_name}: {_i}/{_n_items} '
+                         f'({100.0 * _i / _n_items:.0f}%)')
             try:
                 # 1. Load image and apply corruption in PIL — lazily, so a
                 # cache hit skips the decode+corrupt work entirely.
