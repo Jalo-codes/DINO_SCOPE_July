@@ -13,7 +13,7 @@
 #  training via coco_inpaint — i.e. the contamination that weakens an OOD claim.
 #
 #  Usage (Colab/box, where the data lives):
-#    python run_scripts/audit_coco_overlap.py \
+#    python -m analysis.audit_coco_overlap \
 #       --coco_inpaint_root /content/inpaint_coco/images \
 #       --tgif2_index       /content/dataset_root/content/flux_originals/tgif2_index.json \
 #       --out               /content/coco_overlap_report

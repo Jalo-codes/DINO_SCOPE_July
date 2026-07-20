@@ -37,7 +37,7 @@ SOURCE_ROOT_ARGS: Dict[str, str] = {
     # Whole-image ("full fake") generation eval set (lab_utils/data/datasets/
     # full_fakes.py) — root/real/ vs root/<generator>/, per-generator AUROC +
     # localization distribution (recall/iou, meaningful despite the sentinel
-    # mask) via experiments/labs/full_fakes_report.py.
+    # mask) via analysis/full_fakes_report.py.
     'full_fakes':   'full_fakes_root',
     # Region-probe eval conditions (BCE-emergence study). Each flag points at
     # the PARENT dataset root: ai_*/real_crop → sagid root; sp_* → imd2020

@@ -25,9 +25,9 @@ CUDA_VISIBLE_DEVICES="$GPU" "$PY" -m experiments.scripts.orchestrate \
   --run_root "$RUNS/model_size_sweep" --cwd "$REPO" "$@"
 
 echo "[ablation_eval] done. Roll up the per-cell tables with:"
-echo "  $PY -m experiments.scripts.rollup_ablation_eval \\"
+echo "  $PY -m analysis.rollup_ablation_eval \\"
 echo "      --run_root $RUNS/model_size_sweep --only_suffix _tgif --metric mean \\"
 echo "      --out_prefix $RUNS/model_size_sweep/rollup_tgif"
-echo "  $PY -m experiments.scripts.rollup_ablation_eval \\"
+echo "  $PY -m analysis.rollup_ablation_eval \\"
 echo "      --run_root $RUNS/model_size_sweep --only_suffix _imd --metric mean \\"
 echo "      --out_prefix $RUNS/model_size_sweep/rollup_imd"

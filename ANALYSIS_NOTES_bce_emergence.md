@@ -168,7 +168,7 @@ is already correct):
         <same dataset-root flags>
 
     # regenerate the manifest once (any box with the data)
-    $PY -m experiments.labs.probe_manifest <same roots> \
+    $PY -m analysis.probe_manifest <same roots> \
         --out_csv results/bce_emergence/probe_manifest2.csv
 
 Shortcut if 2080 time is tight: cont_* only need `--sources fr_bg_matched` (their
@@ -220,7 +220,7 @@ Predictions the ladder discriminates:
 - sp_* (real-content splices, no generator fingerprint available at all) should be
   the flattest curves — a sanity anchor.
 
-Mechanics: `run_bce_emergence_noise.sh` → eval_robustness.py over the probe
+Mechanics: `run_scripts/run_bce_emergence_noise.sh` → eval_robustness.py over the probe
 conditions, `--conditions clean jpeg_90 jpeg_70 jpeg_50 jpeg_30`,
 `--corrupt_at model_input` (corruption AFTER the 448 resize → identical model-space
 frequency destruction for every crop; `native` would confound the ladder with each

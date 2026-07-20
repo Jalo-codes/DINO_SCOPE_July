@@ -1,7 +1,7 @@
 """tests.test_rank_stats — lab_utils.eval.rank_stats (rank_auc / stats).
 
-Shared by experiments/labs/probe_contrasts.py and
-experiments/labs/full_fakes_report.py. No torch, no GPU; numpy only.
+Shared by analysis/probe_contrasts.py and
+analysis/full_fakes_report.py. No torch, no GPU; numpy only.
 """
 
 import sys

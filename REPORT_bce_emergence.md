@@ -251,4 +251,4 @@ For each of the three BCE conditions (the only ones with a continuous, threshold
 
 ---
 
-*Underlying tables: `bce_emergence_tables.xlsx` (compression/calibration sheets prefixed `CMP_`) and `compression_metrics.csv` (long-format, all §7/§8 values with bootstrap CIs). Verified numbers and procedures also written to `CLAUDE.md` and `ANALYSIS_NOTES_bce_emergence.md` in the repo.*
+*Underlying tables: `results/tables/bce_emergence_tables.xlsx` (compression/calibration sheets prefixed `CMP_`) and `results/tables/compression_metrics.csv` (long-format, all §7/§8 values with bootstrap CIs). Verified numbers and procedures also written to `CLAUDE.md` and `ANALYSIS_NOTES_bce_emergence.md` in the repo.*

@@ -52,7 +52,7 @@ ROOTS=(
 ALL=(bce_both_s0 bce_inpaint_s0 bce_splice_s0 cont_both_s0 cont_inpaint_s0 cont_splice_s0)
 
 run_manifest() {
-  "$PY" -m experiments.labs.probe_manifest \
+  "$PY" -m analysis.probe_manifest \
       "${ROOTS[@]}" \
       --image_size 448 --patch_size 16 \
       --out_csv "$OUT/probe_manifest2.csv"

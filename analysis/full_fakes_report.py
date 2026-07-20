@@ -1,4 +1,4 @@
-"""experiments.labs.full_fakes_report — AUROC + localization distribution for
+"""analysis.full_fakes_report — AUROC + localization distribution for
 whole-image ("full fake") generations, per generator, across the 6
 BCE-emergence cells.
 

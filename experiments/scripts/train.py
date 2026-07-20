@@ -70,6 +70,23 @@ def _build_parser() -> argparse.ArgumentParser:
     g.add_argument('--pico_pseudo_root',  default=None,
                    help='PicoBanana pseudo-mask inpaint-triplet root '
                         '(experiments/scripts/export_pico_masks.py output)')
+    g.add_argument('--full_fakes_root',     default=None,
+                   help='Whole-image fakes TRAIN root, full_fakes layout '
+                        '(root/real/ + root/<generator>/). Indexed entirely as '
+                        'train (val_split=0.0); pair with --full_fakes_val_root')
+    g.add_argument('--full_fakes_val_root', default=None,
+                   help='Whole-image fakes VAL root — a SEPARATE download from '
+                        '--full_fakes_root. OpenFake validation = held-out images '
+                        'from the TRAINING generators; test = held-out GENERATORS. '
+                        'Those semantics cannot be reproduced by splitting one root, '
+                        'hence two flags. Indexed val-only (val_split=1.0)')
+    g.add_argument('--full_fakes_val_per_pool', type=int, default=None,
+                   help='Cap the full_fakes VAL set to N items per generator pool. '
+                        'Pools range 200 images down to 3, so an uncapped val is slow '
+                        'and dominated by the large generators. Deterministic per seed')
+    g.add_argument('--full_fakes_val_reals', type=int, default=None,
+                   help='Cap the full_fakes VAL real pool to N items (paired with '
+                        '--full_fakes_val_per_pool)')
 
     # run management
     g = p.add_argument_group('run management')
@@ -146,6 +163,12 @@ def _build_parser() -> argparse.ArgumentParser:
     g = p.add_argument_group('data / sampling')
     g.add_argument('--splice_mix',     nargs='*', default=None,
                    metavar='source=frac', help='e.g. imd2020=0.6 casia=0.4')
+    g.add_argument('--balance_real_fake', action='store_true',
+                   help='Sample each epoch 50/50 real/fake. --splice_mix cannot do '
+                        'this: it weights by SOURCE, and a source holds both classes '
+                        '(all full_fakes items share source=full_fakes), so the class '
+                        'ratio falls out of pool sizes. Composes with --splice_mix; '
+                        'ignored under DDP')
     g.add_argument('--casia_train',    action='store_true')
     g.add_argument('--imd_val_only',   action='store_true')
     g.add_argument('--imd_val_split',  type=float, default=None,
@@ -309,6 +332,10 @@ def _build_datasets(cfg, res: Resolution):
         'anyedit':      ('anyedit_root', {}),
         'indoor':       ('indoor_root',  {}),
         'pico_pseudo':  ('pico_pseudo_root', {}),
+        # Whole-image fakes, TRAIN side only — val comes from a separate root
+        # (--full_fakes_val_root, handled below), so this root is indexed
+        # entirely as train.
+        'full_fakes':   ('full_fakes_root', {'val_split': 0.0}),
     }
 
     for source, (root_attr, kwargs) in source_map.items():
@@ -338,6 +365,25 @@ def _build_datasets(cfg, res: Resolution):
         train_ds, val_ds = REGISTRY[source](root, res=res, **kwargs)
         train_items.extend(train_ds.items)
         val_items.extend(val_ds.items)
+
+    # full_fakes VAL root → per-epoch VAL only.  A SEPARATE download from the
+    # train root: OpenFake's validation split is held-out IMAGES from the
+    # training generators, its test split is held-out GENERATORS, and neither
+    # is reproducible by randomly splitting the train root — so the split
+    # boundary is expressed as two roots rather than a ratio.
+    ff_val_root = _root(cfg, 'full_fakes_val_root')
+    if ff_val_root is not None:
+        if not ff_val_root.exists():
+            log_line(f'[data] WARNING: --full_fakes_val_root = {ff_val_root} '
+                     f'does not exist — skipping full_fakes val')
+        else:
+            _, ff_val = REGISTRY['full_fakes'](
+                ff_val_root, res=res, val_split=1.0,
+                val_per_pool=cfg.full_fakes_val_per_pool,
+                val_real_cap=cfg.full_fakes_val_reals,
+                split_seed=cfg.seed,
+            )
+            val_items.extend(ff_val.items)
 
     # TGIF2 → per-epoch VAL only.  Uses the leakage-free held-out partition
     # (eval_per_cell) and optionally filters to a subset of generator models, so
@@ -504,6 +550,60 @@ def main() -> None:
         if 0 < cap < len(train_ds) and hw.is_main:
             log_line(f'[data] NOTE: --train_samples={cap} ignored under DDP '
                      f'(DistributedSampler uses full dataset)')
+        if cfg.balance_real_fake and hw.is_main:
+            log_line('[data] NOTE: --balance_real_fake ignored under DDP '
+                     '(DistributedSampler uses full dataset, unweighted)')
+    elif cfg.balance_real_fake:
+        # 50/50 real/fake per epoch. --splice_mix cannot express this: it
+        # weights by SOURCE, and a source is real+fake together (every
+        # full_fakes item, real or fake, has source='full_fakes'), so the
+        # class ratio just falls out of the pool — 10000 reals vs 6409 fakes
+        # is 61/39, not 50/50.
+        #
+        # Composes with --splice_mix rather than replacing it:
+        #   weight(item) = source_frac[src] * 0.5 / count[(src, is_real)]
+        # so each source keeps its requested share AND each source's share is
+        # split evenly between its reals and its fakes. Groups that don't
+        # exist (a fakes-only source has no real group) contribute nothing and
+        # the remaining mass renormalises — WeightedRandomSampler normalises
+        # internally, so absent groups cannot silently steal probability.
+        from collections import Counter
+        grp_counts = Counter((it.source, it.is_real) for it in train_ds.items)
+        src_counts = Counter(it.source for it in train_ds.items)
+        if cfg.splice_mix:
+            unknown = sorted(set(cfg.splice_mix) - set(src_counts))
+            if unknown:
+                log_line(f'[data] WARNING: --splice_mix sources not present in '
+                         f'train set: {unknown}')
+            src_frac = {s: cfg.splice_mix.get(s, 0.0) for s in src_counts}
+        else:
+            src_frac = {s: 1.0 / len(src_counts) for s in src_counts}
+
+        weights = [
+            src_frac.get(it.source, 0.0) * 0.5 / grp_counts[(it.source, it.is_real)]
+            for it in train_ds.items
+        ]
+        if sum(weights) <= 0:
+            raise RuntimeError(
+                'train.py: --balance_real_fake resolved to all-zero sampling '
+                f'weights; loaded sources {sorted(src_counts)}, '
+                f'splice_mix={cfg.splice_mix or "(none)"}'
+            )
+        n_samples = cap if cap > 0 else len(train_ds)
+        train_sampler = torch.utils.data.WeightedRandomSampler(
+            torch.as_tensor(weights, dtype=torch.double),
+            num_samples=n_samples, replacement=True,
+        )
+        n_real = sum(1 for it in train_ds.items if it.is_real)
+        grp_desc = ', '.join(
+            '{}/{}={}'.format(s, 'real' if r else 'fake', n)
+            for (s, r), n in sorted(grp_counts.items())
+        )
+        log_line(
+            f'[data] balance_real_fake: 50/50 per epoch, num_samples={n_samples} '
+            f'(pool is {n_real} real / {len(train_ds) - n_real} fake) '
+            f'groups={{{grp_desc}}}'
+        )
     elif cfg.splice_mix:
         # Per-source weighted sampling so the mix ratio (e.g. sagid=0.33
         # pico_pseudo=0.33 casia=0.34) is exact regardless of each source's

@@ -1,4 +1,4 @@
-"""experiments.scripts.audit_zoom_image_auc — does zoom help image-level AUROC?
+"""analysis.audit_zoom_image_auc — does zoom help image-level AUROC?
 
 Structural fact this audit exists to quantify: the zoom two-pass has NEVER
 touched the image score.  attention_zoom_single builds its EvalRecord from the

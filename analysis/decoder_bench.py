@@ -1,18 +1,18 @@
-"""experiments.labs.decoder_bench — compare decoder strategies head-to-head.
+"""analysis.decoder_bench — compare decoder strategies head-to-head.
 
 Runs multiple decoders on the same cached ModelInfo objects and prints a
 comparison table (via lab_utils.eval.aggregate.decoder_bench).
 
 Typical usage::
 
-    python -m experiments.labs.decoder_bench \\
+    python -m analysis.decoder_bench \\
         --cache_dir /tmp/eval_cache \\
         --items_pkl /tmp/val_items.pkl \\
         --decoder kmeans threshold hdbscan
 
 Or call directly::
 
-    from experiments.labs.decoder_bench import run_decoder_bench
+    from analysis.decoder_bench import run_decoder_bench
     table = run_decoder_bench(infos, items, decoders=['kmeans', 'threshold'])
 """
 
