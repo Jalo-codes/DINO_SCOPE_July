@@ -73,6 +73,13 @@ def add_source_root_args(group) -> None:
                        help='Override IMD2020 val_split fraction (use 1.0 to eval the '
                             'entire imd2020_root — IMD is never trained on, so the '
                             'train/val distinction is moot)')
+    group.add_argument('--full_fakes_val_per_pool', type=int, default=None,
+                       help='Cap full_fakes eval to N items per generator pool. Use to '
+                            'match a training run\'s per-epoch val exactly — --max_items '
+                            'cannot: it truncates the FLAT list, so it takes whole '
+                            'generators in order and drops the rest entirely')
+    group.add_argument('--full_fakes_val_reals', type=int, default=None,
+                       help='Cap the full_fakes eval real pool to N items')
 
 
 def collect_val_items_by_source(
@@ -117,6 +124,13 @@ def collect_val_items_by_source(
         if source == 'imd2020':
             if getattr(args, 'imd_val_split', None) is not None:
                 kwargs['val_split'] = args.imd_val_split
+        if source == 'full_fakes':
+            # Per-pool caps, so a standalone eval can reproduce a training run's
+            # per-epoch val set exactly (same seed -> same draw).
+            if getattr(args, 'full_fakes_val_per_pool', None) is not None:
+                kwargs['val_per_pool'] = args.full_fakes_val_per_pool
+            if getattr(args, 'full_fakes_val_reals', None) is not None:
+                kwargs['val_real_cap'] = args.full_fakes_val_reals
         _, val_ds = REGISTRY[source](root, res=res, **kwargs)
         items = val_ds.items
         if max_items:
