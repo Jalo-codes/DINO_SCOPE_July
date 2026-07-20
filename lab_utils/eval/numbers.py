@@ -332,7 +332,7 @@ def _flat_records(model, items, res, *, decoders, device, use_amp, amp_dtype,
     n = len(items)
     every = max(1, n // 10)
     for i, item in enumerate(items):
-        sub = item.meta.get('tgif_subcat')
+        sub = item.meta.get('tgif_subcat') or item.meta.get('generator')
         try:
             img_down, _ = _load_and_launder(item, launder_mode, prelaundered_root, args=args)
             img_t = load_image_tensor(img_down, res, device=device)
@@ -367,7 +367,7 @@ def _zoom_records(model, items, res, *, decoders, device, use_amp, amp_dtype,
     n = len(items)
     every = max(1, n // 10)
     for i, item in enumerate(items):
-        sub = item.meta.get('tgif_subcat')
+        sub = item.meta.get('tgif_subcat') or item.meta.get('generator')
         try:
             img_down, img_up = _load_and_launder(item, launder_mode, prelaundered_root, args=args)
             img_t = load_image_tensor(img_down, res, device=device)
