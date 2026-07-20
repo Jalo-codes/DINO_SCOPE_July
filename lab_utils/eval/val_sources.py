@@ -73,6 +73,11 @@ def add_source_root_args(group) -> None:
                        help='Override IMD2020 val_split fraction (use 1.0 to eval the '
                             'entire imd2020_root — IMD is never trained on, so the '
                             'train/val distinction is moot)')
+    group.add_argument('--pico_pseudo_val_split', type=float, default=None,
+                       help='Override pico_pseudo val_split (default 0.10 — a straight '
+                            'eval would otherwise silently score only a tenth of the '
+                            'triplets). Use 1.0 for a checkpoint that never trained on '
+                            'pico, where the train/val distinction is moot')
     group.add_argument('--full_fakes_val_per_pool', type=int, default=None,
                        help='Cap full_fakes eval to N items per generator pool. Use to '
                             'match a training run\'s per-epoch val exactly — --max_items '
@@ -124,6 +129,9 @@ def collect_val_items_by_source(
         if source == 'imd2020':
             if getattr(args, 'imd_val_split', None) is not None:
                 kwargs['val_split'] = args.imd_val_split
+        if source == 'pico_pseudo':
+            if getattr(args, 'pico_pseudo_val_split', None) is not None:
+                kwargs['val_split'] = args.pico_pseudo_val_split
         if source == 'full_fakes':
             # Per-pool caps, so a standalone eval can reproduce a training run's
             # per-epoch val set exactly (same seed -> same draw).
