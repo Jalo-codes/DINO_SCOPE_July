@@ -54,7 +54,15 @@ from lab_utils.logging.text import log_line
 from lab_utils.train.checkpoint import load as load_ckpt
 from lab_utils.train.distributed import unwrap_model
 
-_DECODE_FNS = {'kmeans': decode_kmeans, 'hdbscan': decode_hdbscan, 'threshold': decode_threshold}
+_DECODE_FNS = {
+    'kmeans': decode_kmeans, 'hdbscan': decode_hdbscan, 'threshold': decode_threshold,
+    # Image-level only: emit an empty mask and skip localization entirely. For a
+    # checkpoint with no localization head, every real decoder raises per item,
+    # which the handler logs and skips — leaving NO records, hence no image-level
+    # AUC either, even though that metric is decoder-independent. Matches the
+    # 'none' option eval.py and eval_robustness already expose.
+    'none': lambda info: np.zeros(info.grid_hw, dtype=bool),
+}
 
 # Canonical backbone for this project — pinned as the default override so a
 # checkpoint carrying a stale cfg.model_name (e.g. 'dinov2-base') still rebuilds
@@ -95,7 +103,9 @@ def build_parser() -> argparse.ArgumentParser:
 
     g = p.add_argument_group('decode / readouts')
     g.add_argument('--decoders', nargs='+', default=['kmeans', 'hdbscan'],
-                   choices=['kmeans', 'hdbscan', 'threshold'])
+                   # 'none' = image-level only; required for image-head-only
+                   # checkpoints, where any real decoder has nothing to decode.
+                   choices=['kmeans', 'hdbscan', 'threshold', 'none'])
     g.add_argument('--zoom', action=argparse.BooleanOptionalAction, default=True,
                    help='Also run attention-zoom readouts (shared forwards).')
     g.add_argument('--attn_percentile', default='otsu',
