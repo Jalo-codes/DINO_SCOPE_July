@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 # T0 — how (non-)trivial is whole-image fake detection, with the heads AS THEY STAND?
 #
-# Image head + patch-BCE only, NO contrastive. Trains on the OpenFake TRAIN split
-# (full_fakes layout) and scores against a separate eval root. Motivated by a
-# measured failure, not curiosity: the FullySynthesized recall 0.15 crater.
+# Image head only by default (HEADS=image); HEADS=image+patch adds patch-BCE.
+# Never contrastive. Trains on the OpenFake TRAIN split (full_fakes layout) and
+# scores against a separate eval root. Motivated by a measured failure, not
+# curiosity: the FullySynthesized recall 0.15 crater.
 #
 # Two things this is designed to keep honest:
 #   1. Leakage is GATED, not assumed — the run refuses to start until the train
@@ -13,7 +14,8 @@
 #      signal), which means a model CAN lean on it. If detection collapses under
 #      re-encoding, that is what it was doing. Run step 4.
 #
-# L4 (Ada) => bf16. Do NOT copy the fp16 flags from the 2080/T4 recipes.
+# Precision is autodetected from compute capability (see DTYPE below); override
+# with DTYPE=fp16|bf16 if you need to pin it.
 set -euo pipefail
 
 FF_TRAIN="${FF_TRAIN:-/content/openfake_train_ff}"
@@ -25,6 +27,17 @@ BATCH="${BATCH:-8}"
 VAL_PER_POOL="${VAL_PER_POOL:-25}"     # per generator pool
 VAL_REALS="${VAL_REALS:-100}"          # reals in the per-epoch val
 HEADS="${HEADS:-image}"                # 'image' | 'image+patch'
+# bf16 needs Ampere+ (L4/Ada = ok). A T4 or 2080 Ti is Turing -> fp16 ONLY, and
+# bf16 there fails at runtime rather than falling back. Autodetect unless told.
+if [[ -z "${DTYPE:-}" ]]; then
+    DTYPE=$(python - <<'PY' 2>/dev/null || echo fp16
+import torch
+print('bf16' if torch.cuda.is_available() and torch.cuda.get_device_capability()[0] >= 8 else 'fp16')
+PY
+)
+fi
+ROBUST_DTYPE=$([[ "$DTYPE" == "bf16" ]] && echo bfloat16 || echo float16)
+echo "[cfg] dtype=$DTYPE (robustness: $ROBUST_DTYPE)  heads=$HEADS"
 
 # HEADS=image is the default after the first T0 run: with --patch_bce, OOD image
 # AUC fell 0.9693 -> 0.9217 across one epoch while BOTH losses dropped. On
@@ -84,7 +97,7 @@ python -m experiments.scripts.train \
     --image_size 448 --lora_rank 16 --lora_alpha 32 \
     --batch_size "$BATCH" --num_epochs "$EPOCHS" --train_samples "$TRAIN_SAMPLES" \
     --seed 42 \
-    --base_dtype bf16 --amp_dtype bf16 \
+    --base_dtype "$DTYPE" --amp_dtype "$DTYPE" \
     --num_workers 2 \
     --val_decoder "$VAL_DECODER" \
     --no-val_zoom
@@ -96,14 +109,15 @@ if [[ -z "$CKPT" ]]; then
     echo "no checkpoint found under $RUN_DIR — skipping"; exit 0
 fi
 echo "checkpoint: $CKPT"
-# NOTE --amp_dtype here is 'bfloat16', NOT the 'bf16' train.py wants. Different
-# vocabularies for the same thing; eval_robustness rejects 'bf16'.
-# --decoder defaults to kmeans (contrastive); this model has no contrastive head.
+# NOTE eval_robustness spells precision 'float16'/'bfloat16' while train.py wants
+# 'fp16'/'bf16' — same thing, different vocabularies, and it REJECTS 'bf16'.
+# Hence ROBUST_DTYPE. --decoder likewise defaults to kmeans; there is no
+# contrastive head here, so it is set explicitly.
 python -m experiments.scripts.eval_robustness \
     --checkpoint "$CKPT" \
     --full_fakes_root "$FF_VAL" \
     --decoder "$ROBUST_DECODER" \
-    --amp_dtype bfloat16 \
+    --amp_dtype "$ROBUST_DTYPE" \
     --corrupt_at native \
     --out_dir "$RUN_DIR/robustness"
 
