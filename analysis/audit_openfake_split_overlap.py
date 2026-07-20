@@ -47,10 +47,20 @@ def collect(root: Path) -> Tuple[Dict[str, Path], int, int]:
 
     Returns (mapping, n_from_manifest, n_hashed). Manifest rows win; files not
     covered by the manifest are hashed so an interrupted download still audits.
+
+    Hashing is the slow path — tens of GB of I/O on a full OpenFake root — so
+    progress is reported. A large n_hashed on a root that HAS a manifest is a
+    warning sign in itself: it means the manifest and the files disagree (e.g.
+    re-encoded images, whose stems still carry the ORIGINAL md5).
     """
     by_md5: Dict[str, Path] = {}
     covered: Set[Path] = set()
     n_manifest = 0
+
+    print(f'{root}: scanning...', flush=True)
+    files = [p for p in root.rglob('*')
+             if p.is_file() and p.suffix.lower() in _VALID_EXTS]
+    print(f'{root}: {len(files)} image files on disk', flush=True)
 
     manifest = root / MANIFEST_NAME
     if manifest.exists():
@@ -64,15 +74,24 @@ def collect(root: Path) -> Tuple[Dict[str, Path], int, int]:
                 by_md5.setdefault(md5, path)
                 covered.add(path.resolve())
                 n_manifest += 1
+        print(f'{root}: manifest supplied {n_manifest} md5s (no hashing needed '
+              f'for those)', flush=True)
+    else:
+        print(f'{root}: NO {MANIFEST_NAME} — every file must be hashed', flush=True)
+
+    todo = [p for p in files if p.resolve() not in covered]
+    if todo:
+        total_gb = sum(p.stat().st_size for p in todo) / 2**30
+        print(f'{root}: hashing {len(todo)} uncovered files ({total_gb:.1f} GB) — '
+              f'this is the slow part', flush=True)
 
     n_hashed = 0
-    for path in sorted(root.rglob('*')):
-        if not path.is_file() or path.suffix.lower() not in _VALID_EXTS:
-            continue
-        if path.resolve() in covered:
-            continue
+    step = max(1, len(todo) // 20)
+    for i, path in enumerate(sorted(todo), 1):
         by_md5.setdefault(_md5_of_file(path), path)
         n_hashed += 1
+        if i % step == 0 or i == len(todo):
+            print(f'{root}:   hashed {i}/{len(todo)} ({100*i/len(todo):.0f}%)', flush=True)
 
     return by_md5, n_manifest, n_hashed
 
