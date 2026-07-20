@@ -313,10 +313,13 @@ def run_val_eval(
     import dataclasses
 
     def _tag_subgroup(rec, item):
-        """Tag TGIF records with their (model|type|family) cell so the per-epoch
-        summary breaks the held-out cells out individually; non-TGIF items carry
-        no tgif_subcat and stay pooled."""
-        sub = item.meta.get('tgif_subcat')
+        """Tag records with the cell the per-epoch summary should break out.
+
+        TGIF: its (model|type|family) cell. full_fakes: the GENERATOR — without
+        this the whole-image view has nothing to break down, since full_fakes
+        items carry meta['generator'] and no tgif_subcat. Items with neither
+        stay pooled."""
+        sub = item.meta.get('tgif_subcat') or item.meta.get('generator')
         return dataclasses.replace(rec, subgroup=sub) if (sub and sub != 'real') else rec
 
     records: List[EvalRecord] = []
@@ -360,10 +363,18 @@ def run_val_eval(
             log_line(f'{log_tag} WARN: skipped item={item.item_id}: {exc}')
 
     if records:
-        summarize(records, log_tag=log_tag, include_sources=True)
-        if any(r.subgroup is not None for r in records):
-            from lab_utils.eval.aggregate import summarize_by_subgroup
-            summarize_by_subgroup(records, log_tag=log_tag)
+        # Sentinel-mask sources (full_fakes) make f1/iou/precision category
+        # errors, not measurements (rule 2) — report separability + per-generator
+        # AUROC instead of a localization block that mechanically reads ~1.0.
+        from lab_utils.eval.aggregate import localization_is_meaningful
+        if localization_is_meaningful(items_to_eval):
+            summarize(records, log_tag=log_tag, include_sources=True)
+            if any(r.subgroup is not None for r in records):
+                from lab_utils.eval.aggregate import summarize_by_subgroup
+                summarize_by_subgroup(records, log_tag=log_tag)
+        else:
+            from lab_utils.eval.aggregate import summarize_full_fakes
+            summarize_full_fakes(records, log_tag=log_tag)
     else:
         log_line(f'{log_tag} no records to summarize (n_items={len(items_to_eval)})')
 

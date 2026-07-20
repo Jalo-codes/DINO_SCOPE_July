@@ -365,3 +365,99 @@ def write_records_csv(records: List[EvalRecord], path: str) -> None:
                 f'{r.image_score:.6f}', f'{r.mask_area:.6f}', r.bucket,
             ])
     log_line(f'[eval] wrote {len(records)} records -> {path}')
+
+
+# ── Whole-image ("full fake") view ────────────────────────────────────────────
+
+def localization_is_meaningful(items) -> bool:
+    """False when every fake item carries a geometry-free sentinel mask.
+
+    full_fakes fakes get an all-white full-frame mask (there is no localized
+    region — the whole frame IS the label) and set meta['gt_mask_reliable'] =
+    False. Against an all-true GT, precision pins at 1.0 and recall == iou ==
+    the predicted-positive fraction, so f1/iou/precision are NOT localization
+    measurements (CLAUDE.md rule 2). Callers use this to pick a reporting view
+    and — critically — an early-stop metric: selecting on a mechanically
+    saturated f1 freezes the best checkpoint at epoch 0.
+
+    Takes dataset Items (not EvalRecords): the flag lives in item.meta.
+    """
+    fakes = [it for it in items if not it.is_real]
+    if not fakes:
+        return False
+    return not all(it.meta.get('gt_mask_reliable') is False for it in fakes)
+
+
+def summarize_full_fakes(
+    records: List[EvalRecord],
+    *,
+    log_tag: str = '[eval]',
+    tag: str = '',
+    min_n: int = 5,
+) -> Dict:
+    """Whole-image separability view: AUROC pooled and PER GENERATOR.
+
+    The counterpart to summarize() for sources where localization is a
+    category error. Reports no f1/iou/precision. Instead:
+
+      image_auc      the real number — real/fake separability
+      lit            mean predicted-positive fraction on fakes (== recall ==
+                     iou here) — how much of a wholly-fake frame lights up
+      false_lit      mean predicted-positive fraction on reals (1 - accuracy)
+                     — how much of a wholly-REAL frame wrongly lights up
+
+    Per-generator AUROC scores that generator's fakes against the POOLED reals,
+    since a generator subfolder has no reals of its own. Generators with fewer
+    than min_n fakes are pooled into a '(thin)' row rather than reported
+    individually: a 4-image pool yields a meaningless 1.000.
+    """
+    prefix = f'{log_tag} {tag}' if tag else log_tag
+
+    splices = [r for r in records if not r.is_real]
+    reals   = [r for r in records if r.is_real]
+
+    log_line(f'{prefix} ─── full-fakes view: n_fake={len(splices)} n_real={len(reals)} '
+             f'(localization suppressed — sentinel GT, rule 2) ───')
+
+    auc = _image_auc(records)
+    if not np.isnan(auc):
+        log_line(f'{prefix} image_auc: {auc:.4f}')
+
+    lit = _stats([r.recall for r in splices]) if splices else None
+    if lit:
+        log_line(f'{prefix} fakes      lit: {_fmt_stat(lit)}')
+    false_lit = _stats([1.0 - r.accuracy for r in reals]) if reals else None
+    if false_lit:
+        log_line(f'{prefix} reals false_lit: {_fmt_stat(false_lit)}')
+
+    out: Dict = {'image_auc': float(auc), 'n_fake': len(splices), 'n_real': len(reals),
+                 'lit': lit, 'false_lit': false_lit, 'generators': {}}
+
+    groups = by_subgroup(splices)
+    if not groups:
+        return out
+
+    log_line(f'{prefix} ─── per generator ({len(groups)} cells, vs {len(reals)} pooled reals) ───')
+    rows, thin = [], []
+    for gen, recs in groups.items():
+        (thin if len(recs) < min_n else rows).append((gen, recs))
+
+    scored = []
+    for gen, recs in rows:
+        g_auc = _image_auc(recs + reals)
+        g_lit = float(np.mean([r.recall for r in recs])) if recs else float('nan')
+        scored.append((g_auc, gen, len(recs), g_lit))
+        out['generators'][gen] = {'n': len(recs), 'image_auc': float(g_auc), 'lit': g_lit}
+
+    for g_auc, gen, n, g_lit in sorted(scored, key=lambda t: (np.isnan(t[0]), t[0])):
+        log_line(f'{prefix}   auc={g_auc:.4f}  lit={g_lit:.3f}  n={n:<4} {gen}')
+
+    if thin:
+        pooled = [r for _, recs in thin for r in recs]
+        t_auc = _image_auc(pooled + reals)
+        log_line(f'{prefix}   auc={t_auc:.4f}  n={len(pooled):<4} (thin) '
+                 f'{len(thin)} generators under min_n={min_n}: '
+                 f'{", ".join(sorted(g for g, _ in thin))}')
+        out['generators']['(thin)'] = {'n': len(pooled), 'image_auc': float(t_auc),
+                                       'members': sorted(g for g, _ in thin)}
+    return out
