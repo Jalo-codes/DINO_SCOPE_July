@@ -728,7 +728,17 @@ def main() -> None:
         # ── Per-epoch val eval (main rank only) ───────────────────────────────
         val_metric = best_metric
         mil_only = (cfg.contrastive_dim <= 0 and not cfg.patch_bce)
-        metric_label = 'val_image_auc' if mil_only else f'val_f1_{cfg.early_stop_reduce}'
+        # A val set of sentinel masks (full_fakes) makes loc F1 mechanically
+        # ~1.0, so selecting on it pins best.pt to epoch 0 forever
+        # (is_best needs f1 >= 1.0 + min_delta) and burns early-stop patience
+        # while the model is still improving. Select on image AUC instead.
+        from lab_utils.eval.aggregate import localization_is_meaningful
+        loc_ok = localization_is_meaningful(val_ds.items)
+        use_auc = mil_only or not loc_ok
+        if not loc_ok and not mil_only and epoch == 0:
+            log_line('[eval] val localization is sentinel-only (rule 2) — '
+                     'early-stop metric switched to image AUC')
+        metric_label = 'val_image_auc' if use_auc else f'val_f1_{cfg.early_stop_reduce}'
         if hw.is_main and val_ds.items:
             records, image_auc = run_val_eval(
                 model,
@@ -740,8 +750,9 @@ def main() -> None:
                 max_items=args.val_max_items,
                 decoder=args.val_decoder,
             )
-            if mil_only:
-                # MIL-only: early-stop on image-level AUC
+            if use_auc:
+                # MIL-only, or localization is sentinel-only: early-stop on
+                # image-level AUC
                 if image_auc is not None and not math.isnan(image_auc):
                     val_metric = image_auc
                     log_line(f'[eval] epoch={epoch} {metric_label}={val_metric:.4f}')
