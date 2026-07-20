@@ -39,6 +39,11 @@ class RunConfig:
     anyedit_root:       Optional[str] = None
     tgif2_root:         Optional[str] = None
     pico_pseudo_root:   Optional[str] = None
+    full_fakes_root:      Optional[str] = None
+    full_fakes_val_root:  Optional[str] = None
+    full_fakes_val_per_pool: Optional[int] = None
+    full_fakes_val_reals:    Optional[int] = None
+    balance_real_fake:       bool = False
 
     # ── Checkpoint / run dir ──────────────────────────────────────────────────
     run_dir:            Optional[str] = None
@@ -186,6 +191,11 @@ def resolve_config(args, *, hw: Optional[HardwareInfo] = None) -> RunConfig:
         anyedit_root=getattr(args, 'anyedit_root', None),
         tgif2_root=getattr(args, 'tgif2_root', None),
         pico_pseudo_root=getattr(args, 'pico_pseudo_root', None),
+        full_fakes_root=getattr(args, 'full_fakes_root', None),
+        full_fakes_val_root=getattr(args, 'full_fakes_val_root', None),
+        full_fakes_val_per_pool=getattr(args, 'full_fakes_val_per_pool', None),
+        full_fakes_val_reals=getattr(args, 'full_fakes_val_reals', None),
+        balance_real_fake=bool(getattr(args, 'balance_real_fake', False)),
         # ckpt/run dir
         run_dir=getattr(args, 'checkpoint_root', None) or getattr(args, 'run_dir', None),
         resume=getattr(args, 'resume', None),

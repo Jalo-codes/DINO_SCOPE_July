@@ -28,13 +28,17 @@ distribution this eval set exists to measure (how much of a wholly-fake
 frame the model's patch head lights up). image_score / AUC is the real/fake
 separability number.
 
-Eval-only (mirrors sagid/pico_banana/unpaired): returns
-(empty_train_dataset, val_dataset).
+Eval-only BY DEFAULT (``val_split=1.0``, the same idiom region_probes' sp_*
+wrappers use), which is how this builder began life. Pass ``val_split=0.0`` to
+index a root entirely as TRAIN — used to train on whole-image fakes (the
+OpenFake train split). Intermediate values give a stratified internal split.
 """
 
 from __future__ import annotations
 
+import random
 import tempfile
+from collections import defaultdict
 from pathlib import Path
 from typing import Optional, Tuple
 
@@ -66,6 +70,10 @@ def build(
     source: str = 'full_fakes',
     verify_policy: Optional[VerifyPolicy] = None,
     valid_exts: Optional[frozenset] = None,
+    val_split: float = 1.0,
+    split_seed: int = 42,
+    val_per_pool: Optional[int] = None,
+    val_real_cap: Optional[int] = None,
 ) -> Tuple[Dataset, Dataset]:
     """Discover root/real/ + root/<generator>/ whole-image pools.
 
@@ -74,6 +82,23 @@ def build(
     full-frame sentinel mask (100% coverage) by design, so when the caller
     does not pass an explicit policy this builder relaxes max_mask_area to
     1.0 so the sentinel survives verify_all.
+
+    val_split: fraction routed to the VAL dataset. Defaults to 1.0 —
+    eval-only, this builder's original and still most common use. 0.0 sends
+    everything to TRAIN, which is the mode that matters for OpenFake, whose
+    train / validation / test splits are SEPARATE DOWNLOADS carrying semantics
+    an internal random split cannot reproduce (validation = held-out images
+    from the training generators; test = held-out GENERATORS). Point one root
+    per split. Intermediate values split internally, stratified by generator
+    so a small val slice cannot silently drop a generator entirely.
+
+    val_per_pool / val_real_cap: cap the VAL side to N items per generator pool
+    and M reals. Pools are wildly uneven (200 images down to 3), so an uncapped
+    val is both slow and dominated by whichever generators happen to be large.
+    Applied AFTER the split and selected deterministically from split_seed, so
+    the val set is identical every epoch and across runs — a moving eval set
+    would make epoch-to-epoch deltas unreadable. A pool smaller than its cap is
+    taken whole, never padded.
     """
     root = Path(root)
     exts = valid_exts or _VALID_EXTS
@@ -127,6 +152,53 @@ def build(
         f'use image_score/AUC and recall/iou (== predicted-positive pixel fraction)'
     )
 
-    val_ds = Dataset(kept, res=res, augment=False)
-    train_ds = Dataset([], res=res, augment=True)
+    frac = float(val_split)
+    if frac >= 1.0:
+        train_split, val_split_items = [], list(kept)
+    elif frac <= 0.0:
+        train_split, val_split_items = list(kept), []
+    else:
+        # Stratify by generator ('real' is its own stratum) so a small val
+        # slice cannot miss a generator entirely — the pools are per-generator
+        # and can be small.
+        by_gen = defaultdict(list)
+        for it in kept:
+            by_gen[it.meta.get('generator') or 'real'].append(it)
+        split_rng = random.Random(int(split_seed))
+        train_split, val_split_items = [], []
+        for gen in sorted(by_gen):
+            group = list(by_gen[gen])
+            split_rng.shuffle(group)
+            n_val = int(len(group) * frac)
+            val_split_items.extend(group[:n_val])
+            train_split.extend(group[n_val:])
+        log_line(
+            f'[data] {source}: internal split val_split={frac} seed={split_seed} '
+            f'-> train={len(train_split)} val={len(val_split_items)} '
+            f'(stratified over {len(by_gen)} strata)'
+        )
+
+    if val_per_pool is not None or val_real_cap is not None:
+        cap_rng = random.Random(int(split_seed) + 1)   # +1: independent of the split draw
+        by_pool = defaultdict(list)
+        for it in val_split_items:
+            by_pool[it.meta.get('generator') or 'real'].append(it)
+        capped, dropped = [], 0
+        for pool in sorted(by_pool):
+            group = list(by_pool[pool])
+            cap = val_real_cap if pool == 'real' else val_per_pool
+            if cap is not None and len(group) > int(cap):
+                group.sort(key=lambda i: i.item_id)   # stable order before the draw
+                cap_rng.shuffle(group)
+                dropped += len(group) - int(cap)
+                group = group[:int(cap)]
+            capped.extend(group)
+        log_line(
+            f'[data] {source}: val capped per_pool={val_per_pool} reals={val_real_cap} '
+            f'-> {len(capped)} items across {len(by_pool)} pools ({dropped} dropped)'
+        )
+        val_split_items = capped
+
+    val_ds = Dataset(val_split_items, res=res, augment=False)
+    train_ds = Dataset(train_split, res=res, augment=True)
     return train_ds, val_ds

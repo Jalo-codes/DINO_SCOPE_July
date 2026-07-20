@@ -51,7 +51,9 @@ class TestFullFakesBuild:
     def test_counts_and_is_real(self, tmp_path):
         _make_dataset(tmp_path, n_real=3, generators={'sdxl': 2, 'flux': 4})
         train_ds, val_ds = build(tmp_path, res=RES)
-        assert len(train_ds.items) == 0  # eval-only, like sagid/pico_banana/unpaired
+        # Eval-only BY DEFAULT (val_split=1.0) — see TestValSplit for the
+        # train-side modes.
+        assert len(train_ds.items) == 0
         items = val_ds.items
         assert len(items) == 3 + 2 + 4
 
@@ -99,3 +101,113 @@ class TestFullFakesBuild:
         (tmp_path / 'sdxl' / 'readme.txt').write_text('not an image')
         _, val_ds = build(tmp_path, res=RES)
         assert len(val_ds.items) == 2
+
+
+class TestValSplit:
+    """val_split routing: 1.0 = eval-only (default), 0.0 = all train, else split.
+
+    The 0.0 mode is what lets a whole-image-fakes root be TRAINED on. OpenFake's
+    train / validation / test splits are separate downloads (validation = held-out
+    images from the training generators; test = held-out GENERATORS), so the real
+    split boundary is expressed as two roots, not a ratio — the intermediate mode
+    exists only for single-root convenience.
+    """
+
+    def test_default_is_eval_only(self, tmp_path):
+        _make_dataset(tmp_path, n_real=3, generators={'sdxl': 2, 'flux': 4})
+        train_ds, val_ds = build(tmp_path, res=RES)
+        assert (len(train_ds.items), len(val_ds.items)) == (0, 9)
+
+    def test_zero_sends_everything_to_train(self, tmp_path):
+        _make_dataset(tmp_path, n_real=3, generators={'sdxl': 2, 'flux': 4})
+        train_ds, val_ds = build(tmp_path, res=RES, val_split=0.0)
+        assert (len(train_ds.items), len(val_ds.items)) == (9, 0)
+        # Train side must augment; val side must not.
+        assert train_ds.augment is True
+
+    def test_internal_split_is_disjoint_and_lossless(self, tmp_path):
+        _make_dataset(tmp_path, n_real=10, generators={'sdxl': 10, 'flux': 10})
+        train_ds, val_ds = build(tmp_path, res=RES, val_split=0.3)
+        train_ids = {it.item_id for it in train_ds.items}
+        val_ids = {it.item_id for it in val_ds.items}
+        assert not (train_ids & val_ids), 'train/val overlap'
+        assert len(train_ids) + len(val_ids) == 30, 'items lost in the split'
+        assert len(val_ids) > 0 and len(train_ids) > 0
+
+    def test_internal_split_is_deterministic(self, tmp_path):
+        _make_dataset(tmp_path, n_real=10, generators={'sdxl': 10, 'flux': 10})
+        a = build(tmp_path, res=RES, val_split=0.3)[1]
+        b = build(tmp_path, res=RES, val_split=0.3)[1]
+        assert [it.item_id for it in a.items] == [it.item_id for it in b.items]
+        c = build(tmp_path, res=RES, val_split=0.3, split_seed=7)[1]
+        assert [it.item_id for it in c.items] != [it.item_id for it in a.items], \
+            'split_seed had no effect'
+
+    def test_internal_split_is_stratified_by_generator(self, tmp_path):
+        # A naive global shuffle can drop a small generator from val entirely;
+        # stratifying per generator (reals are their own stratum) cannot.
+        _make_dataset(tmp_path, n_real=20, generators={'sdxl': 20, 'tiny': 4})
+        train_ds, val_ds = build(tmp_path, res=RES, val_split=0.5)
+        strata = lambda ds: {(it.meta.get('generator') or 'real') for it in ds.items}
+        assert strata(val_ds) == {'real', 'sdxl', 'tiny'}
+        assert strata(train_ds) == {'real', 'sdxl', 'tiny'}
+
+
+class TestValCaps:
+    """val_per_pool / val_real_cap: a bounded, STABLE per-epoch eval set.
+
+    Pools are wildly uneven (200 images down to 3), so an uncapped val is both
+    slow and dominated by whichever generators happen to be large. The caps must
+    also be stable across calls — a val set that moves between epochs makes
+    epoch-to-epoch deltas unreadable.
+    """
+
+    def _uneven(self, root):
+        pools = {'real': 40, 'sdxl': 20, 'flux': 20, 'tiny': 3}
+        for name, n in pools.items():
+            for i in range(n):
+                _write_image(root / name / f'{i:04d}.png', color=(i % 256, 40, 90))
+        return pools
+
+    def test_caps_applied_per_pool(self, tmp_path):
+        self._uneven(tmp_path)
+        _, val_ds = build(tmp_path, res=RES, val_per_pool=5, val_real_cap=10)
+        counts = {}
+        for it in val_ds.items:
+            k = it.meta.get('generator') or 'real'
+            counts[k] = counts.get(k, 0) + 1
+        assert counts == {'real': 10, 'sdxl': 5, 'flux': 5, 'tiny': 3}
+
+    def test_pool_smaller_than_cap_is_taken_whole_not_padded(self, tmp_path):
+        self._uneven(tmp_path)
+        _, val_ds = build(tmp_path, res=RES, val_per_pool=5)
+        tiny = [it for it in val_ds.items if it.meta.get('generator') == 'tiny']
+        assert len(tiny) == 3
+        assert len({it.item_id for it in tiny}) == 3, 'duplicated to fill the cap'
+
+    def test_val_set_is_stable_across_calls(self, tmp_path):
+        self._uneven(tmp_path)
+        kw = dict(res=RES, val_per_pool=5, val_real_cap=10)
+        a = build(tmp_path, **kw)[1]
+        b = build(tmp_path, **kw)[1]
+        assert [it.item_id for it in a.items] == [it.item_id for it in b.items]
+
+    def test_split_seed_varies_the_draw(self, tmp_path):
+        self._uneven(tmp_path)
+        a = build(tmp_path, res=RES, val_per_pool=5, val_real_cap=10)[1]
+        c = build(tmp_path, res=RES, val_per_pool=5, val_real_cap=10, split_seed=7)[1]
+        assert [it.item_id for it in a.items] != [it.item_id for it in c.items]
+
+    def test_caps_are_opt_in(self, tmp_path):
+        self._uneven(tmp_path)
+        _, val_ds = build(tmp_path, res=RES)
+        assert len(val_ds.items) == 83  # 40 + 20 + 20 + 3, uncapped
+
+    def test_only_real_cap_leaves_generators_uncapped(self, tmp_path):
+        self._uneven(tmp_path)
+        _, val_ds = build(tmp_path, res=RES, val_real_cap=10)
+        counts = {}
+        for it in val_ds.items:
+            k = it.meta.get('generator') or 'real'
+            counts[k] = counts.get(k, 0) + 1
+        assert counts == {'real': 10, 'sdxl': 20, 'flux': 20, 'tiny': 3}
