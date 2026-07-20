@@ -24,6 +24,38 @@ TRAIN_SAMPLES="${TRAIN_SAMPLES:-3000}"
 BATCH="${BATCH:-8}"
 VAL_PER_POOL="${VAL_PER_POOL:-25}"     # per generator pool
 VAL_REALS="${VAL_REALS:-100}"          # reals in the per-epoch val
+HEADS="${HEADS:-image}"                # 'image' | 'image+patch'
+
+# HEADS=image is the default after the first T0 run: with --patch_bce, OOD image
+# AUC fell 0.9693 -> 0.9217 across one epoch while BOTH losses dropped. On
+# whole-image fakes the patch target is the image target copied 784x
+# (all-positive for fakes, all-negative for reals), so it adds no information
+# but dominates the gradient into the shared backbone — the image head emits one
+# attention-pooled scalar, the patch head emits 784 dense signals. The cheapest
+# way to satisfy 784 per-patch labels is local texture, i.e. generator-specific
+# artifacts, which is precisely what fails to transfer to held-out generators.
+case "$HEADS" in
+  image)
+    # --contrastive_dim 0 is NOT optional. It defaults to 64, so the projector is
+    # BUILT even at --lambda_contrastive 0, and --val_decoder auto then resolves
+    # to kmeans over an UNTRAINED random projection — plausible-looking garbage
+    # masks. Zero it and auto correctly resolves to 'none'.
+    HEAD_FLAGS=(--lambda_image_bce 1.0 --lambda_contrastive 0.0
+                --lambda_patch_bce 0.0 --contrastive_dim 0)
+    VAL_DECODER=none
+    ROBUST_DECODER=none
+    ;;
+  image+patch)
+    # patch_pos_weight 1.0, not the default 10.0: under --balance_real_fake the
+    # patch classes are already ~50/50, so a 10x positive weight just teaches the
+    # head to fire everywhere (75% of patches lit on REAL images in run 1).
+    HEAD_FLAGS=(--patch_bce --lambda_image_bce 1.0 --lambda_patch_bce 1.0
+                --lambda_contrastive 0.0 --patch_pos_weight 1.0)
+    VAL_DECODER=threshold
+    ROBUST_DECODER=threshold
+    ;;
+  *) echo "HEADS must be 'image' or 'image+patch', got '$HEADS'" >&2; exit 2 ;;
+esac
 
 echo "=== [1/4] leakage gate ==="
 # Exits 1 on any shared md5. set -e turns that into a hard stop, by design:
@@ -39,15 +71,12 @@ done | sort -rn
 echo "train total: $(find "$FF_TRAIN" -type f ! -name manifest.csv | wc -l) images"
 
 echo
-echo "=== [3/4] train (image head + patch-BCE, contrastive OFF) ==="
+echo "=== [3/4] train (HEADS=$HEADS) ==="
 python -m experiments.scripts.train \
     --full_fakes_root     "$FF_TRAIN" \
     --full_fakes_val_root "$FF_VAL" \
     --checkpoint_root     "$RUN_DIR" \
-    --patch_bce \
-    --lambda_image_bce   1.0 \
-    --lambda_patch_bce   1.0 \
-    --lambda_contrastive 0.0 \
+    "${HEAD_FLAGS[@]}" \
     --balance_real_fake \
     --full_fakes_val_per_pool "$VAL_PER_POOL" \
     --full_fakes_val_reals    "$VAL_REALS" \
@@ -57,7 +86,7 @@ python -m experiments.scripts.train \
     --seed 42 \
     --base_dtype bf16 --amp_dtype bf16 \
     --num_workers 2 \
-    --val_decoder threshold \
+    --val_decoder "$VAL_DECODER" \
     --no-val_zoom
 
 echo
@@ -73,7 +102,7 @@ echo "checkpoint: $CKPT"
 python -m experiments.scripts.eval_robustness \
     --checkpoint "$CKPT" \
     --full_fakes_root "$FF_VAL" \
-    --decoder threshold \
+    --decoder "$ROBUST_DECODER" \
     --amp_dtype bfloat16 \
     --corrupt_at native \
     --out_dir "$RUN_DIR/robustness"

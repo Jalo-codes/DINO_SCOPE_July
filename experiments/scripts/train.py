@@ -216,7 +216,10 @@ def _build_parser() -> argparse.ArgumentParser:
     # eval
     g = p.add_argument_group('eval')
     g.add_argument('--val_decoder', default='auto',
-                   choices=['auto', 'kmeans', 'threshold'])
+                   choices=['auto', 'kmeans', 'threshold', 'none'],
+                   help="'none' = image-level only, no mask decode (run_val_eval "
+                        'already supported it; the choice list did not). Correct '
+                        'for an image-head-only run, where there is nothing to decode')
     g.add_argument('--val_max_items', type=int, default=None,
                    help='Limit val items per epoch (for quick smoke tests)')
     g.add_argument('--val_zoom', action=argparse.BooleanOptionalAction, default=True,
