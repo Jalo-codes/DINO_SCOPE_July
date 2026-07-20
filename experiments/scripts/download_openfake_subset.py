@@ -1,5 +1,5 @@
 """experiments.scripts.download_openfake_subset — build a full_fakes-layout
-OpenFake eval subset (Colab-oriented).
+OpenFake eval OR training subset (Colab-oriented).
 
 Supersedes the ad-hoc notebook downloader.  Differences that matter:
 
@@ -25,14 +25,63 @@ Supersedes the ad-hoc notebook downloader.  Differences that matter:
   AUROC negative set isn't dominated by whichever source the stream serves
   first.  The source survives in the filename (real_<source>_<md5>) and the
   manifest `model` column.
+- **Builds train sets too, via the same --split flag.** `--split` still
+  defaults to `'test'` (an EVAL pull) — that default is unchanged, see the
+  flag help.  Pass `--split train` to pull from OpenFake's ~2.31M-row core
+  training split (all in-distribution generators), or `--split validation`
+  for the ~59K held-out-IMAGE split (same generators as train, unseen images
+  — the in-distribution readout). This maps onto the generators-as-cameras
+  noise-head experiment (docs/noise_head_phase0.md): train learns
+  fingerprints, validation is the in-distribution check, test (the existing
+  default) is the out-of-distribution generator check. No other machinery
+  changes — resume/stratify/original-bytes all apply identically to every
+  split.
+- **Train/eval leakage is provable, not assumed — and checkable standalone.**
+  Because every image is keyed by the md5 of its raw bytes (see
+  "Resume-safe" above), a train root and an eval root pulled from disjoint HF
+  splits should share zero images by construction, unless the splits
+  themselves overlap or a run was pointed at the wrong split. `--check_disjoint
+  EVAL_ROOT TRAIN_ROOT` verifies this directly against two already-downloaded
+  manifest.csv files — no network, no re-download — and hard-fails (nonzero
+  exit, offending md5s + file paths printed) on any collision. Run it after
+  any train pull that will sit alongside an existing eval root.
 
-Torch-free; needs `datasets` + `pillow` (+ tqdm if available).
+Torch-free; needs `datasets` + `pillow` (+ tqdm if available). The leakage
+check (--check_disjoint) needs neither — it only reads manifest.csv.
 
-Usage (Colab):
+Usage (Colab, eval/test — the default, unchanged):
     python -m experiments.scripts.download_openfake_subset \
         --output_dir /content/openfake_ff \
         --n_per_gen 100 --n_per_real_source 250 \
         --zip_out /content/drive/MyDrive/DINO_SCOPE_DATA/openfake_ff.zip
+
+Usage (Colab, TRAIN set for generators-as-cameras, docs/noise_head_phase0.md):
+    python -m experiments.scripts.download_openfake_subset \
+        --output_dir /content/openfake_train --split train \
+        --n_per_gen 2000 --n_per_real_source 5000 \
+        --stop_after_dry 50000 \
+        --zip_out /content/drive/MyDrive/DINO_SCOPE_DATA/openfake_train.zip
+    # train is ~2.31M rows across 100+ generators; streaming to exhaustion is
+    # impractical, so this is bounded by --stop_after_dry rather than left to
+    # run to completion. Keep it GENEROUS: per --stop_after_dry's own caution,
+    # the stream can be shard/generator-ordered, so a long dry stretch (every
+    # known generator already at cap) can still precede an as-yet-unseen
+    # generator later in the shard order — 50000 is a reasonable floor for a
+    # first pull, not a tuned value. The run prints a per-generator shortfall
+    # warning at the end; rerun (resume-safe, tops up) with a larger
+    # --stop_after_dry or --max_scan if generators came up short. If you only
+    # want a known generator subset, pass --generators explicitly instead —
+    # that early-exits as soon as its targets are met and sidesteps the
+    # dry-stretch tradeoff entirely.
+
+Usage (Colab, VALIDATION set — in-distribution eval, same generators as train):
+    python -m experiments.scripts.download_openfake_subset \
+        --output_dir /content/openfake_val --split validation \
+        --n_per_gen 200 --n_per_real_source 500
+
+    # after a train pull, verify no train/eval leakage (standalone, no network):
+    python -m experiments.scripts.download_openfake_subset \
+        --check_disjoint /content/openfake_ff /content/openfake_train
 
     # later, evaluate:
     python -m experiments.scripts.audit_zoom_image_auc \
@@ -64,8 +113,15 @@ def _build_parser() -> argparse.ArgumentParser:
         description='Stream OpenFake into a full_fakes-layout eval directory.',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    p.add_argument('--output_dir', required=True,
-                   help='Destination root (becomes --full_fakes_root for eval)')
+    p.add_argument('--output_dir', default=None,
+                   help='Destination root (becomes --full_fakes_root for eval). '
+                        'Required unless --check_disjoint is given.')
+    p.add_argument('--check_disjoint', nargs=2, default=None,
+                   metavar=('EVAL_ROOT', 'TRAIN_ROOT'),
+                   help='Skip downloading. Instead verify manifest.csv md5s in '
+                        'EVAL_ROOT and TRAIN_ROOT are disjoint (train/eval leakage '
+                        'guard) against two already-downloaded roots and hard-fail '
+                        '(nonzero exit) on any collision. No network access.')
     p.add_argument('--n_per_gen', type=int, default=100,
                    help='Target images per generator')
     p.add_argument('--n_per_real_source', type=int, default=250,
@@ -76,9 +132,14 @@ def _build_parser() -> argparse.ArgumentParser:
                         'by whichever source the stream serves first')
     p.add_argument('--config_name', default='core')
     p.add_argument('--split', default='test',
-                   help="Default 'test' ON PURPOSE: this builds an EVAL set, "
-                        "and training on OpenFake train is on the roadmap — "
-                        "drawing eval images from train would bake in leakage.")
+                   help="Default 'test' ON PURPOSE: an unqualified invocation "
+                        "must keep building an EVAL set, so documented eval "
+                        "commands don't silently change meaning. 'train' and "
+                        "'validation' are supported (opt-in) — see the module "
+                        "docstring for train/validation usage and pair any "
+                        "'train' pull with --check_disjoint against your eval "
+                        "root before training, since drawing eval images from "
+                        "train bakes in leakage.")
     p.add_argument('--max_scan', type=int, default=None,
                    help='Stop after scanning this many stream items regardless '
                         'of fill state (bound a slow stream)')
@@ -135,6 +196,58 @@ def _load_manifest_state(manifest_path: Path):
                 else:
                     counts[row.get('generator') or 'unknown'] += 1
     return seen, counts
+
+
+def _load_manifest_md5s(manifest_path: Path) -> dict:
+    """md5 -> file_path for every row with an md5 (dedup keeps the first)."""
+    rows = {}
+    with manifest_path.open() as fh:
+        for row in csv.DictReader(fh):
+            md5 = row.get('md5')
+            if md5 and md5 not in rows:
+                rows[md5] = row.get('file_path', '')
+    return rows
+
+
+def verify_disjoint(root_a: Path, root_b: Path, *,
+                    label_a: str = 'A', label_b: str = 'B') -> int:
+    """Hard leakage check between two already-downloaded roots. No network.
+
+    Every image is keyed by the md5 of its raw bytes (see module docstring),
+    so this is PROVABLE disjointness, not an assumption: two roots pulled
+    from non-overlapping HF splits should share zero md5s by construction.
+    A nonzero return means either the splits themselves overlap or a root was
+    built from the wrong split — investigate before training.
+
+    Returns the collision count (0 = disjoint). Raises SystemExit if either
+    root has no manifest.csv — there is nothing to verify.
+    """
+    manifest_a = root_a / MANIFEST_NAME
+    manifest_b = root_b / MANIFEST_NAME
+    for m, label in ((manifest_a, label_a), (manifest_b, label_b)):
+        if not m.exists():
+            raise SystemExit(f'no {MANIFEST_NAME} at {m} ({label} root) — '
+                             f'nothing to verify')
+
+    rows_a = _load_manifest_md5s(manifest_a)
+    rows_b = _load_manifest_md5s(manifest_b)
+    collisions = sorted(set(rows_a) & set(rows_b))
+
+    print(f'{label_a}: {len(rows_a)} images  ({manifest_a})')
+    print(f'{label_b}: {len(rows_b)} images  ({manifest_b})')
+
+    if collisions:
+        print(f'\nLEAKAGE: {len(collisions)} md5 collision(s) between '
+              f'{label_a} and {label_b}:')
+        shown = collisions[:50]
+        for md5 in shown:
+            print(f'  {md5}  {label_a}:{rows_a[md5]}  {label_b}:{rows_b[md5]}')
+        if len(collisions) > len(shown):
+            print(f'  ... and {len(collisions) - len(shown)} more')
+    else:
+        print(f'\nOK: 0 collisions — {label_a} and {label_b} are disjoint')
+
+    return len(collisions)
 
 
 def download(args) -> Path:
@@ -279,8 +392,32 @@ def download(args) -> Path:
     for key in sorted(counts):
         print(f'{key:<32} {counts[key]:>6} / {target_for(key)}')
     print('=' * 56)
-    print(f'{new_rows} new images this run; manifest: {manifest_path}')
+
+    # Per-generator balance (generators-as-cameras needs this: a class
+    # dominated by whichever generator the stream serves first is bad
+    # training data). Report every pool under its target PROMINENTLY, not
+    # buried in the table above — includes --generators names that never
+    # appeared in the stream at all (count 0, not just "under cap").
+    shortfalls = {k: counts[k] for k in counts if counts[k] < target_for(k)}
+    if restrict is not None:
+        for k in restrict:
+            shortfalls.setdefault(k, 0)
+    if shortfalls:
+        print(f'\nWARNING: {len(shortfalls)} pool(s) short of their requested '
+              f'cap (underrepresented generator == class imbalance):')
+        for k in sorted(shortfalls):
+            have, want = shortfalls[k], target_for(k)
+            print(f'  {k:<32} {have:>6} / {want}  (short {want - have})')
+    else:
+        print('\nall pools reached their target cap')
+
+    print(f'\n{new_rows} new images this run; manifest: {manifest_path}')
     print(f'eval with: --full_fakes_root {root.resolve()}')
+    if args.split != 'test':
+        print(f"\nNOTE: split='{args.split}' — before training on this root "
+              f"alongside any existing eval root, verify disjointness:\n"
+              f"  python -m experiments.scripts.download_openfake_subset "
+              f"--check_disjoint <EVAL_ROOT> {root.resolve()}")
     return root
 
 
@@ -298,6 +435,15 @@ def zip_dir(root: Path, zip_out: str) -> None:
 
 def main() -> None:
     args = _build_parser().parse_args()
+
+    if args.check_disjoint:
+        root_a, root_b = (Path(p) for p in args.check_disjoint)
+        n_collisions = verify_disjoint(root_a, root_b, label_a='EVAL', label_b='TRAIN')
+        raise SystemExit(1 if n_collisions else 0)
+
+    if not args.output_dir:
+        raise SystemExit('--output_dir is required (unless using --check_disjoint)')
+
     root = download(args)
     if args.zip_out:
         zip_dir(root, args.zip_out)
