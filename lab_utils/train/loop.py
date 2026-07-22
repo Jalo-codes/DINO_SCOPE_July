@@ -48,6 +48,38 @@ def _mask_to_patch_labels(mask_t: torch.Tensor, patch_size: int) -> torch.Tensor
     return (pooled.squeeze(1).flatten(1) > 0.5).long()
 
 
+def _mask_to_patch_labels_soft_t(
+    mask_t: torch.Tensor, patch_size: int, low: float, high: float,
+) -> Tuple[torch.Tensor, torch.Tensor]:
+    """Batched tensor twin of lab_utils.data.resolution.mask_to_patch_labels_soft.
+
+    Same piecewise band rule (density==0 -> confident bg weight=1; 0<density<low
+    -> ignore weight=0; low<=density<high -> linear ramp; density>=high ->
+    confident fake weight=1), just over a (B,1,S,S) batch instead of one PIL
+    mask. MUST stay bit-parity with the PIL function (see
+    tests/test_equal_budget_bce.py::test_band_parity) — that function is the
+    source of truth; this is a batched restatement, not an independent design.
+
+    Returns (labels (B,N) long, weights (B,N) float).
+    """
+    if not (0.0 < float(low) < float(high) <= 1.0):
+        raise ValueError(
+            f'_mask_to_patch_labels_soft_t: need 0 < low < high <= 1, '
+            f'got low={low}, high={high}'
+        )
+    density = F.avg_pool2d(mask_t, kernel_size=patch_size, stride=patch_size).squeeze(1).flatten(1)
+    low_t, high_t = float(low), float(high)
+
+    labels = (density >= low_t).long()
+    weights = torch.zeros_like(density)
+    weights[density == 0.0] = 1.0
+    weights[density >= high_t] = 1.0
+    ramp_mask = (density >= low_t) & (density < high_t)
+    if bool(ramp_mask.any()):
+        weights[ramp_mask] = (density[ramp_mask] - low_t) / (high_t - low_t)
+    return labels, weights
+
+
 # ── Optimizer + scheduler ──────────────────────────────────────────────────────
 
 def build_optimizer(model: torch.nn.Module, cfg) -> torch.optim.Optimizer:
@@ -110,6 +142,7 @@ def run_train_epoch(
     """Run one training epoch; return a loss-summary dict."""
     from lab_utils.model.losses.bce import (
         selective_bce_loss_with_diag, selective_patch_bce_loss,
+        equal_budget_patch_bce_loss,
     )
     from lab_utils.model.losses.contrastive import selective_symmetric_contrastive_loss
 
@@ -117,12 +150,26 @@ def run_train_epoch(
     bce_active  = (cfg.pool_hidden > 0 and cfg.lambda_image_bce > 0.0)
     cont_active = (cfg.contrastive_dim > 0 and cfg.lambda_contrastive > 0.0)
     patch_active = (cfg.patch_bce and cfg.lambda_patch_bce > 0.0)
+    patch_balance = getattr(cfg, 'patch_balance', 'global')
+    patch_band = getattr(cfg, 'patch_band', None)
+    patch_k_min = float(getattr(cfg, 'patch_k_min', 4.0))
+    if patch_active and patch_balance == 'per_image' and epoch == 0 \
+            and float(cfg.patch_pos_weight) != 1.0:
+        log_line(
+            f'[train] patch_balance=per_image: --patch_pos_weight={cfg.patch_pos_weight} '
+            f'is IGNORED (per-image budgets replace it wholesale)'
+        )
 
     model.train()
     optimizer.zero_grad()
 
     loss_total = loss_bce = loss_cont = loss_patch = 0.0
     n_steps = 0
+    # Equal-budget diagnostics (only meaningful when patch_balance == 'per_image')
+    diag_P_sum = diag_Q_sum = 0.0
+    diag_P_n = diag_Q_n = 0
+    diag_max_patch_w = 0.0
+    diag_n_no_supervision = 0
 
     for step, batch in enumerate(loader):
         if batch is None:
@@ -189,11 +236,31 @@ def run_train_epoch(
         patch_logit = out.get('patch_logit')
         if patch_active and patch_logit is not None:
             active_patch = ~(is_splice & is_single)
-            patch_loss, _ = selective_patch_bce_loss(
-                patch_logit, patch_labels,
-                active_mask=active_patch,
-                pos_weight=cfg.patch_pos_weight,
-            )
+            if patch_band:
+                bce_labels, bce_pw = _mask_to_patch_labels_soft_t(
+                    mask, cfg.patch_size, float(patch_band[0]), float(patch_band[1]))
+            else:
+                bce_labels, bce_pw = patch_labels, None
+            if patch_balance == 'per_image':
+                patch_loss, patch_diag = equal_budget_patch_bce_loss(
+                    patch_logit, bce_labels,
+                    active_mask=active_patch,
+                    k_min=patch_k_min,
+                    patch_weights=bce_pw,
+                )
+                if not math.isnan(patch_diag['realized_P']):
+                    diag_P_sum += patch_diag['realized_P']; diag_P_n += 1
+                if not math.isnan(patch_diag['realized_Q']):
+                    diag_Q_sum += patch_diag['realized_Q']; diag_Q_n += 1
+                diag_max_patch_w = max(diag_max_patch_w, patch_diag['max_patch_w'])
+                diag_n_no_supervision += patch_diag['n_no_supervision']
+            else:
+                patch_loss, _ = selective_patch_bce_loss(
+                    patch_logit, bce_labels,
+                    active_mask=active_patch,
+                    pos_weight=cfg.patch_pos_weight,
+                    patch_weights=bce_pw,
+                )
         else:
             patch_loss = torch.tensor(0.0, device=device)
 
@@ -238,13 +305,19 @@ def run_train_epoch(
         optimizer.zero_grad()
 
     n = max(1, n_steps)
-    return {
+    stats = {
         'loss':        loss_total / n,
         'loss_bce':    loss_bce   / n,
         'loss_cont':   loss_cont  / n,
         'loss_patch':  loss_patch / n,
         'n_steps':     n_steps,
     }
+    if patch_active and patch_balance == 'per_image':
+        stats['patch_realized_P']       = diag_P_sum / diag_P_n if diag_P_n else float('nan')
+        stats['patch_realized_Q']       = diag_Q_sum / diag_Q_n if diag_Q_n else float('nan')
+        stats['patch_max_patch_w']      = diag_max_patch_w
+        stats['patch_n_no_supervision'] = diag_n_no_supervision
+    return stats
 
 
 # ── Validation eval ────────────────────────────────────────────────────────────

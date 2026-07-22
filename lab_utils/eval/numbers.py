@@ -120,6 +120,17 @@ def build_parser() -> argparse.ArgumentParser:
                    help='Upsampling-downsampling laundering attack simulation.')
     g.add_argument('--prelaundered_root', default=None,
                    help='Path to the pre-laundered directory for offline Real-ESRGAN/SR.')
+    g.add_argument('--patch_auroc', action=argparse.BooleanOptionalAction, default=False,
+                   help='Also report threshold-free per-patch AUROC (raw sigmoid scores vs '
+                        'banded GT labels; no decoder, no fixed threshold). Required for '
+                        'comparing patch_balance=global vs per_image checkpoints (CLAUDE.md '
+                        'rule 1 — per_image outputs are no longer calibrated at t=0.5, so any '
+                        'fixed-threshold f1/iou comparison between them measures the '
+                        'calibration shift, not localization quality). Skipped with a warning '
+                        'for checkpoints with no patch-BCE head.')
+    g.add_argument('--patch_gt_band', nargs=2, type=float, default=None, metavar=('LOW', 'HIGH'),
+                   help='Ignore-band thresholds for --patch_auroc GT labels (see '
+                        'lab_utils.data.resolution.mask_to_patch_labels_soft). Default 0.2 0.8.')
 
     g = p.add_argument_group('arch overrides (pin the backbone)')
     g.add_argument('--model_name', default=_DINOV3)
@@ -475,6 +486,8 @@ def _eval_checkpoint(ckpt_path: str, label: str, item_sets: Dict[str, List],
                   launder_mode=launder_mode, prelaundered_root=prelaundered_root, args=args)
 
     is_prelaundered = launder_mode.startswith('real_esrgan')
+    _patch_head_present = bool(p_bce)
+    _warned_no_patch_head = False
 
     out: dict = {'checkpoint': str(ckpt_path), 'sources': {}}
     for src, items in item_sets.items():
@@ -529,6 +542,20 @@ def _eval_checkpoint(ckpt_path: str, label: str, item_sets: Dict[str, List],
             if subs:   # only sources whose items carry a subgroup label (TGIF)
                 entry['subgroups'] = subs
             src_out['localization'][rlabel] = entry
+
+        if getattr(args, 'patch_auroc', False):
+            if _patch_head_present:
+                from lab_utils.eval.patch_scores import collect_patch_scores
+                gt_band = tuple(getattr(args, 'patch_gt_band', None) or (0.2, 0.8))
+                src_out['patch_auroc'] = collect_patch_scores(
+                    bare, items, res, device=device, use_amp=use_amp,
+                    amp_dtype=args.amp_dtype, band=gt_band, log_tag=f'{tag} patch-auroc',
+                )
+            elif not _warned_no_patch_head:
+                log_line(f'{tag} --patch_auroc requested but this checkpoint has no '
+                         f'patch-BCE head (patch_bce={p_bce}) — skipping for all sources')
+                _warned_no_patch_head = True
+
         out['sources'][src] = src_out
     return out
 

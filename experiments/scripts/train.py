@@ -158,6 +158,34 @@ def _build_parser() -> argparse.ArgumentParser:
     g.add_argument('--lambda_contrastive', type=float, default=2.0)
     g.add_argument('--lambda_patch_bce',   type=float, default=1.0)
     g.add_argument('--patch_pos_weight',   type=float, default=10.0)
+    g.add_argument('--patch_balance', choices=['global', 'per_image'], default='global',
+                   help="'global' (default) reproduces current behavior exactly: a flat "
+                        "mean-reduced patch BCE at --patch_pos_weight. 'per_image' switches "
+                        "to equal-budget patch BCE (lab_utils.model.losses.bce."
+                        "equal_budget_patch_bce_loss): every image gets a fixed positive and "
+                        "negative loss budget split evenly over its own fake/not-fake "
+                        "patches, fixing the small-splice punishment gap (a k-fake-patch "
+                        "splice is punished k/N as hard as a whole N-patch fake for being "
+                        "totally missed, under 'global'). --patch_pos_weight is IGNORED "
+                        "under 'per_image'. Outputs are no longer calibrated at t=0.5 under "
+                        "'per_image' (CLAUDE.md rule 1) — compare checkpoints via patch AUROC "
+                        "(eval_numbers --patch_auroc), never at a fixed decode threshold.")
+    g.add_argument('--patch_k_min', type=float, default=4.0,
+                   help="Only used when --patch_balance per_image. Floor on the banded "
+                        "fake/not-fake patch count before its budget is treated as full: "
+                        "an image with fewer than this many supervised fake (or "
+                        "not-fake) patches gets a linearly-shrunk budget (count/k_min) "
+                        "instead of the 1/count blowup — insurance against one noisy "
+                        "patch label owning a whole image's gradient.")
+    g.add_argument('--patch_band', type=float, nargs=2, default=None, metavar=('LOW', 'HIGH'),
+                   help="Ignore-band thresholds on per-patch mask coverage, matching "
+                        "lab_utils.data.resolution.mask_to_patch_labels_soft: density==0 -> "
+                        "confident not-fake; 0<density<LOW -> ignored (boundary noise); "
+                        "LOW<=density<HIGH -> linear ramp weight; density>=HIGH -> confident "
+                        "fake. Default None reproduces today's hard binarize at 0.5 exactly "
+                        "(no ignore band). Only affects the patch-BCE head's labels/weights — "
+                        "the contrastive head always sees the hard-binarized labels. "
+                        "Suggested for --patch_balance per_image: 0.2 0.8.")
 
     # data / sampling
     g = p.add_argument_group('data / sampling')
@@ -492,6 +520,10 @@ def main() -> None:
     cfg = resolve_config(args, hw=hw)
     if not cfg.run_dir:
         parser.error('one of --run_dir or --checkpoint_root is required')
+    if cfg.patch_band is not None:
+        lo, hi = cfg.patch_band
+        if not (0.0 < lo < hi <= 1.0):
+            parser.error(f'--patch_band needs 0 < LOW < HIGH <= 1, got {lo} {hi}')
     _seed_everything(cfg.seed + hw.rank)
 
     if hw.is_main:
@@ -727,6 +759,14 @@ def main() -> None:
                 f'cont={loss_stats["loss_cont"]:.4f} '
                 f'patch={loss_stats["loss_patch"]:.4f}'
             )
+            if 'patch_realized_P' in loss_stats:
+                log_line(
+                    f'[train] epoch={epoch} patch_balance=per_image diag: '
+                    f'P={loss_stats["patch_realized_P"]:.3f} '
+                    f'Q={loss_stats["patch_realized_Q"]:.3f} '
+                    f'max_patch_w={loss_stats["patch_max_patch_w"]:.3f} '
+                    f'n_no_supervision={loss_stats["patch_n_no_supervision"]}'
+                )
 
         # ── Per-epoch val eval (main rank only) ───────────────────────────────
         val_metric = best_metric

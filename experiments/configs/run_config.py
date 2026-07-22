@@ -91,6 +91,9 @@ class RunConfig:
     lambda_contrastive:   float = 2.0
     lambda_patch_bce:     float = 1.0
     patch_pos_weight:     float = 10.0
+    patch_balance:        str   = 'global'  # 'global' (today's flat mean) | 'per_image' (equal-budget)
+    patch_k_min:          float = 4.0        # per_image only: floor before a splice's budget is treated as full
+    patch_band:           Optional[Tuple[float, float]] = None  # per_image only: (low, high) ignore-band; None = hard binarize (today)
 
     # ── Data / sampling ───────────────────────────────────────────────────────
     splice_mix:          Optional[Dict[str, float]] = None   # {source: frac}
@@ -237,6 +240,9 @@ def resolve_config(args, *, hw: Optional[HardwareInfo] = None) -> RunConfig:
         lambda_contrastive=getattr(args, 'lambda_contrastive', 2.0),
         lambda_patch_bce=getattr(args, 'lambda_patch_bce', 1.0),
         patch_pos_weight=getattr(args, 'patch_pos_weight', 10.0),
+        patch_balance=getattr(args, 'patch_balance', 'global'),
+        patch_k_min=getattr(args, 'patch_k_min', 4.0),
+        patch_band=(tuple(args.patch_band) if getattr(args, 'patch_band', None) else None),
         # data/sampling
         splice_mix=splice_mix,
         casia_train=getattr(args, 'casia_train', False),

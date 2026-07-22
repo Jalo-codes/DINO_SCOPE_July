@@ -144,6 +144,7 @@ class TestFetchIsSoleModelEntry:
         'experiments/scripts/eval_oracle.py',   # isolated cheating-oracle eval; reuses fetch.model_info by design
         'experiments/scripts/gen_size_bucket_visuals.py',  # per-item viz forward, same shape as attention_zoom.py
         'experiments/scripts/eval_openfake_by_generator.py',  # per-generator OpenFake eval; full+crop forwards
+        'lab_utils/eval/patch_scores.py',  # threshold-free patch-AUROC readout: own forward loop
     }
 
     def test_model_info_not_called_elsewhere(self):
@@ -185,6 +186,10 @@ class TestMetricIsSoleGTTouch:
         'lab_utils/eval/aggregate.py', # reads .is_real (not the mask itself)
         'lab_utils/eval/robustness.py',
         'lab_utils/eval/buckets.py',   # docstring mentions Item.mask_area() concept
+        'lab_utils/eval/patch_scores.py',  # reads GT mask density for PATCH-level labels/weights
+                                            # (mask_to_patch_labels_soft), not a pixel-wise decode
+                                            # comparison — a genuinely different access pattern than
+                                            # metric.py's committed-mask scoring, so not routed through it
         'tests/test_invariants.py',    # this file
     }
 
