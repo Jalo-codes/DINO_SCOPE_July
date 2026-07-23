@@ -282,6 +282,12 @@ def _build_parser() -> argparse.ArgumentParser:
     g.add_argument('--tgif_val_models', default=None,
                    help='Comma-separated generators to keep in TGIF per-epoch val '
                         "(e.g. 'flux1dev,flux1filldev'); reals always kept. Default: all")
+    g.add_argument('--tgif_val_reals', type=int, default=None,
+                   help='Cap the TGIF per-epoch val reals to N (deterministic subsample, '
+                        'seeded from --seed). TGIF keeps ONE real per val coco_id and '
+                        '--tgif_val_models never filters reals, so without this the real '
+                        'pool is the whole val split — far more than a condensed eval or a '
+                        'balanced image-AUROC needs. --val_per_cell bounds the fakes.')
     g.add_argument('--tgif_types', nargs='*', default=None, choices=['sp', 'fr'],
                    help="Restrict TGIF per-epoch val to these manipulation types "
                         "(e.g. --tgif_types sp fr keeps both; omit for all). Combine "
@@ -458,12 +464,21 @@ def _build_datasets(cfg, res: Resolution):
             it for it in tg_val.items
             if it.is_real or not keep_models or it.meta.get('tgif_model') in keep_models
         ]
+        if cfg.tgif_val_reals is not None:
+            reals = [it for it in tg_items if it.is_real]
+            fakes = [it for it in tg_items if not it.is_real]
+            if len(reals) > cfg.tgif_val_reals:
+                reals.sort(key=lambda i: i.item_id)          # stable order before the draw
+                random.Random(cfg.seed + 11).shuffle(reals)  # +11: independent of other draws
+                reals = reals[:cfg.tgif_val_reals]
+            tg_items = fakes + reals
         cells  = sorted({it.meta.get('tgif_subcat') for it in tg_items if not it.is_real})
         n_real = sum(1 for it in tg_items if it.is_real)
         val_items.extend(tg_items)
         log_line(
             f'[data] tgif2 → val: {len(tg_items)} items ({n_real} real) '
-            f'models={sorted(keep_models) or "all"} per_cell={per_cell} cells={cells}'
+            f'models={sorted(keep_models) or "all"} per_cell={per_cell} '
+            f'reals_cap={cfg.tgif_val_reals} cells={cells}'
         )
 
     if not train_items:

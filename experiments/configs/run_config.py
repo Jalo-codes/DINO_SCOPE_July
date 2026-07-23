@@ -128,6 +128,7 @@ class RunConfig:
     val_zoom_pad_frac:   Optional[float] = None  # area-based crop pad (frame fraction/side); None = legacy patch pad
     val_zoom_min_area:   float         = 0.0    # with val_zoom_pad_frac: floor padded crop to this frame-area fraction
     tgif_val_models:     Optional[Tuple[str, ...]] = None  # restrict tgif per-epoch val to these generators
+    tgif_val_reals:      Optional[int] = None  # cap tgif per-epoch val reals (fakes bounded by val_per_cell); None = all val-split reals
     viz_every_epoch:     bool          = False   # save+display a fixed splice-item sample every epoch (lab_utils.train.loop.run_epoch_viz)
     viz_n:               int           = 15      # number of fixed, seeded splice items to visualize per epoch
     viz_per_source:      Optional[Dict[str, int]] = None  # {source: n} stratified viz counts; unlisted val sources pooled and sampled up to viz_n
@@ -275,6 +276,7 @@ def resolve_config(args, *, hw: Optional[HardwareInfo] = None) -> RunConfig:
             if getattr(args, 'tgif_val_models', None) else None
         ),
         tgif_types=(tuple(getattr(args, 'tgif_types')) if getattr(args, 'tgif_types', None) else None),
+        tgif_val_reals=getattr(args, 'tgif_val_reals', None),
         primary_surface=getattr(args, 'primary_surface', 'imd'),
         viz_every_epoch=getattr(args, 'viz_every_epoch', False),
         viz_n=getattr(args, 'viz_n', 15),
