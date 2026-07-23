@@ -202,6 +202,13 @@ def _build_parser() -> argparse.ArgumentParser:
     g.add_argument('--imd_val_split',  type=float, default=None,
                    help='Override IMD2020 val_split fraction for the per-epoch val '
                         '(use 1.0 with --imd_val_only to validate on the full IMD set)')
+    g.add_argument('--pico_pseudo_val_only', action='store_true',
+                   help='Route --pico_pseudo_root to the per-epoch VAL only — index pico '
+                        'but never add it to TRAIN. Lets a no-pico arm still monitor pico '
+                        'localization each epoch (the B arm of the pico-label-quality '
+                        'probe). Uses pico\'s default 90/10 split, so the val 10% matches '
+                        'the held-out 10% an arm that DID train on pico evaluates on. '
+                        'Do NOT combine with a pico weight in --splice_mix.')
 
     # augmentation — THREE knobs (I7): the severity preset, the sp/fr paste
     # share, and the oracle-crop regime switch. Crop geometry, jpeg/noise
@@ -249,7 +256,15 @@ def _build_parser() -> argparse.ArgumentParser:
                         'already supported it; the choice list did not). Correct '
                         'for an image-head-only run, where there is nothing to decode')
     g.add_argument('--val_max_items', type=int, default=None,
-                   help='Limit val items per epoch (for quick smoke tests)')
+                   help='Limit val items per epoch (for quick smoke tests). Truncates the '
+                        'FLAT source-ordered list — takes whole sources in order and drops '
+                        'the rest; use --val_per_source for a balanced multi-source cap.')
+    g.add_argument('--val_per_source', type=int, default=None,
+                   help='Cap the per-epoch val to N items PER SOURCE (deterministic '
+                        'subsample, seeded from --seed). Unlike --val_max_items this keeps '
+                        'the eval balanced across every source, so a condensed per-epoch '
+                        'eval still reports every held-out set (in-domain + pico + imd) '
+                        'rather than whichever sources sort first.')
     g.add_argument('--val_zoom', action=argparse.BooleanOptionalAction, default=True,
                    help='Per-epoch val runs attention-zoom two-pass; early-stop '
                         'then tracks the zoomed localization F1 (default on; '
@@ -392,6 +407,13 @@ def _build_datasets(cfg, res: Resolution):
             _, val_ds = REGISTRY[source](root, res=res, **imd_kwargs)
             val_items.extend(val_ds.items)
             continue
+        if source == 'pico_pseudo' and cfg.pico_pseudo_val_only:
+            # val only — monitor pico each epoch WITHOUT training on it (the
+            # no-pico arm of the pico-label-quality probe). Default 90/10 split,
+            # so this val 10% == the held-out 10% a pico-trained arm evaluates on.
+            _, val_ds = REGISTRY[source](root, res=res, **kwargs)
+            val_items.extend(val_ds.items)
+            continue
 
         train_ds, val_ds = REGISTRY[source](root, res=res, **kwargs)
         train_items.extend(train_ds.items)
@@ -450,6 +472,25 @@ def _build_datasets(cfg, res: Resolution):
             'at least one non-val-only root (--casia_root, --bfree_root, '
             '--coco_inpaint_root, --sagid_root, ...) exists on disk.'
         )
+
+    if cfg.val_per_source is not None and val_items:
+        from collections import defaultdict as _defaultdict
+        by_src = _defaultdict(list)
+        for it in val_items:
+            by_src[it.source].append(it)
+        cap_rng = random.Random(cfg.seed + 7)   # +7: independent of any other draw
+        capped, n_dropped = [], 0
+        for src in sorted(by_src):
+            group = list(by_src[src])
+            if len(group) > cfg.val_per_source:
+                group.sort(key=lambda i: i.item_id)   # stable order before the draw
+                cap_rng.shuffle(group)
+                n_dropped += len(group) - cfg.val_per_source
+                group = group[:cfg.val_per_source]
+            capped.extend(group)
+        log_line(f'[data] val_per_source={cfg.val_per_source} → {len(capped)} val items '
+                 f'across {len(by_src)} sources ({n_dropped} dropped)')
+        val_items = capped
 
     _log_data_diet(train_items, val_items, cfg)
 
