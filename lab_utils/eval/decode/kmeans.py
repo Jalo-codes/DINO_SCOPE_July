@@ -100,7 +100,94 @@ def polarity_attn(
     return (raw == chosen)
 
 
-# ── Public decode function ─────────────────────────────────────────────────────
+# ── 1-D two-means (exact, deterministic) ───────────────────────────────────────
+
+def _kmeans2_1d(x: np.ndarray) -> np.ndarray:
+    """Exact 1-D k=2 clustering.
+
+    The optimal 1-D 2-means partition is a threshold between two adjacent
+    sorted values that minimises total within-cluster SSE (equivalently the
+    Jenks/Otsu natural break).  Solved in closed form via prefix sums — no
+    random restarts, fully deterministic.
+
+    Returns:
+        (N,) int labels in {0, 1}; cluster 1 is the UPPER (larger-value) group.
+    """
+    x = np.asarray(x, dtype=np.float64).reshape(-1)
+    n = x.shape[0]
+    if n < 2:
+        return np.zeros(n, dtype=np.int64)
+    order = np.argsort(x, kind='mergesort')
+    xs    = x[order]
+    csum  = np.cumsum(xs)
+    csum2 = np.cumsum(xs * xs)
+    total, total2 = csum[-1], csum2[-1]
+    # split after sorted index i (i in 1..n-1): lower = xs[:i], upper = xs[i:]
+    i     = np.arange(1, n)
+    n_lo  = i.astype(np.float64)
+    n_hi  = (n - i).astype(np.float64)
+    s_lo  = csum[:-1]
+    s2_lo = csum2[:-1]
+    s_hi  = total - s_lo
+    s2_hi = total2 - s2_lo
+    sse   = (s2_lo - s_lo * s_lo / n_lo) + (s2_hi - s_hi * s_hi / n_hi)
+    cut   = int(np.argmin(sse)) + 1          # size of lower group
+    labels_sorted            = np.zeros(n, dtype=np.int64)
+    labels_sorted[cut:]      = 1
+    labels                   = np.empty(n, dtype=np.int64)
+    labels[order]            = labels_sorted
+    return labels
+
+
+# ── Public decode functions ────────────────────────────────────────────────────
+
+def decode_kmeans_logit(info: ModelInfo) -> np.ndarray:
+    """k=2 clustering on the BCE head's own per-patch logits ("learned vector").
+
+    Clusters ``patch_logits`` (the scalar ``w·f + b`` the trained patch head
+    emits) into two groups and picks the splice cluster by attention polarity —
+    the same GT-free polarity rule as ``decode_kmeans``.  This is the
+    self-calibrating (per-crop adaptive) counterpart to ``decode_threshold``:
+    identical axis, but the split is chosen by the data instead of a fixed t.
+
+    Requires the patch-BCE head (``patch_logits`` not None).
+    """
+    if info.patch_logits is None:
+        raise ValueError(
+            'decode_kmeans_logit: ModelInfo.patch_logits is None '
+            '(patch-BCE head not enabled in this model).'
+        )
+    x          = np.asarray(info.patch_logits, dtype=np.float64).reshape(-1)
+    n_side     = info.grid_hw[0]
+    raw_labels = _kmeans2_1d(x)
+    mask       = polarity_attn(raw_labels, info.attention)
+    return mask.reshape(n_side, n_side)
+
+
+def decode_kmeans_feats(info: ModelInfo, *, n_init: int = 4) -> np.ndarray:
+    """Spherical k=2 clustering on the raw backbone patch features ("whole vector").
+
+    Same clustering + attention-polarity as ``decode_kmeans``, but over the
+    L2-normalised raw ``patch_feats`` (the full ViT feature vector) instead of
+    the contrastive projector output.  For checkpoints trained WITHOUT a
+    contrastive head (``contrastive_dim=0``) this reads the trained backbone
+    geometry directly, with no random-projector bottleneck.
+
+    Requires ``model_info(..., return_feats=True)`` so ``patch_feats`` is set.
+    """
+    if info.patch_feats is None:
+        raise ValueError(
+            'decode_kmeans_feats: ModelInfo.patch_feats is None '
+            '(call model_info(..., return_feats=True)).'
+        )
+    z          = np.ascontiguousarray(info.patch_feats, dtype=np.float32)
+    norms      = np.linalg.norm(z, axis=1, keepdims=True)
+    z          = z / np.clip(norms, a_min=1e-12, a_max=None)
+    n_side     = info.grid_hw[0]
+    raw_labels, _ = spherical_kmeans2(z, n_init=n_init)
+    mask       = polarity_attn(raw_labels, info.attention)
+    return mask.reshape(n_side, n_side)
+
 
 def decode_kmeans(info: ModelInfo, *, n_init: int = 4) -> np.ndarray:
     """Spherical k-means on embeddings; polarity by attention → (n_side, n_side) bool.

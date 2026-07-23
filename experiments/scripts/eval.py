@@ -41,7 +41,11 @@ from lab_utils.compat import trapz
 from lab_utils.eval.aggregate import decoder_bench, save_summary_json, summarize
 from lab_utils.eval.cache import build_cache, iter_cache
 from lab_utils.eval.decode.hdbscan import decode_hdbscan
-from lab_utils.eval.decode.kmeans import decode_kmeans
+from lab_utils.eval.decode.kmeans import (
+    decode_kmeans,
+    decode_kmeans_feats,
+    decode_kmeans_logit,
+)
 from lab_utils.eval.decode.threshold import decode_threshold
 from lab_utils.eval.fetch import model_info
 from lab_utils.eval.load_model import load_eval_model
@@ -75,7 +79,8 @@ def _build_parser() -> argparse.ArgumentParser:
     p.add_argument('--summary_out', default=None,
                    help='Path to write a flat JSON file of summary metrics')
     p.add_argument('--decoder', nargs='+', default=['kmeans'],
-                   choices=['kmeans', 'threshold', 'hdbscan', 'none'],
+                   choices=['kmeans', 'kmeans_logit', 'kmeans_feats',
+                            'threshold', 'hdbscan', 'none'],
                    help='Decoder(s) to evaluate. "none" skips localization '
                         '(image-level AUC only).')
     p.add_argument('--bench', action='store_true',
@@ -144,10 +149,12 @@ def _build_parser() -> argparse.ArgumentParser:
 # ── Decode dispatch ────────────────────────────────────────────────────────────
 
 _DECODERS = {
-    'kmeans':    decode_kmeans,
-    'threshold': decode_threshold,
-    'hdbscan':   decode_hdbscan,
-    'none':      lambda info: np.zeros(info.grid_hw, dtype=bool),
+    'kmeans':        decode_kmeans,
+    'kmeans_logit':  decode_kmeans_logit,
+    'kmeans_feats':  decode_kmeans_feats,
+    'threshold':     decode_threshold,
+    'hdbscan':       decode_hdbscan,
+    'none':          lambda info: np.zeros(info.grid_hw, dtype=bool),
 }
 
 
@@ -222,6 +229,18 @@ def main() -> None:
     if not has_localization and args.decoder == ['kmeans']:
         log_line('[eval] no localization heads in checkpoint — defaulting --decoder to none')
         args.decoder = ['none']
+
+    # kmeans_feats needs raw patch_feats, which are neither cached nor produced by
+    # the two-pass zoom crop path — fail fast rather than deep inside the decode.
+    if 'kmeans_feats' in args.decoder and args.cache_dir:
+        raise SystemExit(
+            'eval.py: --decoder kmeans_feats needs raw patch_feats, which are not cached. '
+            'Run it WITHOUT --cache_dir (fresh forward), or drop kmeans_feats from the '
+            'decoder list for the cached run.')
+    if 'kmeans_feats' in args.decoder and args.zoom:
+        raise SystemExit(
+            'eval.py: --decoder kmeans_feats is not supported with --zoom '
+            '(the two-pass zoom path does not extract raw patch_feats).')
 
     # ── Datasets ──────────────────────────────────────────────────────────────
     val_items_by_source = collect_val_items_by_source(args, res)
@@ -304,7 +323,9 @@ def main() -> None:
                     else:
                         img_t = load_image_tensor(item, res, device=device)
                         with torch.no_grad():
-                            info = model_info(bare_model, img_t, device=device, amp=use_amp, amp_dtype=args.amp_dtype)
+                            info = model_info(bare_model, img_t, device=device, amp=use_amp,
+                                              amp_dtype=args.amp_dtype,
+                                              return_feats=(decoder_name == 'kmeans_feats'))
 
                     patch_mask = _decode(decoder_name, info)
                     rec        = eval_metric(patch_mask, info, item, decoder=decoder_name)
