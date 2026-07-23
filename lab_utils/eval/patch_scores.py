@@ -104,6 +104,7 @@ def collect_patch_scores(
     amp_dtype: str = 'bfloat16',
     band: Tuple[float, float] = (0.2, 0.8),
     log_tag: str = '[patch-auroc]',
+    quiet: bool = False,
 ) -> Dict:
     """Run one forward per item, score raw patch sigmoids against GT — no decode.
 
@@ -226,7 +227,7 @@ def collect_patch_scores(
                 'scores_fake_mean': scores_fake_mean, 'scores_bg_mean': scores_bg_mean,
             })
 
-            if (i + 1) % every == 0 or (i + 1) == n:
+            if not quiet and ((i + 1) % every == 0 or (i + 1) == n):
                 log_line(f'{log_tag} {i + 1}/{n} items '
                          f'(skipped unreliable={n_skipped_unreliable} '
                          f'crop_window={n_skipped_cropwin} fetch_fail={n_fetch_failed})')
@@ -263,22 +264,23 @@ def collect_patch_scores(
         'real_bg': _quantiles(strata_scores['real_bg']),
     }
 
-    log_line(
-        f'{log_tag} n_items={len(per_image)} skipped(unreliable={n_skipped_unreliable} '
-        f'crop_window={n_skipped_cropwin} fetch_fail={n_fetch_failed})'
-    )
-    log_line(
-        f'{log_tag} auroc_pooled={auroc_pooled:.4f} '
-        f'vs_splice_bg={auroc_vs_splice_bg:.4f} vs_real_bg={auroc_vs_real_bg:.4f}'
-    )
-    for b in BUCKET_LABELS:
-        log_line(f'{log_tag}   bucket={b}: auroc={auroc_by_bucket[b]:.4f}')
-    log_line(
-        f'{log_tag} real_bg score quantiles: '
-        f'p50={score_quantiles["real_bg"]["p50"]:.4f} '
-        f'p90={score_quantiles["real_bg"]["p90"]:.4f} '
-        f'p99={score_quantiles["real_bg"]["p99"]:.4f}'
-    )
+    if not quiet:
+        log_line(
+            f'{log_tag} n_items={len(per_image)} skipped(unreliable={n_skipped_unreliable} '
+            f'crop_window={n_skipped_cropwin} fetch_fail={n_fetch_failed})'
+        )
+        log_line(
+            f'{log_tag} auroc_pooled={auroc_pooled:.4f} '
+            f'vs_splice_bg={auroc_vs_splice_bg:.4f} vs_real_bg={auroc_vs_real_bg:.4f}'
+        )
+        for b in BUCKET_LABELS:
+            log_line(f'{log_tag}   bucket={b}: auroc={auroc_by_bucket[b]:.4f}')
+        log_line(
+            f'{log_tag} real_bg score quantiles: '
+            f'p50={score_quantiles["real_bg"]["p50"]:.4f} '
+            f'p90={score_quantiles["real_bg"]["p90"]:.4f} '
+            f'p99={score_quantiles["real_bg"]["p99"]:.4f}'
+        )
 
     return {
         'n_items': len(per_image),

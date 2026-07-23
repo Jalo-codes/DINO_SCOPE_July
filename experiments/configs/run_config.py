@@ -124,6 +124,7 @@ class RunConfig:
     val_per_cell:        Optional[int] = None   # per-epoch scoring cap / cell
     imd_max_items:       Optional[int] = None   # per-epoch IMD scoring cap
     val_per_source:      Optional[int] = None   # per-epoch val cap PER SOURCE (balanced condensed eval); None = uncapped
+    val_patch_auroc:     bool = False            # also report per-source threshold-free localization AUROC each epoch
     val_zoom:            bool          = True   # per-epoch val uses attention-zoom two-pass (default on)
     val_zoom_pad_frac:   Optional[float] = None  # area-based crop pad (frame fraction/side); None = legacy patch pad
     val_zoom_min_area:   float         = 0.0    # with val_zoom_pad_frac: floor padded crop to this frame-area fraction
@@ -268,6 +269,7 @@ def resolve_config(args, *, hw: Optional[HardwareInfo] = None) -> RunConfig:
         val_per_cell=getattr(args, 'val_per_cell', None),
         imd_max_items=getattr(args, 'imd_max_items', None),
         val_per_source=getattr(args, 'val_per_source', None),
+        val_patch_auroc=getattr(args, 'val_patch_auroc', False),
         val_zoom=getattr(args, 'val_zoom', True),
         val_zoom_pad_frac=getattr(args, 'val_zoom_pad_frac', None),
         val_zoom_min_area=getattr(args, 'val_zoom_min_area', 0.0),

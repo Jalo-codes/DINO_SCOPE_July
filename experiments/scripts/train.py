@@ -259,6 +259,12 @@ def _build_parser() -> argparse.ArgumentParser:
                    help='Limit val items per epoch (for quick smoke tests). Truncates the '
                         'FLAT source-ordered list — takes whole sources in order and drops '
                         'the rest; use --val_per_source for a balanced multi-source cap.')
+    g.add_argument('--val_patch_auroc', action=argparse.BooleanOptionalAction, default=False,
+                   help='Also report threshold-free per-source LOCALIZATION AUROC each '
+                        'epoch (patch sigmoid vs banded GT). The honest localization signal '
+                        'under --patch_balance per_image, where the val F1 above is '
+                        'calibration-shifted (t=0.5 no longer optimal). Costs a second flat '
+                        'forward per val item. full_fakes/pseudo-sentinel items self-skip.')
     g.add_argument('--val_per_source', type=int, default=None,
                    help='Cap the per-epoch val to N items PER SOURCE (deterministic '
                         'subsample, seeded from --seed). Unlike --val_max_items this keeps '

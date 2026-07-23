@@ -463,6 +463,29 @@ def run_val_eval(
             if src_auc is not None:
                 log_line(f'{log_tag}   {src} image_auc={src_auc:.4f} (n={len(src_records)})')
 
+    # Per-source LOCALIZATION AUROC (threshold-free patch separability). A
+    # second flat forward per item (no zoom) — gated behind --val_patch_auroc
+    # since it ~doubles val cost. This is the honest per-epoch localization
+    # signal under per_image, where the threshold-decode F1 above is
+    # calibration-shifted (CLAUDE.md rule 1). full_fakes / pseudo-sentinel
+    # items self-skip inside collect_patch_scores (rule 2).
+    if getattr(cfg, 'val_patch_auroc', False) and has_patch_bce and records:
+        from lab_utils.eval.patch_scores import collect_patch_scores
+        band = tuple(getattr(cfg, 'patch_band', None) or (0.2, 0.8))
+        pa_dtype = 'bfloat16' if getattr(cfg, 'amp_dtype', None) == 'bf16' else 'float16'
+        by_src: Dict[str, List] = {}
+        for it in items_to_eval:
+            by_src.setdefault(it.source, []).append(it)
+        for src in sorted(by_src):
+            ps = collect_patch_scores(
+                bare_model, by_src[src], res, device=device, use_amp=use_amp,
+                amp_dtype=pa_dtype, band=band, log_tag=f'{log_tag} pa:{src}', quiet=True)
+            if ps['n_items'] > 0:
+                log_line(
+                    f'{log_tag}   {src} patch_auroc={ps["auroc_pooled"]:.4f} '
+                    f'vs_real_bg={ps["auroc_vs_real_bg"]:.4f} '
+                    f'vs_splice_bg={ps["auroc_vs_splice_bg"]:.4f} (n={ps["n_items"]})')
+
     return records, image_auc
 
 
