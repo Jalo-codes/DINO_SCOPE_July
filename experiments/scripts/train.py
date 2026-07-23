@@ -264,7 +264,9 @@ def _build_parser() -> argparse.ArgumentParser:
                         'subsample, seeded from --seed). Unlike --val_max_items this keeps '
                         'the eval balanced across every source, so a condensed per-epoch '
                         'eval still reports every held-out set (in-domain + pico + imd) '
-                        'rather than whichever sources sort first.')
+                        'rather than whichever sources sort first. tgif2 and full_fakes are '
+                        'EXEMPT (they self-cap via --val_per_cell / --full_fakes_val_per_pool, '
+                        'which keep their cell/pool balance a flat draw would destroy).')
     g.add_argument('--val_zoom', action=argparse.BooleanOptionalAction, default=True,
                    help='Per-epoch val runs attention-zoom two-pass; early-stop '
                         'then tracks the zoomed localization F1 (default on; '
@@ -475,6 +477,12 @@ def _build_datasets(cfg, res: Resolution):
 
     if cfg.val_per_source is not None and val_items:
         from collections import defaultdict as _defaultdict
+        # tgif2 (per-CELL cap, val_per_cell) and full_fakes (per-POOL cap,
+        # val_per_pool) already carry bespoke BALANCED per-epoch caps; a flat
+        # per-source draw would flatten their cell/pool structure (e.g. lose
+        # tgif's sp/fr and per-generator balance). Exempt them — they pass
+        # through whole.
+        _SELF_CAPPED = {'tgif2', 'full_fakes'}
         by_src = _defaultdict(list)
         for it in val_items:
             by_src[it.source].append(it)
@@ -482,6 +490,9 @@ def _build_datasets(cfg, res: Resolution):
         capped, n_dropped = [], 0
         for src in sorted(by_src):
             group = list(by_src[src])
+            if src in _SELF_CAPPED:
+                capped.extend(group)
+                continue
             if len(group) > cfg.val_per_source:
                 group.sort(key=lambda i: i.item_id)   # stable order before the draw
                 cap_rng.shuffle(group)
@@ -489,7 +500,8 @@ def _build_datasets(cfg, res: Resolution):
                 group = group[:cfg.val_per_source]
             capped.extend(group)
         log_line(f'[data] val_per_source={cfg.val_per_source} → {len(capped)} val items '
-                 f'across {len(by_src)} sources ({n_dropped} dropped)')
+                 f'across {len(by_src)} sources ({n_dropped} dropped; '
+                 f'tgif2/full_fakes exempt — self-capped)')
         val_items = capped
 
     _log_data_diet(train_items, val_items, cfg)
