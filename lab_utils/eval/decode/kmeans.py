@@ -100,6 +100,32 @@ def polarity_attn(
     return (raw == chosen)
 
 
+def polarity_logit(
+    raw_labels: np.ndarray,
+    patch_logits: np.ndarray,
+) -> np.ndarray:
+    """Pick the splice cluster as the one with higher mean patch logit.
+
+    For a BCE patch head, fakeness is EXPLICITLY defined — fake patches are
+    trained to high logit — so the higher-logit cluster is the splice by
+    construction. No attention needed (and attention must NOT be used: it can
+    disagree and flip the mask). This is the correct polarity for any decode on
+    a checkpoint that carries a patch-BCE head; attention polarity is only for
+    the contrastive case, where no fakeness direction is defined.
+
+    Returns:
+        (N,) bool — True for predicted-splice patches.
+    """
+    raw = np.asarray(raw_labels).reshape(-1)
+    lg  = np.asarray(patch_logits).reshape(-1)
+    n0  = int((raw == 0).sum())
+    n1  = int((raw == 1).sum())
+    mean0 = float(lg[raw == 0].mean()) if n0 else float('-inf')
+    mean1 = float(lg[raw == 1].mean()) if n1 else float('-inf')
+    chosen = 1 if mean1 > mean0 else 0
+    return (raw == chosen)
+
+
 # ── 1-D two-means (exact, deterministic) ───────────────────────────────────────
 
 def _kmeans2_1d(x: np.ndarray) -> np.ndarray:
@@ -160,7 +186,8 @@ def decode_kmeans_logit(info: ModelInfo) -> np.ndarray:
     x          = np.asarray(info.patch_logits, dtype=np.float64).reshape(-1)
     n_side     = info.grid_hw[0]
     raw_labels = _kmeans2_1d(x)
-    mask       = polarity_attn(raw_labels, info.attention)
+    # Fakeness is defined by the head — the higher-logit cluster is the splice.
+    mask       = polarity_logit(raw_labels, x)
     return mask.reshape(n_side, n_side)
 
 
@@ -185,7 +212,13 @@ def decode_kmeans_feats(info: ModelInfo, *, n_init: int = 4) -> np.ndarray:
     z          = z / np.clip(norms, a_min=1e-12, a_max=None)
     n_side     = info.grid_hw[0]
     raw_labels, _ = spherical_kmeans2(z, n_init=n_init)
-    mask       = polarity_attn(raw_labels, info.attention)
+    # Clustering is unsupervised, but orient it with the head when one exists:
+    # a patch-BCE head defines fakeness, so orient by logit. Only fall back to
+    # attention polarity for a headless / frozen backbone (no fakeness direction).
+    if info.patch_logits is not None:
+        mask = polarity_logit(raw_labels, info.patch_logits)
+    else:
+        mask = polarity_attn(raw_labels, info.attention)
     return mask.reshape(n_side, n_side)
 
 
