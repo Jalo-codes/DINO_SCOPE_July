@@ -22,7 +22,11 @@ import torch
 
 from lab_utils.data.item import Item
 from lab_utils.data.resolution import Resolution
-from lab_utils.eval.decode.kmeans import decode_kmeans
+from lab_utils.eval.decode.kmeans import (
+    decode_kmeans,
+    decode_kmeans_feats,
+    decode_kmeans_logit,
+)
 from lab_utils.eval.decode.threshold import decode_threshold
 from lab_utils.eval.fetch import ModelInfo, model_info, repool_hidden
 from lab_utils.eval.metric import metric as eval_metric
@@ -46,9 +50,14 @@ from experiments.configs.zoom import DEFAULT_ZOOM
 DecodeFn = Callable[[ModelInfo], np.ndarray]
 
 _NAMED_DECODERS: dict = {
-    'kmeans':    decode_kmeans,
-    'threshold': decode_threshold,
+    'kmeans':        decode_kmeans,
+    'kmeans_logit':  decode_kmeans_logit,
+    'kmeans_feats':  decode_kmeans_feats,
+    'threshold':     decode_threshold,
 }
+
+# Decoders that cluster over raw backbone features need model_info(return_feats=True).
+_FEATS_DECODERS = frozenset({'kmeans_feats'})
 
 
 def _resolve_decoder(decoder) -> tuple:
@@ -120,6 +129,7 @@ def attention_zoom_single(
     """
     decode_fn, decoder_name = _resolve_decoder(decoder)
     zoom_label = f'{decoder_name}_zoom'
+    need_feats = decoder_name in _FEATS_DECODERS
 
     # Pass 1 — full image
     if override_image_pil is not None:
@@ -129,7 +139,8 @@ def attention_zoom_single(
 
         img_pil = PILImage.open(item.image).convert('RGB')
     img_tensor = load_image_tensor(img_pil, res, device=device)
-    info1 = model_info(model, img_tensor, device=device, amp=use_amp, amp_dtype=amp_dtype)
+    info1 = model_info(model, img_tensor, device=device, amp=use_amp, amp_dtype=amp_dtype,
+                       return_feats=need_feats)
     mask1 = decode_fn(info1)
 
     debug = {'bbox': None, 'mask_full': mask1, 'mask_zoom': None,
@@ -159,7 +170,8 @@ def attention_zoom_single(
     # full-frame patch grid would throw most of it away).
     crop_pil    = crop_to_bbox(img_pil, bbox)
     crop_tensor = load_image_tensor(crop_pil, res, device=device)
-    info2       = model_info(model, crop_tensor, device=device, amp=use_amp, amp_dtype=amp_dtype)
+    info2       = model_info(model, crop_tensor, device=device, amp=use_amp, amp_dtype=amp_dtype,
+                             return_feats=need_feats)
     mask2_crop  = decode_fn(info2)
 
     crop2d = np.asarray(mask2_crop, dtype=bool)

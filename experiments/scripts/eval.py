@@ -230,17 +230,14 @@ def main() -> None:
         log_line('[eval] no localization heads in checkpoint — defaulting --decoder to none')
         args.decoder = ['none']
 
-    # kmeans_feats needs raw patch_feats, which are neither cached nor produced by
-    # the two-pass zoom crop path — fail fast rather than deep inside the decode.
-    if 'kmeans_feats' in args.decoder and args.cache_dir:
+    # kmeans_feats needs raw patch_feats. The flat cache path does not store them
+    # (fetch: "Never cached"), so fail fast there. The zoom path extracts them live
+    # (return_feats threaded through both passes) and ignores --cache_dir anyway.
+    if 'kmeans_feats' in args.decoder and args.cache_dir and not args.zoom:
         raise SystemExit(
             'eval.py: --decoder kmeans_feats needs raw patch_feats, which are not cached. '
             'Run it WITHOUT --cache_dir (fresh forward), or drop kmeans_feats from the '
             'decoder list for the cached run.')
-    if 'kmeans_feats' in args.decoder and args.zoom:
-        raise SystemExit(
-            'eval.py: --decoder kmeans_feats is not supported with --zoom '
-            '(the two-pass zoom path does not extract raw patch_feats).')
 
     # ── Datasets ──────────────────────────────────────────────────────────────
     val_items_by_source = collect_val_items_by_source(args, res)
