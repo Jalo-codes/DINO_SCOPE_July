@@ -24,7 +24,7 @@ from lab_utils.compat import trapz
 from lab_utils.data.item import Item
 from lab_utils.data.resolution import Resolution
 from lab_utils.eval.fetch import model_info
-from lab_utils.eval.decode.kmeans import decode_kmeans
+from lab_utils.eval.decode.kmeans import decode_kmeans, decode_kmeans_logit
 from lab_utils.eval.decode.threshold import decode_threshold
 from lab_utils.eval.metric import metric as eval_metric
 from lab_utils.eval.record import EvalRecord
@@ -378,7 +378,7 @@ def run_val_eval(
     # actually report at eval time.  Only meaningful for localization decoders.
     # Function-local import (mirrors load_model's run_config import) keeps the
     # lazy lab_utils→experiments edge contained to this opt-in path.
-    zoom_val = bool(getattr(cfg, 'val_zoom', False)) and decoder in ('kmeans', 'threshold')
+    zoom_val = bool(getattr(cfg, 'val_zoom', False)) and decoder in ('kmeans', 'threshold', 'kmeans_logit')
     if zoom_val:
         from experiments.labs.attention_zoom import attention_zoom_single
         log_line(f'{log_tag} val zoom ON (two-pass, decoder={decoder})')
@@ -423,6 +423,8 @@ def run_val_eval(
                 patch_mask = np.zeros((n_side, n_side), dtype=bool)
             elif decoder == 'kmeans':
                 patch_mask = decode_kmeans(info)
+            elif decoder == 'kmeans_logit':
+                patch_mask = decode_kmeans_logit(info)
             elif decoder == 'threshold':
                 patch_mask = decode_threshold(info)
             else:
@@ -598,6 +600,8 @@ def run_epoch_viz(
                 patch_mask = np.zeros((n_side, n_side), dtype=bool)
             elif decoder == 'kmeans':
                 patch_mask = decode_kmeans(info)
+            elif decoder == 'kmeans_logit':
+                patch_mask = decode_kmeans_logit(info)
             elif decoder == 'threshold':
                 patch_mask = decode_threshold(info)
             else:

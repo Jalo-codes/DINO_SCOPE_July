@@ -251,10 +251,12 @@ def _build_parser() -> argparse.ArgumentParser:
     # eval
     g = p.add_argument_group('eval')
     g.add_argument('--val_decoder', default='auto',
-                   choices=['auto', 'kmeans', 'threshold', 'none'],
-                   help="'none' = image-level only, no mask decode (run_val_eval "
-                        'already supported it; the choice list did not). Correct '
-                        'for an image-head-only run, where there is nothing to decode')
+                   choices=['auto', 'kmeans', 'kmeans_logit', 'threshold', 'none'],
+                   help="'kmeans_logit' = adaptive per-image split on the patch-BCE "
+                        "logits (Otsu); the representative per-epoch localization metric "
+                        "for a BCE head — 'threshold' (fixed t=0.5) collapses on small "
+                        "masks and mis-selects best.pt. 'none' = image-level only, no "
+                        'mask decode. Correct for an image-head-only run.')
     g.add_argument('--val_max_items', type=int, default=None,
                    help='Limit val items per epoch (for quick smoke tests). Truncates the '
                         'FLAT source-ordered list — takes whole sources in order and drops '
