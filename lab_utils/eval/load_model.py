@@ -155,4 +155,16 @@ def load_eval_model(
     )
     model.load_state_dict(model_sd, strict=strict)
     model.eval()
+
+    # Traceability: record the EXACT model identity every eval path ran on, so
+    # eval.log / sweep.log are self-describing for apples-to-apples comparison.
+    _epoch = state.get('epoch')
+    log_line(
+        f'[ckpt] identity | checkpoint={checkpoint_path}'
+        + (f' epoch={_epoch}' if _epoch is not None else '')
+        + f' | backbone={r_model_name} @ {r_image_size}/{r_patch_size}'
+          f' lora_rank={r_lora_rank} lora_alpha={r_lora_alpha}'
+        + f' | heads: contrastive_dim={r_contrastive} pool_hidden={r_pool_hidden}'
+          f' patch_bce={r_patch_bce} | base_dtype={r_base_dtype}'
+    )
     return model, cfg, res
