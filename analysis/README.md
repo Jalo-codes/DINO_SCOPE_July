@@ -13,6 +13,7 @@ Run from the repo root as modules, e.g. `python -m analysis.probe_contrasts ...`
 | `probe_contrasts.py` | probe records CSVs + manifest | raw tables, rank-AUC contrasts |
 | `full_fakes_report.py` | full-fakes eval records | whole-image AUC report |
 | `decoder_bench.py` | frozen eval cache (ModelInfo) | decoder comparison table |
+| `otsu_vs_threshold.py` | decoder-bench `*_records.csv` + `sweep_records.csv` | adaptive(otsu)-vs-fixed(thr@0.5/oracle-t) F1 table, per source × size bucket |
 | `rollup_ablation_eval.py` | orchestrator.log under a run_root | per-cell + headline CSVs |
 | `audit_zoom_image_auc.py` | checkpoint (collect) / logits CSV (analyze) | zoom-fusion AUROC audit |
 | `coco_leakage_probe.py` | dataset roots / manifests | COCO-provenance leakage audit |
